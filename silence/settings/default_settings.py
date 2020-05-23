@@ -18,5 +18,5 @@ SECRET_KEY = "These are generated automatically for each project."
 
 SQL_SCRIPTS = []
 
-PROJECT_TEMPLATE_NAME = "silence-project"
-PROJECT_TEMPLATE_REPO = "https://github.com/agu-borrego/Silence-project-template.git"  # TO-DO cambiar esto
+PROJECT_TEMPLATE_NAME = "silence-app"
+PROJECT_TEMPLATE_REPO = "https://github.com/agu-borrego/Silence-project-template.git"
