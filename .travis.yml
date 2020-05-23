@@ -17,7 +17,8 @@ before_script:
   - sudo mysql -e "GRANT ALL ON app.* TO 'silence'@'localhost';"
 
 script:
-  - silence new travis-ci
-  - cd travis-ci
+  - mkdir travis-ci && cd travis-ci
+  - silence new app
+  - cd app
   - silence createdb
   - silence run
