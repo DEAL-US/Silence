@@ -21,4 +21,3 @@ script:
   - silence new app
   - cd app
   - silence createdb
-  # TO-DO: deploy the API in the background and test it

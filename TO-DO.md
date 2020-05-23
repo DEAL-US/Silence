@@ -5,7 +5,7 @@
 
 # Should be done eventually (medium priority)
 - Upload to PyPI
-- Set up CI
+- Finish proper CI (actual testing, grab settings from the sample project, cross-builds)
 - Logging
 
 # Would be nice (low priority)
