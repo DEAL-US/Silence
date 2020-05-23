@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -13,7 +13,7 @@ setup(
     author='Agustín Borrego',
     author_email='borrego@us.es',
     license='MIT',
-    packages=['silence'],
+    packages=find_packages(),
     entry_points={
         "console_scripts": [
             "silence = silence.cli.manager:run_from_command_line",
