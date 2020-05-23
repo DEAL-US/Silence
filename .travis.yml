@@ -1,0 +1,23 @@
+sudo: required
+language: python
+python:
+  - "3.6"
+  - "3.7"
+  - "3.8"
+
+addons:
+  mariadb: "10.4"
+
+install:
+  - pip install .
+
+before_script:
+  - sudo mysql -e 'CREATE DATABASE app;'
+  - sudo mysql -e "CREATE USER 'silence'@'localhost' IDENTIFIED BY '123456';"
+  - sudo mysql -e "GRANT ALL ON app.* TO 'silence'@'localhost';"
+
+script:
+  - silence new travis-ci
+  - cd travis-ci
+  - silence createdb
+  - silence run
