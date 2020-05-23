@@ -1,4 +1,4 @@
-# Silence: An educational framework for deploying RESTful APIs and Web applications.
+# Silence: An educational framework for deploying RESTful APIs and Web applications. [![Build Status](https://travis-ci.org/agu-borrego/Silence.svg?branch=master)](https://travis-ci.org/agu-borrego/Silence)
 
 Work in progress.
 
