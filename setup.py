@@ -20,19 +20,9 @@ setup(
         ],
     },
     install_requires=[
-        'certifi==2020.4.5.1',
-        'chardet==3.0.4',
-        'click==7.1.2',
         'dload==0.6',
         'Flask==1.1.2',
-        'idna==2.9',
-        'itsdangerous==1.1.0',
-        'Jinja2==2.11.2',
-        'MarkupSafe==1.1.1',
         'PyMySQL==0.9.3',
-        'requests==2.23.0',
-        'urllib3==1.25.9',
-        'Werkzeug==1.0.1',
     ],
     zip_safe=False
 )
