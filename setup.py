@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name='Silence',
-    version='0.0.3',
+    version='0.0.4',
     description='An educational API+Web framework.',
     long_description=long_description,
     long_description_content_type="text/markdown",

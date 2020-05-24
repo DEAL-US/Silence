@@ -1,3 +1,6 @@
+# 0.0.4
+- Improvements in GitHub automated actions
+
 # 0.0.3
 - Fixing the PyPI publication workflow
 - Added PyPI badge in README
