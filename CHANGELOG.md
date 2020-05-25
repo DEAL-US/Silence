@@ -1,3 +1,6 @@
+# 0.1.0
+- Added support for HTTP GET / SQL SELECT (URL params, query filtering...)
+
 # 0.0.5
 - Improvements in version handling
 
