@@ -1,4 +1,4 @@
-# 0.0.4-dev
+# 0.0.5
 - Improvements in version handling
 
 # 0.0.4
