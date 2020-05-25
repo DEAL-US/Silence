@@ -15,9 +15,9 @@ jobs:
       - name: Set variables
         run: |
           version=$(cat silence/__init__.py | perl -0 -ne 'print $1 if s|.*__version__ = ["'"'"'](.*?)['"'"'"]||')
+          prerelease=$(if [[ "$version" == 0.* ]] ; then printf "true"; else printf "false"; fi)
           echo ::set-env name=release_name::$version
           version=${version//./\\.}   
-          prerelease=$(if [[ "$version" == 0.* ]] ; then printf "true"; else printf "false"; fi)
           changelog="$(cat CHANGELOG.md | perl -0 -ne 'print $1 if s|.*?#\s*'"$version"'.*?\n(.*?)\n#.*||s')"
           changelog="${changelog//'%'/'%25'}"
           changelog="${changelog//$'\n'/'%0A'}"
