@@ -14,13 +14,14 @@ jobs:
         uses: actions/checkout@v2
       - name: Set variables
         run: |
-          version=$(cat CHANGELOG.md | perl -0 -ne 'print $1 if s|.*?#\s*(.*?)\s*\n.*||')
+          version=$(cat silence/__init__.py | perl -0 -ne 'print $1 if s|.*__version__ = ["'"'"'](.*?)['"'"'"]||')
+          echo ::set-env name=release_name::$version
+          version=${version//./\\.}   
           prerelease=$(if [[ "$version" == 0.* ]] ; then printf "true"; else printf "false"; fi)
-          changelog="$(cat CHANGELOG.md | perl -0 -ne 'print $1 if s|.*?#.*?\n(.*?)\n#.*||s')"
+          changelog="$(cat CHANGELOG.md | perl -0 -ne 'print $1 if s|.*?#\s*'"$version"'.*?\n(.*?)\n#.*||s')"
           changelog="${changelog//'%'/'%25'}"
           changelog="${changelog//$'\n'/'%0A'}"
           changelog="${changelog//$'\r'/'%0D'}"
-          echo ::set-env name=release_name::$version
           echo "::set-env name=release_info::$changelog"
           echo "::set-env name=prerelease::$prerelease" 
       - name: Create Release
