@@ -1,3 +1,6 @@
+# 0.0.4-dev
+- Improvements in version handling
+
 # 0.0.4
 - Improvements in GitHub automated actions
 
