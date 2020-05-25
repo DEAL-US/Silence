@@ -1,6 +1,6 @@
 # Must complete (high priority)
-- SELECTs (+ automated query filtering)
-- Param binding
+- Param binding for POST/PUT/DELETE
+- Register/login endpoints and auth control
 - Webserver
 
 # Should be done eventually (medium priority)
@@ -11,3 +11,4 @@
 - Automate the command listing and handling
 - Nice log colors
 - Gracefully close the DB connection on CTRL+C
+- Filter/sort/paginate by editing the SQL query

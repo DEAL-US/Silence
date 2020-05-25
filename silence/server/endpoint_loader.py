@@ -1,5 +1,4 @@
 import importlib
-import inspect
 
 from os import listdir
 from os.path import splitext
@@ -10,8 +9,6 @@ from os.path import splitext
 ###############################################################################
 
 def load_user_endpoints():
-    print("Loading user endpoints...")
-    
     # Load every .py file inside the api/ folder
     for pyfile in listdir("api"):
         module_name = "api." + splitext(pyfile)[0]
