@@ -4,7 +4,6 @@
 - Webserver
 
 # Should be done eventually (medium priority)
-- Upload to PyPI
 - Finish proper CI (actual testing, grab settings from the sample project, cross-builds)
 - Logging
 
