@@ -30,6 +30,4 @@ class Settings:
                 print("Can't find the settings.py file! Are you running this command from the project's root folder?")
                 sys.exit(1)
         
-
-
 settings = Settings()

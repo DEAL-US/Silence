@@ -1,9 +1,12 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
+from werkzeug.exceptions import NotFound
 
 from silence.server.endpoint_loader import load_user_endpoints
 from silence.settings import settings
 from silence.exceptions import HTTPError
 
+from os.path import join
+from os import getcwd
 import traceback
 
 ###############################################################################
@@ -11,7 +14,8 @@ import traceback
 # configuring it and deploying the endpoints and web app.
 ###############################################################################
 
-APP = Flask(__name__)
+static_folder = join(getcwd(), "docs") if settings.RUN_WEB else None
+APP = Flask(__name__, static_folder=static_folder)
 
 def setup():
     # Configures the web server
@@ -28,7 +32,7 @@ def setup():
     # Set up the generic Exception handler for server errors
     @APP.errorhandler(Exception)
     def handle_generic_error(exc):
-        if isinstance(exc, HTTPError):
+        if isinstance(exc, HTTPError) or isinstance(exc, NotFound):
             # Handle these using the other function
             return exc
         
@@ -38,8 +42,20 @@ def setup():
         err = HTTPError(500, msg, exc_type)
         return handle_HTTPError(err)
 
-    # Load the user-provided endpoints
-    load_user_endpoints()
+    # Load the user-provided API endpoints
+    if settings.RUN_API:
+        load_user_endpoints()
+
+    # Load the web static files
+    if settings.RUN_WEB:
+        @APP.route("/")
+        def root():
+            return APP.send_static_file("index.html")
+
+        @APP.route("/<path:path>")
+        def other_path(path):
+            return APP.send_static_file(path)
+
 
 
 def run():

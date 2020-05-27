@@ -6,6 +6,9 @@ DEBUG_ENABLED = False
 HTTP_PORT = 8080
 API_PREFIX = ""
 
+RUN_API = True
+RUN_WEB = True
+
 DB_CONN = {
     "host": "localhost",
     "port": 3306,
