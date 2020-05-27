@@ -4,6 +4,8 @@ from silence.server.endpoint_loader import load_user_endpoints
 from silence.settings import settings
 from silence.exceptions import HTTPError
 
+import traceback
+
 ###############################################################################
 # The server manager is responsible for setting up the Flask webserver,
 # configuring it and deploying the endpoints and web app.
@@ -18,10 +20,23 @@ def setup():
 
     # Set up the error handle for our custom exception type
     @APP.errorhandler(HTTPError)
-    def handle_invalid_usage(error):
+    def handle_HTTPError(error):
         response = jsonify(error.to_dict())
         response.status_code = error.status_code
         return response
+
+    # Set up the generic Exception handler for server errors
+    @APP.errorhandler(Exception)
+    def handle_generic_error(exc):
+        if isinstance(exc, HTTPError):
+            # Handle these using the other function
+            return exc
+        
+        exc_type = type(exc).__name__
+        msg = str(exc)
+        traceback.print_exc()
+        err = HTTPError(500, msg, exc_type)
+        return handle_HTTPError(err)
 
     # Load the user-provided endpoints
     load_user_endpoints()
