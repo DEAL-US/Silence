@@ -1,5 +1,4 @@
 # Must complete (high priority)
-- Param binding for POST/PUT/DELETE
 - Register/login endpoints and auth control
 - Webserver
 
