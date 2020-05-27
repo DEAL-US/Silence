@@ -5,7 +5,6 @@ from silence.server import manager as server_manager
 from silence.db import dal
 from silence import sql as SQL
 from silence.sql import get_sql_op
-from silence.sql.validator import sql_is_ok
 from silence.sql.converter import silence_to_mysql
 from silence.settings import settings
 from silence.exceptions import SQLWarning, EndpointWarning, EndpointError, HTTPError
@@ -31,9 +30,6 @@ def endpoint(route, method, sql, auth_required=False):
     if route_prefix.endswith("/"):
         route_prefix = route_prefix[:-1]  # Drop the final /
     full_route = route_prefix + route
-
-    # Warn if the SQL seems to not be correct
-    check_sql(sql, route)
 
     # Warn if the pair SQL operation - HTTP verb is not the proper one
     check_method(sql, method, route)
@@ -157,13 +153,6 @@ def filter_query_results(data, args):
 
 ###############################################################################
 # Aux stuff for checking and parsing
-
-# Checks whether an SQL string may contain errors
-# This may not be super trustworthy, so we just raise a Warning instead
-# of an exception.
-def check_sql(sql, endpoint):
-    if not sql_is_ok(sql):
-        warnings.warn(f"The SQL string '{sql}' for the endpoint {endpoint} seems to contain errors.", SQLWarning)
 
 # Checks whether the SQL operation and the HTTP verb match
 def check_method(sql, verb, endpoint):

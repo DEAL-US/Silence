@@ -33,7 +33,6 @@ setup(
         'dload==0.6',
         'Flask==1.1.2',
         'PyMySQL==0.9.3',
-        'sqlvalidator==0.0.3'
     ],
     python_requires='~=3.6',
     zip_safe=False
