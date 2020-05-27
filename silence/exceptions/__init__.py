@@ -24,7 +24,7 @@ class EndpointError(Exception):
 # Generic HTTP errors
 # Grabbed from https://flask.palletsprojects.com/en/1.1.x/patterns/apierrors/
 class HTTPError(Exception):
-    def __init__(self, message, status_code, payload=None):
+    def __init__(self, status_code, message=None, payload=None):
         Exception.__init__(self)
         self.message = message
         self.status_code = status_code
@@ -32,6 +32,6 @@ class HTTPError(Exception):
 
     def to_dict(self):
         rv = dict(self.payload or ())
-        rv['message'] = self.message
+        rv['message'] = self.message or f"Error {self.status_code}"
         rv['code'] = self.status_code
         return rv

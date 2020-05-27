@@ -95,7 +95,7 @@ def endpoint(route, method, sql, auth_required=False):
                 # at least one URL parameter and we have no results,
                 # we should return a 404 code
                 if url_params and not res:
-                    raise HTTPError("Not found", 404)
+                    raise HTTPError(404, "Not found")
 
             else:  # POST/PUT/DELETE operations
                 # Construct a dict for all params expected in the request body,
