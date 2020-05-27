@@ -1,6 +1,5 @@
 # Must complete (high priority)
 - Register/login endpoints and auth control
-- Webserver
 
 # Should be done eventually (medium priority)
 - Finish proper CI (actual testing, grab settings from the sample project, cross-builds)
