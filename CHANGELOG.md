@@ -1,5 +1,5 @@
 # 0.1.0-dev
-- ...
+- Added support for HTTP POST/PUT/DELETE and SQL INSERT/UPDATE/DELETE
 
 # 0.1.0
 - Added support for HTTP GET / SQL SELECT (URL params, query filtering...)
