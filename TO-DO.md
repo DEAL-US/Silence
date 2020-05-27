@@ -1,7 +1,5 @@
 # Must complete (high priority)
-- Param binding for POST/PUT/DELETE
 - Register/login endpoints and auth control
-- Webserver
 
 # Should be done eventually (medium priority)
 - Finish proper CI (actual testing, grab settings from the sample project, cross-builds)

@@ -5,11 +5,12 @@ from silence.server import manager as server_manager
 from silence.db import dal
 from silence import sql as SQL
 from silence.sql import get_sql_op
-from silence.sql.validator import sql_is_ok
 from silence.sql.converter import silence_to_mysql
 from silence.settings import settings
-from silence.exceptions import SQLWarning, EndpointWarning, EndpointError, HTTPError
+from silence.exceptions import EndpointWarning, EndpointError, HTTPError
+from silence.decorators.db_call import db_call
 
+import inspect
 import warnings
 import re
 
@@ -30,9 +31,6 @@ def endpoint(route, method, sql, auth_required=False):
     if route_prefix.endswith("/"):
         route_prefix = route_prefix[:-1]  # Drop the final /
     full_route = route_prefix + route
-
-    # Warn if the SQL seems to not be correct
-    check_sql(sql, route)
 
     # Warn if the pair SQL operation - HTTP verb is not the proper one
     check_method(sql, method, route)
@@ -57,10 +55,19 @@ def endpoint(route, method, sql, auth_required=False):
         def decorator(*args, **kwargs):
             func(*args, **kwargs)
 
+        # Get the list of arguments expected by the decorated function
+        decorated_func_args = inspect.getargspec(func)[0]
+
+        # If it's a SELECT or a DELETE, make sure that all SQL params can be
+        # obtained from the url AND the request body
+        if sql_op in (SQL.INSERT, SQL.UPDATE):
+            check_params_match(sql_params, url_params + decorated_func_args, route)
+
         # The handler function that will be passed to flask
         def route_handler(*args, **kwargs):
             # Collect all url pattern params
             request_params = kwargs
+            url_pattern_params = tuple(request_params[param] for param in url_params)
 
             # Convert the silence-style placeholders in the SQL query to proper MySQL placeholders
             query_string = silence_to_mysql(sql)
@@ -69,13 +76,13 @@ def endpoint(route, method, sql, auth_required=False):
             res = None
             status = 200
             
+            # SELECT/GET operations
             if sql_op == SQL.SELECT:
                 # Call the decorated function, just in case (though it should do nothing)
                 decorator()
 
                 # The URL params have been checked to be enough to fill all SQL params
-                query_params = tuple(request_params[param] for param in sql_params)
-                res = dal.query(query_string, query_params)
+                res = query(query_string, url_pattern_params)
                 
                 # Filter these results according to the URL query string, if there is one
                 # Possible TO-DO: do this by directly editing the SQL query for extra efficiency
@@ -85,21 +92,48 @@ def endpoint(route, method, sql, auth_required=False):
                 # at least one URL parameter and we have no results,
                 # we should return a 404 code
                 if url_params and not res:
-                    raise HTTPError("Not found", 404)
-            else:
-                # TO-DO: updates
-                raise NotImplementedError
+                    raise HTTPError(404, "Not found")
+
+            else:  # POST/PUT/DELETE operations
+                # Construct a dict for all params expected in the request body,
+                # setting them to None if they have not been provided
+                body_params = {param: request.form.get(param, None) for param in decorated_func_args}
+
+                # Call the decorated function with these parameters to allow the
+                # user to validate them
+                decorator(**body_params)
+
+                # We have checked that sql_params is a subset of url_params U body_params,
+                # construct a joint param object and use it to fill the SQL placeholders
+                for i, param in enumerate(url_params):
+                    body_params[param] = url_pattern_params[i]
+
+                param_tuple = tuple(body_params[param] for param in sql_params)
+
+                # Run the execute query
+                res = update(query_string, param_tuple)
 
             return jsonify(res), status
         
-        # flaskify adapts the URL so that all $variables are converted to Flask-style <variables>
-        server_manager.APP.add_url_rule(flaskify_url(full_route), route, route_handler, methods=[method])
+        # flaskify_url() adapts the URL so that all $variables are converted to Flask-style <variables>
+        server_manager.APP.add_url_rule(flaskify_url(full_route), method + route, route_handler, methods=[method])
 
         return decorator
     return wrapper
 
 ###############################################################################
 # Aux stuff for the handler function
+
+# Wraps DB calls to catch DBerrors and turn them into HTTPErrors
+@db_call
+def query(sql, params):
+    return dal.query(sql, params)
+
+@db_call
+def update(sql, params):
+    return dal.update(sql, params)
+
+# Implements filtering, ordering and paging using query strings
 def filter_query_results(data, args):
     # Grab all parameters from the query string
     sort_param = args.get("_sort", None)
@@ -131,13 +165,6 @@ def filter_query_results(data, args):
 ###############################################################################
 # Aux stuff for checking and parsing
 
-# Checks whether an SQL string may contain errors
-# This may not be super trustworthy, so we just raise a Warning instead
-# of an exception.
-def check_sql(sql, endpoint):
-    if not sql_is_ok(sql):
-        warnings.warn(f"The SQL string '{sql}' for the endpoint {endpoint} seems to contain errors.", SQLWarning)
-
 # Checks whether the SQL operation and the HTTP verb match
 def check_method(sql, verb, endpoint):
     sql_op = get_sql_op(sql)
@@ -167,14 +194,14 @@ def extract_params(string):
 def flaskify_url(url):
     return re.sub(r"\$(\w+)", r"<\1>", url)
 
-# Checks whether all SQL params can be filled with URL-pattern params
-# This is done for GETs and DELETEs where no request body is sent
-def check_params_match(sql_params, url_params, route):
+# Checks whether all SQL params can be filled with the provided params
+def check_params_match(sql_params, user_params, route):
     sql_params = set(sql_params)
-    url_params = set(url_params)
-    diff = sql_params.difference(url_params)
+    user_params = set(user_params)
+    diff = sql_params.difference(user_params)
 
     if diff:
         params_str = ", ".join(f"${param}" for param in diff)
         raise EndpointError(f"Error creating endpoint {route}: the parameters " +
-                            f"{params_str} are expected by the SQL query but they are not provided in the URL.")
+                            f"{params_str} are expected by the SQL query but they are not provided in the URL " +
+                            "or the request body.")
