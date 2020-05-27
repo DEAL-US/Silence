@@ -2,7 +2,7 @@
 # Default settings, which can be overriden by each individual project.
 ###############################################################################
 
-DEBUG_ENABLED = True
+DEBUG_ENABLED = False
 HTTP_PORT = 8080
 API_PREFIX = ""
 
