@@ -1,3 +1,6 @@
+# 0.2.0-dev
+- ...
+
 # 0.2.0
 - Added support for HTTP POST/PUT/DELETE and SQL INSERT/UPDATE/DELETE
 - Added support for static web files
