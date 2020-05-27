@@ -7,7 +7,7 @@ from silence import sql as SQL
 from silence.sql import get_sql_op
 from silence.sql.converter import silence_to_mysql
 from silence.settings import settings
-from silence.exceptions import SQLWarning, EndpointWarning, EndpointError, HTTPError
+from silence.exceptions import EndpointWarning, EndpointError, HTTPError
 
 import inspect
 import warnings
@@ -112,7 +112,6 @@ def endpoint(route, method, sql, auth_required=False):
                 # Run the execute query
                 res = dal.update(query_string, param_tuple)
 
-
             return jsonify(res), status
         
         # flaskify_url() adapts the URL so that all $variables are converted to Flask-style <variables>
@@ -183,12 +182,11 @@ def extract_params(string):
 def flaskify_url(url):
     return re.sub(r"\$(\w+)", r"<\1>", url)
 
-# Checks whether all SQL params can be filled with URL-pattern params
-# This is done for GETs and DELETEs where no request body is sent
-def check_params_match(sql_params, url_params, route):
+# Checks whether all SQL params can be filled with the provided params
+def check_params_match(sql_params, user_params, route):
     sql_params = set(sql_params)
-    url_params = set(url_params)
-    diff = sql_params.difference(url_params)
+    user_params = set(user_params)
+    diff = sql_params.difference(user_params)
 
     if diff:
         params_str = ", ".join(f"${param}" for param in diff)
