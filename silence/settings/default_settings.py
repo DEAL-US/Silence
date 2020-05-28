@@ -24,7 +24,7 @@ USER_AUTH_DATA = {
 }
 
 SECRET_KEY = "These are generated automatically for each project."
-MAX_TOKEN_AGE = 3600
+MAX_TOKEN_AGE = 86400
 
 SQL_SCRIPTS = []
 

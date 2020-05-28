@@ -1,13 +1,14 @@
 from functools import wraps
 from flask import jsonify, request
 
+from silence.auth.tokens import check_token
 from silence.server import manager as server_manager
 from silence.db import dal
 from silence import sql as SQL
 from silence.sql import get_sql_op
 from silence.sql.converter import silence_to_mysql
 from silence.settings import settings
-from silence.exceptions import EndpointWarning, EndpointError, HTTPError
+from silence.exceptions import EndpointWarning, EndpointError, HTTPError, TokenError
 
 import inspect
 import warnings
@@ -64,6 +65,11 @@ def endpoint(route, method, sql, auth_required=False):
 
         # The handler function that will be passed to flask
         def route_handler(*args, **kwargs):
+            # If this endpoint requires authentication, check that the
+            # user has provided a session token and that it is valid
+            if auth_required:
+                check_session()
+
             # Collect all url pattern params
             request_params = kwargs
             url_pattern_params = tuple(request_params[param] for param in url_params)
@@ -119,6 +125,18 @@ def endpoint(route, method, sql, auth_required=False):
 
         return decorator
     return wrapper
+
+###############################################################################
+# Session token checker
+def check_session():
+    token = request.headers.get("Token", default=None)
+    if not token:
+        raise HTTPError(401, "Unauthorized")
+
+    try:
+        check_token(token)
+    except TokenError as exc:
+        raise HTTPError(401, str(exc))
 
 ###############################################################################
 # Aux stuff for the handler function
