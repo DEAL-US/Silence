@@ -1,5 +1,6 @@
 # 0.2.0-dev
-- ...
+- Added support for the default endpoints /login and /register using custom tables and fields
+- Added support for session tokens and authentication requirements
 
 # 0.2.0
 - Added support for HTTP POST/PUT/DELETE and SQL INSERT/UPDATE/DELETE

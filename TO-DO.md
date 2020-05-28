@@ -1,5 +1,5 @@
 # Must complete (high priority)
-- Register/login endpoints and auth control
+- Accept JSON as content type for POST/PUT requests
 
 # Should be done eventually (medium priority)
 - Finish proper CI (actual testing, grab settings from the sample project, cross-builds)
