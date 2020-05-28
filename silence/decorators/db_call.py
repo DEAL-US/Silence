@@ -3,7 +3,7 @@ from silence.exceptions import HTTPError, DatabaseError
 
 import re
 
-regex_error_str = re.compile(r"\(.*?, '(.*)'\)")
+regex_error_str = re.compile(r"""\(.*?, ['"](.*)['"]\)""")
 
 # Wraps a DB query/update call to catch any possible DatabaseErrors
 # and wrap them inside a HTTPError
