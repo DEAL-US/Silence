@@ -33,6 +33,9 @@ setup(
         'dload==0.6',
         'Flask==1.1.2',
         'PyMySQL==0.9.3',
+        'Werkzeug==1.0.1',
+        'itsdangerous==1.1.0',
+        'pypika==0.37.7',
     ],
     python_requires='~=3.6',
     zip_safe=False
