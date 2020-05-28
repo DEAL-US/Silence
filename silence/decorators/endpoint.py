@@ -1,14 +1,14 @@
 from functools import wraps
 from flask import jsonify, request
 
+from silence.auth.tokens import check_token
 from silence.server import manager as server_manager
 from silence.db import dal
 from silence import sql as SQL
 from silence.sql import get_sql_op
 from silence.sql.converter import silence_to_mysql
 from silence.settings import settings
-from silence.exceptions import EndpointWarning, EndpointError, HTTPError
-from silence.decorators.db_call import db_call
+from silence.exceptions import EndpointWarning, EndpointError, HTTPError, TokenError
 
 import inspect
 import warnings
@@ -65,6 +65,11 @@ def endpoint(route, method, sql, auth_required=False):
 
         # The handler function that will be passed to flask
         def route_handler(*args, **kwargs):
+            # If this endpoint requires authentication, check that the
+            # user has provided a session token and that it is valid
+            if auth_required:
+                check_session()
+
             # Collect all url pattern params
             request_params = kwargs
             url_pattern_params = tuple(request_params[param] for param in url_params)
@@ -82,7 +87,7 @@ def endpoint(route, method, sql, auth_required=False):
                 decorator()
 
                 # The URL params have been checked to be enough to fill all SQL params
-                res = query(query_string, url_pattern_params)
+                res = dal.api_safe_query(query_string, url_pattern_params)
                 
                 # Filter these results according to the URL query string, if there is one
                 # Possible TO-DO: do this by directly editing the SQL query for extra efficiency
@@ -111,7 +116,7 @@ def endpoint(route, method, sql, auth_required=False):
                 param_tuple = tuple(body_params[param] for param in sql_params)
 
                 # Run the execute query
-                res = update(query_string, param_tuple)
+                res = dal.api_safe_update(query_string, param_tuple)
 
             return jsonify(res), status
         
@@ -122,16 +127,19 @@ def endpoint(route, method, sql, auth_required=False):
     return wrapper
 
 ###############################################################################
+# Session token checker
+def check_session():
+    token = request.headers.get("Token", default=None)
+    if not token:
+        raise HTTPError(401, "Unauthorized")
+
+    try:
+        check_token(token)
+    except TokenError as exc:
+        raise HTTPError(401, str(exc))
+
+###############################################################################
 # Aux stuff for the handler function
-
-# Wraps DB calls to catch DBerrors and turn them into HTTPErrors
-@db_call
-def query(sql, params):
-    return dal.query(sql, params)
-
-@db_call
-def update(sql, params):
-    return dal.update(sql, params)
 
 # Implements filtering, ordering and paging using query strings
 def filter_query_results(data, args):

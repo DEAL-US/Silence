@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, send_from_directory
 from werkzeug.exceptions import NotFound
 
-from silence.server.endpoint_loader import load_user_endpoints
+from silence.server.endpoint_loader import load_user_endpoints, load_default_endpoints
 from silence.settings import settings
 from silence.exceptions import HTTPError
 
@@ -42,8 +42,9 @@ def setup():
         err = HTTPError(500, msg, exc_type)
         return handle_HTTPError(err)
 
-    # Load the user-provided API endpoints
+    # Load the user-provided API endpoints and the default ones
     if settings.RUN_API:
+        load_default_endpoints()
         load_user_endpoints()
 
     # Load the web static files

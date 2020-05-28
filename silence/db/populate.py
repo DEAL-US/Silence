@@ -9,8 +9,14 @@ from silence.db.connector import get_conn
 def create_database():
     conn = get_conn()
     cursor = conn.cursor()
+    db_name = settings.DB_CONN["database"]
+
+    cursor.execute(f"DROP DATABASE IF EXISTS {db_name}")
+    cursor.execute(f"CREATE DATABASE {db_name}")
+    conn.commit()
     
     for script in settings.SQL_SCRIPTS:
+        cursor.execute(f"USE {db_name}")
         print_str = f"Executing {script}:"
         print_aux_len = len(print_str) + 2
 

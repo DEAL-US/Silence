@@ -17,7 +17,14 @@ DB_CONN = {
     "database": "default_database",
 }
 
+USER_AUTH_DATA = {
+    "table": "users",
+    "identifier": "username",
+    "password": "password",
+}
+
 SECRET_KEY = "These are generated automatically for each project."
+MAX_TOKEN_AGE = 86400
 
 SQL_SCRIPTS = []
 

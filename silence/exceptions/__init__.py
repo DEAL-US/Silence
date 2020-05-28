@@ -21,6 +21,10 @@ class EndpointWarning(Warning):
 class EndpointError(Exception):
     pass
 
+# Errors for checking session tokens
+class TokenError(Exception):
+    pass
+
 # Generic HTTP errors
 # Grabbed from https://flask.palletsprojects.com/en/1.1.x/patterns/apierrors/
 class HTTPError(Exception):
