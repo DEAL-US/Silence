@@ -1,4 +1,4 @@
-# 0.2.0-dev
+# 0.3.0
 - Added support for the default endpoints /login and /register using custom tables and fields
 - Added support for session tokens and authentication requirements
 
