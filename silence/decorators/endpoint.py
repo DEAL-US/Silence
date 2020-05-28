@@ -8,7 +8,6 @@ from silence.sql import get_sql_op
 from silence.sql.converter import silence_to_mysql
 from silence.settings import settings
 from silence.exceptions import EndpointWarning, EndpointError, HTTPError
-from silence.decorators.db_call import db_call
 
 import inspect
 import warnings
@@ -82,7 +81,7 @@ def endpoint(route, method, sql, auth_required=False):
                 decorator()
 
                 # The URL params have been checked to be enough to fill all SQL params
-                res = query(query_string, url_pattern_params)
+                res = dal.api_safe_query(query_string, url_pattern_params)
                 
                 # Filter these results according to the URL query string, if there is one
                 # Possible TO-DO: do this by directly editing the SQL query for extra efficiency
@@ -111,7 +110,7 @@ def endpoint(route, method, sql, auth_required=False):
                 param_tuple = tuple(body_params[param] for param in sql_params)
 
                 # Run the execute query
-                res = update(query_string, param_tuple)
+                res = dal.api_safe_update(query_string, param_tuple)
 
             return jsonify(res), status
         
@@ -123,15 +122,6 @@ def endpoint(route, method, sql, auth_required=False):
 
 ###############################################################################
 # Aux stuff for the handler function
-
-# Wraps DB calls to catch DBerrors and turn them into HTTPErrors
-@db_call
-def query(sql, params):
-    return dal.query(sql, params)
-
-@db_call
-def update(sql, params):
-    return dal.update(sql, params)
 
 # Implements filtering, ordering and paging using query strings
 def filter_query_results(data, args):
