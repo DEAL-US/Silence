@@ -102,7 +102,8 @@ def endpoint(route, method, sql, auth_required=False):
             else:  # POST/PUT/DELETE operations
                 # Construct a dict for all params expected in the request body,
                 # setting them to None if they have not been provided
-                body_params = {param: request.form.get(param, None) for param in decorated_func_args}
+                form = request.json if request.is_json else request.form
+                body_params = {param: form.get(param, None) for param in decorated_func_args}
 
                 # Call the decorated function with these parameters to allow the
                 # user to validate them

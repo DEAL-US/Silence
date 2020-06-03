@@ -18,8 +18,9 @@ PASSWORD_FIELD = settings.USER_AUTH_DATA["password"]
 
 def login():
     # Ensure that the user has sent the required fields
-    username = request.form.get(IDENTIFIER_FIELD, default=None)
-    password = request.form.get(PASSWORD_FIELD, default=None)
+    form = request.json if request.is_json else request.form
+    username = form.get(IDENTIFIER_FIELD, None)
+    password = form.get(PASSWORD_FIELD, None)
 
     if not username or not password:
         raise HTTPError(400, f"Both '{IDENTIFIER_FIELD}' and '{PASSWORD_FIELD}' are required")
@@ -52,8 +53,10 @@ def login():
 
 def register():
     # Ensure that the user has sent the required fields
-    username = request.form.get(IDENTIFIER_FIELD, default=None)
-    password = request.form.get(PASSWORD_FIELD, default=None)
+    print(request.is_json, request.json)
+    form = request.json if request.is_json else request.form
+    username = form.get(IDENTIFIER_FIELD, None)
+    password = form.get(PASSWORD_FIELD, None)
 
     # Ensure that the identifier is unique
     login_q = get_login_query(USERS_TABLE, IDENTIFIER_FIELD, username)
@@ -63,7 +66,7 @@ def register():
         raise HTTPError(400, f"There already exists another user with that {IDENTIFIER_FIELD}")
 
     # Create the user object, replacing the password with the hashed one
-    user = dict(request.form)
+    user = dict(form)
     user[PASSWORD_FIELD] = generate_password_hash(password)
 
     # Try to insert it in the DB
