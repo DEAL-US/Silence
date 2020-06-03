@@ -5,6 +5,7 @@ from os.path import splitext
 
 from silence.server import manager, default_endpoints
 from silence.settings import settings
+from silence.logging.default_logger import logger
 
 ###############################################################################
 # Look for .py files inside the project's "/api" folder
@@ -12,9 +13,12 @@ from silence.settings import settings
 ###############################################################################
 
 def load_user_endpoints():
+    logger.debug("Looking for custom endpoints...")
+
     # Load every .py file inside the api/ folder
     for pyfile in listdir("api"):
         module_name = "api." + splitext(pyfile)[0]
+        logger.debug(f"Found endpoint file: {module_name}")
 
         try:
             importlib.import_module(module_name)

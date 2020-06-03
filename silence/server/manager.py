@@ -1,9 +1,10 @@
 from flask import Flask, jsonify, send_from_directory
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import HTTPException
 
 from silence.server.endpoint_loader import load_user_endpoints, load_default_endpoints
 from silence.settings import settings
 from silence.exceptions import HTTPError
+from silence.logging.default_logger import logger
 
 from os.path import join
 from os import getcwd
@@ -32,13 +33,21 @@ def setup():
     # Set up the generic Exception handler for server errors
     @APP.errorhandler(Exception)
     def handle_generic_error(exc):
-        if isinstance(exc, HTTPError) or isinstance(exc, NotFound):
-            # Handle these using the other function
+        # Pass through our own HTTP error exception
+        if isinstance(exc, HTTPError):
             return exc
+
+        # Create a similar JSON response for Werkzeug's exceptions
+        if isinstance(exc, HTTPException):
+            code = exc.code
+            res = jsonify({"message": exc.description, "code": code})
+            return res, code
         
+        # We're facing an uncontrolled server exception
+        logger.exception(exc)
+
         exc_type = type(exc).__name__
         msg = str(exc)
-        traceback.print_exc()
         err = HTTPError(500, msg, exc_type)
         return handle_HTTPError(err)
 
@@ -49,6 +58,7 @@ def setup():
 
     # Load the web static files
     if settings.RUN_WEB:
+        logger.debug("Setting up web server")
         @APP.route("/")
         def root():
             return APP.send_static_file("index.html")

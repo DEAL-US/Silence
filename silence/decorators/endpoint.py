@@ -8,10 +8,10 @@ from silence import sql as SQL
 from silence.sql import get_sql_op
 from silence.sql.converter import silence_to_mysql
 from silence.settings import settings
-from silence.exceptions import EndpointWarning, EndpointError, HTTPError, TokenError
+from silence.exceptions import EndpointError, HTTPError, TokenError
+from silence.logging.default_logger import logger
 
 import inspect
-import warnings
 import re
 
 OP_VERBS = {
@@ -26,6 +26,8 @@ OP_VERBS = {
 ###############################################################################
 
 def endpoint(route, method, sql, auth_required=False):
+    logger.debug(f"Setting up endpoint {method} {route}")
+
     # Construct the API route taking the prefix into account
     route_prefix = settings.API_PREFIX
     if route_prefix.endswith("/"):
@@ -183,10 +185,9 @@ def check_method(sql, verb, endpoint):
 
         if correct_verb != verb.lower():
             # Warn the user about the correct verb to use
-            warnings.warn(
+            logger.warn(
                 f"The '{verb.upper()}' HTTP verb is not correct for the SQL {sql_op.upper()} " +
-                f"operation in endpoint {endpoint}, the correct verb is {correct_verb.upper()}.",
-                EndpointWarning
+                f"operation in endpoint {verb.upper()} {endpoint}, the correct verb is {correct_verb.upper()}."
             )
     else:
         # What has the user put here?
