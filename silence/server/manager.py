@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, send_from_directory
 from werkzeug.exceptions import HTTPException
+import click
 
 from silence.server.endpoint_loader import load_user_endpoints, load_default_endpoints
 from silence.settings import settings
@@ -22,6 +23,11 @@ def setup():
     # Configures the web server
     APP.secret_key = settings.SECRET_KEY 
     APP.config["SESSION_TYPE"] = "filesystem"
+
+    # Mute Flask's startup messages
+    def noop(*args, **kwargs): pass
+    click.echo = noop
+    click.secho = noop
 
     # Set up the error handle for our custom exception type
     @APP.errorhandler(HTTPError)
@@ -66,8 +72,6 @@ def setup():
         @APP.route("/<path:path>")
         def other_path(path):
             return APP.send_static_file(path)
-
-
 
 def run():
     APP.run(
