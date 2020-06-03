@@ -15,11 +15,11 @@ def get_conn():
     global conn
     if conn is None:
         conn = pymysql.connect(
-        host=settings.DB_CONN["host"],
-        port=settings.DB_CONN["port"],
-        user=settings.DB_CONN["username"],
-        password=settings.DB_CONN["password"],
-        database=settings.DB_CONN["database"]
-    )
+            host=settings.DB_CONN["host"],
+            port=settings.DB_CONN["port"],
+            user=settings.DB_CONN["username"],
+            password=settings.DB_CONN["password"],
+            database=settings.DB_CONN["database"],
+        )
     return conn
 
