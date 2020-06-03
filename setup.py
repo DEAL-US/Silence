@@ -36,6 +36,7 @@ setup(
         'Werkzeug==1.0.1',
         'itsdangerous==1.1.0',
         'pypika==0.37.7',
+        'colorama==0.4.3',
     ],
     python_requires='~=3.6',
     zip_safe=False
