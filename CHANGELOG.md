@@ -1,3 +1,6 @@
+# 0.4.0-dev
+- ...
+
 # 0.4.0
 - Added support for application/json as encoding for POST/PUT requests
 - Added configuration options to disable login and register
