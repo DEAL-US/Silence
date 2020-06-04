@@ -33,5 +33,8 @@ def load_default_endpoints():
     if route_prefix.endswith("/"):
         route_prefix = route_prefix[:-1]
 
-    manager.APP.add_url_rule(f"{route_prefix}/login", "login", default_endpoints.login, methods=["POST"])
-    manager.APP.add_url_rule(f"{route_prefix}/register", "register", default_endpoints.register, methods=["POST"])
+    if settings.ENABLE_LOGIN:
+        manager.APP.add_url_rule(f"{route_prefix}/login", "login", default_endpoints.login, methods=["POST"])
+
+    if settings.ENABLE_REGISTER:
+        manager.APP.add_url_rule(f"{route_prefix}/register", "register", default_endpoints.register, methods=["POST"])

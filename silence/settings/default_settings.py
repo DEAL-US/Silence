@@ -30,3 +30,6 @@ SQL_SCRIPTS = []
 
 PROJECT_TEMPLATE_NAME = "silence-app"
 PROJECT_TEMPLATE_REPO = "https://github.com/agu-borrego/Silence-project-template.git"
+
+ENABLE_LOGIN = True
+ENABLE_REGISTER = True
