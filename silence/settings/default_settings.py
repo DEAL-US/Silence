@@ -2,13 +2,24 @@
 # Default settings, which can be overriden by each individual project.
 ###############################################################################
 
+# Shows debug messages while Silence is running
 DEBUG_ENABLED = False
-HTTP_PORT = 8080
-API_PREFIX = ""
 
+# The port in which the API and the web server will be deployed
+HTTP_PORT = 8080
+
+# The sequence of SQL scripts located in the sql/ folder that must
+# be ran when the 'silence createdb' command is issued
+SQL_SCRIPTS = []
+
+# The URL prefix for all API endpoints
+API_PREFIX = "/api"
+
+# Enables or disables the API and the web server separately
 RUN_API = True
 RUN_WEB = True
 
+# Database connection details
 DB_CONN = {
     "host": "localhost",
     "port": 3306,
@@ -17,16 +28,26 @@ DB_CONN = {
     "database": "default_database",
 }
 
+# Size of the connection pool that is used to access the database
+DB_CONN_POOL_SIZE = 50
+
+# Table and fields that are used for both login and register
 USER_AUTH_DATA = {
     "table": "users",
     "identifier": "username",
     "password": "password",
 }
 
+# Enables or disables the /login and /register endpoints separately
+ENABLE_LOGIN = True
+ENABLE_REGISTER = True
+
+# A random string that is used for signing session tokens and also passed to Flask
 SECRET_KEY = "These are generated automatically for each project."
+
+# Maximum validity time of a session token in seconds
 MAX_TOKEN_AGE = 86400
 
-SQL_SCRIPTS = []
-
+# Default settings for creating a new project
 PROJECT_TEMPLATE_NAME = "silence-app"
 PROJECT_TEMPLATE_REPO = "https://github.com/agu-borrego/Silence-project-template.git"

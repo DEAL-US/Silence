@@ -3,6 +3,7 @@ from pymysql.cursors import DictCursor
 from silence.db.connector import get_conn
 from silence.exceptions import DatabaseError
 from silence.decorators import db_call
+from silence.logging.default_logger import logger
 
 ###############################################################################
 # The DAL (Data Access Layer) functions provide an abstraction layer
@@ -11,6 +12,8 @@ from silence.decorators import db_call
 
 # Query method to retrieve information
 def query(q, params=None):
+    logger.debug(f"Executing SQL query {q} with params {params}")
+
     # Fetch the connection and get a cursor
     conn = get_conn()
     cursor = conn.cursor(DictCursor)
@@ -22,6 +25,7 @@ def query(q, params=None):
             cursor.execute(q)
 
         res = cursor.fetchall()
+        logger.debug(f"Query result: {res}")
         return res
     except Exception as exc:
         # If anything happens, wrap the exceptions in a DatabaseError
@@ -33,6 +37,7 @@ def query(q, params=None):
 
 # Update method to modify information
 def update(q, params=None):
+    logger.debug(f"Executing SQL operation {q} with params {params}")
     conn = get_conn()
     cursor = conn.cursor(DictCursor)
 
@@ -47,7 +52,9 @@ def update(q, params=None):
         conn.commit()
 
         # Return the ID of the row that was modified or inserted
-        return cursor.lastrowid
+        res = cursor.lastrowid
+        logger.debug(f"Last modified row ID: {res}")
+        return res
     except Exception as exc:
         # If anything happens, wrap the exceptions in a DatabaseError
         raise DatabaseError(exc) from exc

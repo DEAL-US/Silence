@@ -1,3 +1,4 @@
+from random import choice
 import pymysql
 
 from silence.settings import settings
@@ -7,19 +8,18 @@ from silence.settings import settings
 # and uses them to build a connection to the database.
 ###############################################################################
 
-global conn
-conn = None
+global conn_pool
+conn_pool = None
 
 def get_conn():
-    # Only connect lazily
-    global conn
-    if conn is None:
-        conn = pymysql.connect(
-        host=settings.DB_CONN["host"],
-        port=settings.DB_CONN["port"],
-        user=settings.DB_CONN["username"],
-        password=settings.DB_CONN["password"],
-        database=settings.DB_CONN["database"]
-    )
-    return conn
-
+    # Create the pool of connections lazily
+    global conn_pool
+    if conn_pool is None:
+        conn_pool = [pymysql.connect(
+                        host=settings.DB_CONN["host"],
+                        port=settings.DB_CONN["port"],
+                        user=settings.DB_CONN["username"],
+                        password=settings.DB_CONN["password"],
+                        database=settings.DB_CONN["database"],
+                    ) for _ in range(settings.DB_CONN_POOL_SIZE)]
+    return choice(conn_pool)
