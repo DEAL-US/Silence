@@ -25,7 +25,6 @@ def download_from_github(project_name, repo_url):
 
     with open(join(project_name, "settings.py"), "a", encoding="utf-8") as f:
         f.write("\n\n")
-        f.write("#" * 69 + "\n")
-        f.write("# Random secret key for the web server\n")
-        f.write("# (this has been generated automatically)\n")
+        f.write("# A random string that is used for security purposes\n")
+        f.write("# (this has been generated automatically upon project creation)\n")
         f.write(f'SECRET_KEY = "{secret_key}"\n')
