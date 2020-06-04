@@ -6,10 +6,12 @@ from silence.server.endpoint_loader import load_user_endpoints, load_default_end
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
+from silence.logging.flask_filter import FlaskFilter
 
 from os.path import join
 from os import getcwd
 import traceback
+import logging
 
 ###############################################################################
 # The server manager is responsible for setting up the Flask webserver,
@@ -29,9 +31,13 @@ def setup():
     click.echo = noop
     click.secho = noop
 
+    # Add our Flask filter to customize Flask logging messages
+    logging.getLogger("werkzeug").addFilter(FlaskFilter())
+
     # Set up the error handle for our custom exception type
     @APP.errorhandler(HTTPError)
     def handle_HTTPError(error):
+        raise error
         response = jsonify(error.to_dict())
         response.status_code = error.status_code
         return response

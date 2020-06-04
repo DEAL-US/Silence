@@ -1,7 +1,7 @@
 import logging
 
 from silence.settings import settings
-from silence.logging.formatters.default_formatter import DefaultFormatter
+from silence.logging.default_formatter import DefaultFormatter
 
 
 logger = logging.getLogger("silence")
