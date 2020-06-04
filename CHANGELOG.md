@@ -1,5 +1,7 @@
 # 0.3.0-dev
 - Added support for application/json as encoding for POST/PUT requests
+- Added configuration options to disable login and register
+- Custom formatting for HTTP log messages
 
 # 0.3.0
 - Added support for the default endpoints /login and /register using custom tables and fields
