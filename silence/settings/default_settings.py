@@ -17,6 +17,8 @@ DB_CONN = {
     "database": "default_database",
 }
 
+DB_CONN_POOL_SIZE = 50
+
 USER_AUTH_DATA = {
     "table": "users",
     "identifier": "username",
