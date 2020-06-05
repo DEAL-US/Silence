@@ -1,5 +1,7 @@
 # 0.4.0-dev
-- ...
+- Display the API structure as a tree during startup
+- Run server on all network interfaces
+- Automatically set up a permissive CORS setting
 
 # 0.4.0
 - Added support for application/json as encoding for POST/PUT requests
