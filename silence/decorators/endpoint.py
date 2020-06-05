@@ -125,6 +125,7 @@ def endpoint(route, method, sql, auth_required=False):
         
         # flaskify_url() adapts the URL so that all $variables are converted to Flask-style <variables>
         server_manager.APP.add_url_rule(flaskify_url(full_route), method + route, route_handler, methods=[method])
+        server_manager.API_TREE.add_url(full_route)
 
         return decorator
     return wrapper

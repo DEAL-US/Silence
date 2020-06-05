@@ -34,7 +34,9 @@ def load_default_endpoints():
         route_prefix = route_prefix[:-1]
 
     if settings.ENABLE_LOGIN:
+        manager.API_TREE.add_url(f"{route_prefix}/login")
         manager.APP.add_url_rule(f"{route_prefix}/login", "login", default_endpoints.login, methods=["POST"])
 
     if settings.ENABLE_REGISTER:
+        manager.API_TREE.add_url(f"{route_prefix}/register")
         manager.APP.add_url_rule(f"{route_prefix}/register", "register", default_endpoints.register, methods=["POST"])

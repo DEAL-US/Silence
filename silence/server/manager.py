@@ -1,8 +1,10 @@
 from flask import Flask, jsonify, send_from_directory
+from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 import click
 
 from silence.server.endpoint_loader import load_user_endpoints, load_default_endpoints
+from silence.server.api_tree import APITree
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
@@ -20,6 +22,8 @@ import logging
 
 static_folder = join(getcwd(), "docs") if settings.RUN_WEB else None
 APP = Flask(__name__, static_folder=static_folder)
+cors = CORS(APP, resources={f"{settings.API_PREFIX}*": {"origins": "*"}})
+API_TREE = APITree()
 
 def setup():
     # Configures the web server
@@ -37,7 +41,6 @@ def setup():
     # Set up the error handle for our custom exception type
     @APP.errorhandler(HTTPError)
     def handle_HTTPError(error):
-        raise error
         response = jsonify(error.to_dict())
         response.status_code = error.status_code
         return response
@@ -80,7 +83,10 @@ def setup():
             return APP.send_static_file(path)
 
 def run():
+    logger.info(f"\nAPI Structure:\n{settings.API_PREFIX}\n{API_TREE.format_tree()}\n")
+
     APP.run(
+        host="0.0.0.0",
         port=settings.HTTP_PORT,
         debug=settings.DEBUG_ENABLED,
     )

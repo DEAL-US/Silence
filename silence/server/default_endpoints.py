@@ -59,7 +59,6 @@ def login():
 
 def register():
     # Ensure that the user has sent the required fields
-    print(request.is_json, request.json)
     form = request.json if request.is_json else request.form
     username = form.get(IDENTIFIER_FIELD, None)
     password = form.get(PASSWORD_FIELD, None)
