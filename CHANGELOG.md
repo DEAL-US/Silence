@@ -1,4 +1,4 @@
-# 0.4.0-dev
+# 0.4.1
 - Display the API structure as a tree during startup
 - Run server on all network interfaces
 - Automatically set up a permissive CORS setting
