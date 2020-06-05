@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, send_from_directory
+from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 import click
 
@@ -21,6 +22,7 @@ import logging
 
 static_folder = join(getcwd(), "docs") if settings.RUN_WEB else None
 APP = Flask(__name__, static_folder=static_folder)
+cors = CORS(APP, resources={f"{settings.API_PREFIX}*": {"origins": "*"}})
 API_TREE = APITree()
 
 def setup():

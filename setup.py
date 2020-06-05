@@ -32,6 +32,7 @@ setup(
     install_requires=[
         'dload==0.6',
         'Flask==1.1.2',
+        'Flask-Cors==3.0.8',
         'PyMySQL==0.9.3',
         'Werkzeug==1.0.1',
         'itsdangerous==1.1.0',
