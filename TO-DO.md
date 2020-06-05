@@ -1,10 +1,8 @@
 # Must complete (high priority)
-
+- Fix del\[password\] for login and register when the field is in uppercase
 
 # Should be done eventually (medium priority)
 - Finish proper CI (actual testing, grab settings from the sample project, cross-builds)
-- Logging
-- Better HTTP errors control
 
 # Would be nice (low priority)
 - Automate the command listing and handling
