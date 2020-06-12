@@ -1,5 +1,5 @@
 # 0.4.1-dev
-- ...
+- Added a summary of API endpoints with their descriptions in the base URL
 
 # 0.4.1
 - Display the API structure as a tree during startup
