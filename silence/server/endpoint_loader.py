@@ -33,10 +33,24 @@ def load_default_endpoints():
     if route_prefix.endswith("/"):
         route_prefix = route_prefix[:-1]
 
+    manager.APP.add_url_rule(route_prefix, "APItreeHELP", default_endpoints.show_api_endpoints, methods=["GET"])
+
     if settings.ENABLE_LOGIN:
-        manager.API_TREE.add_url(f"{route_prefix}/login")
-        manager.APP.add_url_rule(f"{route_prefix}/login", "login", default_endpoints.login, methods=["POST"])
+        login_route = f"{route_prefix}/login"
+        manager.API_TREE.add_url(login_route)
+        manager.API_TREE.register_endpoint({
+            "route": login_route,
+            "method": "POST",
+            "desc": "Starts a new session, returning a session token and the user data if the login is successful",
+        })
+        manager.APP.add_url_rule(login_route, "login", default_endpoints.login, methods=["POST"])
 
     if settings.ENABLE_REGISTER:
-        manager.API_TREE.add_url(f"{route_prefix}/register")
-        manager.APP.add_url_rule(f"{route_prefix}/register", "register", default_endpoints.register, methods=["POST"])
+        register_route = f"{route_prefix}/register"
+        manager.API_TREE.add_url(register_route)
+        manager.API_TREE.register_endpoint({
+            "route": register_route,
+            "method": "POST",
+            "desc": "Creates a new user, returning a session token and the user data if the register is successful",
+        })
+        manager.APP.add_url_rule(register_route, "register", default_endpoints.register, methods=["POST"])

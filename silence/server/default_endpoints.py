@@ -7,6 +7,7 @@ from silence.sql.builder import get_login_query, get_register_user_query
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
+from silence.server import manager as server_manager
 
 ###############################################################################
 # Defines the default endpoints provided by Silence,
@@ -16,6 +17,9 @@ from silence.logging.default_logger import logger
 USERS_TABLE = settings.USER_AUTH_DATA["table"]
 IDENTIFIER_FIELD = settings.USER_AUTH_DATA["identifier"]
 PASSWORD_FIELD = settings.USER_AUTH_DATA["password"]
+
+def show_api_endpoints():
+    return jsonify(server_manager.API_TREE.get_endpoint_list()), 200
 
 def login():
     # Ensure that the user has sent the required fields
