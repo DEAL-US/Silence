@@ -1,5 +1,6 @@
 # 0.4.1-dev
 - Added a summary of API endpoints with their descriptions in the base URL
+- Automatic column name casing for the login and register endpoints
 
 # 0.4.1
 - Display the API structure as a tree during startup
