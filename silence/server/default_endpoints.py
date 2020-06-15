@@ -4,6 +4,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from silence.auth.tokens import create_token, check_token
 from silence.db import dal
 from silence.sql.builder import get_login_query, get_register_user_query
+from silence.sql.table_cols import get_table_cols
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
@@ -14,16 +15,15 @@ from silence.server import manager as server_manager
 # mainly /login and /register
 ###############################################################################
 
-USERS_TABLE = settings.USER_AUTH_DATA["table"]
-IDENTIFIER_FIELD = settings.USER_AUTH_DATA["identifier"]
-PASSWORD_FIELD = settings.USER_AUTH_DATA["password"]
-
 def show_api_endpoints():
     return jsonify(server_manager.API_TREE.get_endpoint_list()), 200
 
 def login():
+    USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD = get_login_settings()
     # Ensure that the user has sent the required fields
     form = request.json if request.is_json else request.form
+    form = filter_fields_db(form, USERS_TABLE)
+
     username = form.get(IDENTIFIER_FIELD, None)
     password = form.get(PASSWORD_FIELD, None)
 
@@ -62,8 +62,12 @@ def login():
     return jsonify(res), 200
 
 def register():
+    USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD = get_login_settings()
+    
     # Ensure that the user has sent the required fields
     form = request.json if request.is_json else request.form
+    form = filter_fields_db(form, USERS_TABLE)
+
     username = form.get(IDENTIFIER_FIELD, None)
     password = form.get(PASSWORD_FIELD, None)
 
@@ -103,3 +107,40 @@ def register():
     del user[PASSWORD_FIELD]
     res = {"sessionToken": token, "user": user}
     return jsonify(res), 200
+
+
+###############################################################################
+# Aux functions
+
+# Transforms the received dict of fields into a filtered one that shares
+# the same capitalization with the DB columns
+def filter_fields_db(data, table_name):
+    cols = get_table_cols(table_name)
+    res = {}
+
+    for field, value in data.items():
+        for col_name in cols:
+            if field.lower() == col_name.lower():
+                res[col_name] = value
+    
+    return res
+
+# Returns a given column name with the correct capitalization for its table
+# Raises a ValueError if it can't be found in the given table
+def col_correct_case(col_name, table_name):
+    cols = get_table_cols(table_name)
+
+    for col in cols:
+        if col.lower() == col_name.lower():
+            return col
+
+    raise ValueError(f"The column {col_name} could not be found in table {table_name}")
+
+
+# Returns the login table and fields as specified in the settings,
+# with the correct capitalization to avoid SQL errors
+def get_login_settings():
+    users_table = settings.USER_AUTH_DATA["table"]
+    identifier_field = col_correct_case(settings.USER_AUTH_DATA["identifier"], users_table)
+    password_field = col_correct_case(settings.USER_AUTH_DATA["password"], users_table)
+    return users_table, identifier_field, password_field
