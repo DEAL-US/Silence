@@ -22,4 +22,6 @@ def get_conn():
                         password=settings.DB_CONN["password"],
                         database=settings.DB_CONN["database"],
                     ) for _ in range(settings.DB_CONN_POOL_SIZE)]
-    return choice(conn_pool)
+    conn = choice(conn_pool)
+    conn.autocommit(True)
+    return conn
