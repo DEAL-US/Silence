@@ -1,3 +1,6 @@
+# 0.4.2-dev
+- ...
+
 # 0.4.2
 - Added a summary of API endpoints with their descriptions in the base URL
 - Automatic column name casing for the login and register endpoints
