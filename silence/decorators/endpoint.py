@@ -21,6 +21,8 @@ OP_VERBS = {
     SQL.DELETE: 'delete',
 }
 
+RE_QUERY_PARAM = re.compile(r"^.*\$\w+/?$")
+
 ###############################################################################
 # This is where the fun at
 ###############################################################################
@@ -95,10 +97,9 @@ def endpoint(route, method, sql, auth_required=False, description=None):
                 # Possible TO-DO: do this by directly editing the SQL query for extra efficiency
                 res = filter_query_results(res, request.args)
 
-                # In our teaching context, it is safe to assume that if there is
-                # at least one URL parameter and we have no results,
-                # we should return a 404 code
-                if url_params and not res:
+                # In our teaching context, it is safe to assume that if the URL ends
+                # with a parameter and we have no results, we should return a 404 code
+                if RE_QUERY_PARAM.match(route) and not res:
                     raise HTTPError(404, "Not found")
 
             else:  # POST/PUT/DELETE operations
