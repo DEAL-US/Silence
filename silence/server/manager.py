@@ -89,4 +89,5 @@ def run():
         host="0.0.0.0",
         port=settings.HTTP_PORT,
         debug=settings.DEBUG_ENABLED,
+        threaded=True,
     )

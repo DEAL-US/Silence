@@ -21,11 +21,13 @@ OP_VERBS = {
     SQL.DELETE: 'delete',
 }
 
+RE_QUERY_PARAM = re.compile(r"^.*\$\w+/?$")
+
 ###############################################################################
 # This is where the fun at
 ###############################################################################
 
-def endpoint(route, method, sql, auth_required=False):
+def endpoint(route, method, sql, auth_required=False, description=None):
     logger.debug(f"Setting up endpoint {method} {route}")
 
     # Construct the API route taking the prefix into account
@@ -95,10 +97,9 @@ def endpoint(route, method, sql, auth_required=False):
                 # Possible TO-DO: do this by directly editing the SQL query for extra efficiency
                 res = filter_query_results(res, request.args)
 
-                # In our teaching context, it is safe to assume that if there is
-                # at least one URL parameter and we have no results,
-                # we should return a 404 code
-                if url_params and not res:
+                # In our teaching context, it is safe to assume that if the URL ends
+                # with a parameter and we have no results, we should return a 404 code
+                if RE_QUERY_PARAM.match(route) and not res:
                     raise HTTPError(404, "Not found")
 
             else:  # POST/PUT/DELETE operations
@@ -126,6 +127,7 @@ def endpoint(route, method, sql, auth_required=False):
         # flaskify_url() adapts the URL so that all $variables are converted to Flask-style <variables>
         server_manager.APP.add_url_rule(flaskify_url(full_route), method + route, route_handler, methods=[method])
         server_manager.API_TREE.add_url(full_route)
+        server_manager.API_TREE.register_endpoint({"route": full_route, "method": method.upper(), "description": description})
 
         return decorator
     return wrapper

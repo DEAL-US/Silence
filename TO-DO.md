@@ -1,5 +1,5 @@
 # Must complete (high priority)
-- Fix del\[password\] for login and register when the field is in uppercase
+- 
 
 # Should be done eventually (medium priority)
 - Finish proper CI (actual testing, grab settings from the sample project, cross-builds)

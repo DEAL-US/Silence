@@ -6,6 +6,13 @@ from silence.settings import settings
 class APITree:
     def __init__(self):
         self.tree = {}
+        self.endpoints = []
+
+    def register_endpoint(self, endpoint_data):
+        self.endpoints.append(endpoint_data)
+
+    def get_endpoint_list(self):
+        return self.endpoints
 
     def add_url(self, url):
         root = settings.API_PREFIX
