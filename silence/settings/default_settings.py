@@ -28,9 +28,6 @@ DB_CONN = {
     "database": "default_database",
 }
 
-# Size of the connection pool that is used to access the database
-DB_CONN_POOL_SIZE = 50
-
 # Table and fields that are used for both login and register
 USER_AUTH_DATA = {
     "table": "users",

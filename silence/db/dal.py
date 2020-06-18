@@ -31,8 +31,9 @@ def query(q, params=None):
         # If anything happens, wrap the exceptions in a DatabaseError
         raise DatabaseError(exc) from exc
     finally:
-        # Close the cursor
+        # Close the cursor and the connection
         cursor.close()
+        conn.close()
 
 
 # Update method to modify information
@@ -59,8 +60,9 @@ def update(q, params=None):
         # If anything happens, wrap the exceptions in a DatabaseError
         raise DatabaseError(exc) from exc
     finally:
-        # Close the cursor
+        # Close the cursor and the connection
         cursor.close()
+        conn.close()
 
 ###############################################################################
 # Safe wrappers for the API, which return an HTTPError instead of a
