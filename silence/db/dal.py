@@ -53,8 +53,9 @@ def update(q, params=None):
         conn.commit()
 
         # Return the ID of the row that was modified or inserted
-        res = cursor.lastrowid
-        logger.debug(f"Last modified row ID: {res}")
+        lastid = cursor.lastrowid
+        logger.debug(f"Last modified row ID: {lastid}")
+        res = {"lastId": lastid}
         return res
     except Exception as exc:
         # If anything happens, wrap the exceptions in a DatabaseError
