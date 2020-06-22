@@ -12,12 +12,11 @@ install:
   - pip install .
 
 before_script:
-  - sudo mysql -e 'CREATE DATABASE IF NOT EXISTS app;'
+  - sudo mysql -e 'CREATE DATABASE IF NOT EXISTS testing;'
   - sudo mysql -e "CREATE USER IF NOT EXISTS 'silence'@'localhost' IDENTIFIED BY '123456';"
-  - sudo mysql -e "GRANT ALL ON app.* TO 'silence'@'localhost';"
+  - sudo mysql -e "GRANT ALL ON testing.* TO 'silence'@'localhost';"
 
 script:
-  - mkdir travis-ci && cd travis-ci
-  - silence new app
-  - cd app
+  - silence new ci_app https://github.com/IISSI-US/Silence-CI-Project.git
+  - cd ci_app
   - silence createdb
