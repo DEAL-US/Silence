@@ -1,5 +1,6 @@
 # 0.4.2-dev
-- ...
+- Removed the API tree on startup since it could cause issues
+- API calls that perform update operations now return the last modified ID in a JSON response
 
 # 0.4.2
 - Added a summary of API endpoints with their descriptions in the base URL
