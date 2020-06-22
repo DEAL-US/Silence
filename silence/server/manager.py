@@ -83,8 +83,6 @@ def setup():
             return APP.send_static_file(path)
 
 def run():
-    #logger.info(f"\nAPI Structure:\n{settings.API_PREFIX}\n{API_TREE.format_tree()}\n")
-
     APP.run(
         host="0.0.0.0",
         port=settings.HTTP_PORT,
