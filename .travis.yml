@@ -20,3 +20,7 @@ script:
   - silence new ci_app https://github.com/IISSI-US/Silence-CI-Project.git
   - cd ci_app
   - silence createdb
+  - silence run &
+  - sleep 15 # give it ample time just in case
+  - cd test
+  - python test_endpoints.py
