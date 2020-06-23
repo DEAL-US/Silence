@@ -6,6 +6,5 @@
 
 # Would be nice (low priority)
 - Automate the command listing and handling
-- Nice log colors
-- Gracefully close the DB connection on CTRL+C
 - Filter/sort/paginate by editing the SQL query
+- Create a `silence test` command (only in case we're gonna include testing within the project)
