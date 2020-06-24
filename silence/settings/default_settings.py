@@ -22,7 +22,7 @@ RUN_WEB = True
 
 # Database connection details
 DB_CONN = {
-    "host": "localhost",
+    "host": "127.0.0.1",
     "port": 3306,
     "username": "default_username",
     "password": "default_password",
