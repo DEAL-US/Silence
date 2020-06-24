@@ -84,7 +84,7 @@ def setup():
 
 def run():
     APP.run(
-        host="0.0.0.0",
+        host=settings.LISTEN_ADDRESS,
         port=settings.HTTP_PORT,
         debug=settings.DEBUG_ENABLED,
         threaded=True,
