@@ -2,7 +2,6 @@
 - 
 
 # Should be done eventually (medium priority)
-- Finish proper CI (actual testing, grab settings from the sample project, cross-builds)
 - Compatibility with other databases (SQLite, PostgreSQL)
 - Support for different user roles
 
