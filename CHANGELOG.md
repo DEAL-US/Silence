@@ -1,5 +1,5 @@
-# 0.4.3-dev
-- ...
+# 1.0.0
+- First release!
 
 # 0.4.3
 - Removed the API tree on startup since it could cause issues
