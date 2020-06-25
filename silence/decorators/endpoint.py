@@ -169,7 +169,7 @@ def filter_query_results(data, args):
     res = list(filter(filter_func, data))
 
     try:
-        res.sort(key=lambda elem: elem[sort_param], reverse=sort_reverse)
+        res.sort(key=lambda elem: str(elem[sort_param]), reverse=sort_reverse)
     except KeyError: pass
 
     offset = limit * page if limit and page else 0

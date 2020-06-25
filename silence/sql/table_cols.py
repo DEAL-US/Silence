@@ -7,7 +7,6 @@ TABLE_COLUMNS = {}
 # after the first query for a given table
 def get_table_cols(table_name):
     global TABLE_COLUMNS
-    table_name = table_name.lower()
 
     if table_name not in TABLE_COLUMNS:
         cols = query(f"SHOW COLUMNS FROM {table_name}")

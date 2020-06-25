@@ -5,7 +5,8 @@
 # Shows debug messages while Silence is running
 DEBUG_ENABLED = False
 
-# The port in which the API and the web server will be deployed
+# The address and port in which the API and the web server will be deployed
+LISTEN_ADDRESS = "0.0.0.0"  # Listen on all interfaces by default
 HTTP_PORT = 8080
 
 # The sequence of SQL scripts located in the sql/ folder that must
@@ -21,15 +22,12 @@ RUN_WEB = True
 
 # Database connection details
 DB_CONN = {
-    "host": "localhost",
+    "host": "127.0.0.1",
     "port": 3306,
     "username": "default_username",
     "password": "default_password",
     "database": "default_database",
 }
-
-# Size of the connection pool that is used to access the database
-DB_CONN_POOL_SIZE = 50
 
 # Table and fields that are used for both login and register
 USER_AUTH_DATA = {

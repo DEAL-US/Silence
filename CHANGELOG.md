@@ -1,3 +1,8 @@
+# 0.4.3
+- Removed the API tree on startup since it could cause issues
+- API calls that perform update operations now return the last modified ID in a JSON response
+- Proper README
+
 # 0.4.2
 - Added a summary of API endpoints with their descriptions in the base URL
 - Automatic column name casing for the login and register endpoints

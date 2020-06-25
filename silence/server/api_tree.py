@@ -58,6 +58,11 @@ class APITree:
         _ptree(res, start, parent, self.tree)
         return res.get()
 
+    def format_list(self):
+        ls = list(map(lambda x: f"{x['route']} ({x['method']})", self.endpoints))
+        ls.sort()
+        return "\n".join(ls)
+
 class _StrCont:
     def __init__(self, string):
         self.string = string
