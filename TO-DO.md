@@ -4,6 +4,7 @@
 # Should be done eventually (medium priority)
 - Compatibility with other databases (SQLite, PostgreSQL)
 - Support for different user roles
+- Add URL params as function arguments for the endpoints
 
 # Would be nice (low priority)
 - Automate the command listing and handling
