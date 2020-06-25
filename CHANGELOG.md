@@ -1,3 +1,6 @@
+# 1.0.0
+- First release!
+
 # 0.4.3
 - Removed the API tree on startup since it could cause issues
 - API calls that perform update operations now return the last modified ID in a JSON response
