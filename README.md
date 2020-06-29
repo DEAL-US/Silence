@@ -16,7 +16,7 @@ Once Silence has been installed via pip, the `silence` command becomes available
 
 This will download a sample, working project that you can adapt to your needs. If you have a repo with your own Silence project template that you wish to download instead, you can run `silence new <name> <repo_url.git>`.
 
-## Configurating your project
+## Configuring your project
 The project settings can be found in `settings.py`. The available configuration parameters are:
 - `DEBUG_ENABLED` Controls whether debug messages and Flask's debug mode are active (bool, default: `False`)
 - `LISTEN_ADDRESS` IP address in which the web server will listen to requests (str, default: `"0.0.0.0"`, all interfaces)
