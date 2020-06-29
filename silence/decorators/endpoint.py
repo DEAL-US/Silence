@@ -10,6 +10,7 @@ from silence.sql.converter import silence_to_mysql
 from silence.settings import settings
 from silence.exceptions import EndpointError, HTTPError, TokenError
 from silence.logging.default_logger import logger
+from silence.utils.min_type import Min
 
 import inspect
 import re
@@ -168,8 +169,12 @@ def filter_query_results(data, args):
     filter_func = lambda elem: all(k not in elem or str(elem[k]).lower() == v.lower() for k, v in filter_criteria)
     res = list(filter(filter_func, data))
 
+    def order_key_func(elem):
+        v = elem[sort_param]
+        return v if v is not None else Min  # Avoids comparisons against None
+
     try:
-        res.sort(key=lambda elem: str(elem[sort_param]), reverse=sort_reverse)
+        res.sort(key=order_key_func, reverse=sort_reverse)
     except KeyError: pass
 
     offset = limit * page if limit and page else 0
