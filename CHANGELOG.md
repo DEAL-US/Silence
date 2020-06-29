@@ -1,3 +1,6 @@
+# 1.0.1-dev
+- ...
+
 # 1.0.1
 - Fixed a bug where ordering didn't work properly for non-string fields
 
