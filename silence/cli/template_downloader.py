@@ -1,12 +1,42 @@
-import dload
+import re
+import zipfile
+import requests
 
-from os import listdir
-from os.path import join
+from os import listdir, remove, getcwd
+from os.path import join, isfile, basename
+from urllib.parse import urlparse
 from shutil import move, rmtree
 from secrets import token_urlsafe
 
+# Adapted to our needs from https://github.com/x011/dload/
+def save(url, path):
+    r = requests.get(url)
+    with open(path, 'wb') as f:
+        f.write(r.content)
+    return path
+
+def git_clone(git_url, clone_dir):
+    git_url = git_url.strip()
+    if not git_url.lower().endswith(".git"):
+        raise ValueError("Invalid Git URL")
+
+    repo_name = re.sub(r"\.git$", "", git_url, 0, re.IGNORECASE | re.MULTILINE)
+    repo_zip = repo_name + "/archive/master.zip"
+
+    if isfile("master.zip"):
+        remove("master.zip")
+
+    fn = basename(urlparse(repo_zip).path)
+    zip_path = save(repo_zip, join(getcwd(), fn))
+
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(clone_dir)
+
+    if isfile(zip_path):
+        remove(zip_path)
+
 def download_from_github(project_name, repo_url):
-    dload.git_clone(repo_url, project_name + "/")
+    git_clone(repo_url, project_name + "/")
 
     # Unpack it (everything is inside the <name>-master folder)
     branch_folder_name = listdir(project_name)[0]
