@@ -32,11 +32,12 @@ setup(
     install_requires=[
         'Flask==1.1.2',
         'Flask-Cors==3.0.8',
-        'PyMySQL==0.9.3',
-        'Werkzeug==1.0.1',
-        'itsdangerous==1.1.0',
         'pypika==0.37.7',
-        'colorama==0.4.3',
+        'PyMySQL~=0.9.3',
+        'Werkzeug~=1.0.1',
+        'itsdangerous~=1.1.0',
+        'colorama~=0.4.3',
+        'requests~=2.24.0',
     ],
     python_requires='~=3.6',
     zip_safe=False
