@@ -1,5 +1,5 @@
 # 1.0.1-dev
-- ...
+- Fixed a bug where the template project couldn't be downloaded if Silence wasn't installed inside a virtualenv
 
 # 1.0.1
 - Fixed a bug where ordering didn't work properly for non-string fields
