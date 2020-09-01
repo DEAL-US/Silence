@@ -1,4 +1,4 @@
-# 1.0.2-dev
+# 1.0.3
 - Changed repo ownership
 
 # 1.0.2
