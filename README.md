@@ -1,4 +1,4 @@
-# Silence: An educational framework for deploying RESTful APIs and Web applications. [![Build Status](https://travis-ci.org/agu-borrego/Silence.svg?branch=master)](https://travis-ci.org/agu-borrego/Silence) [![PyPi version](https://pypip.in/v/silence/badge.png)](https://pypi.org/project/Silence/)
+# Silence: An educational framework for deploying RESTful APIs and Web applications. [![Build Status](https://travis-ci.org/IISSI-US/Silence.svg?branch=master)](https://travis-ci.org/IISSI-US/Silence) [![PyPi version](https://pypip.in/v/silence/badge.png)](https://pypi.org/project/Silence/)
 
 Silence is a framework that allows for a rapid deployment of a RESTful API and a Web application around a relational database. Silence revolves around the concept of projects, which contain everything needed to deploy the previously mentioned elements and can be moved and/or shared between computers or systems with ease.
 

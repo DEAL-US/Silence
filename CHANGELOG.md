@@ -1,3 +1,6 @@
+# 1.0.3
+- Changed repo ownership
+
 # 1.0.2
 - Fixed a bug where the template project couldn't be downloaded if Silence wasn't installed inside a virtualenv
 

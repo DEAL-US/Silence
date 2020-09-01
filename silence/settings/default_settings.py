@@ -48,4 +48,4 @@ MAX_TOKEN_AGE = 86400
 
 # Default settings for creating a new project
 PROJECT_TEMPLATE_NAME = "silence-app"
-PROJECT_TEMPLATE_REPO = "https://github.com/agu-borrego/Silence-project-template.git"
+PROJECT_TEMPLATE_REPO = "https://github.com/IISSI-US/Silence-project-template.git"
