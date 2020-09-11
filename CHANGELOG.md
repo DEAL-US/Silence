@@ -1,5 +1,5 @@
 # 1.0.3-dev
-- ...
+- Added logo and updated README
 
 # 1.0.3
 - Changed repo ownership
