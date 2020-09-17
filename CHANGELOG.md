@@ -1,4 +1,4 @@
-# 1.0.3-dev
+# 1.0.4
 - Added logo and updated README
 - Added `ENABLE_SUMMARY` and `COLORED_OUTPUT` configuration parameters
 
