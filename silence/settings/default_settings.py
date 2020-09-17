@@ -36,9 +36,13 @@ USER_AUTH_DATA = {
     "password": "password",
 }
 
-# Enables or disables the /login and /register endpoints separately
+# Enables or disables the /login, /register and summary (/base) endpoints separately
 ENABLE_LOGIN = True
 ENABLE_REGISTER = True
+ENABLE_SUMMARY = True
+
+# Enables or disables colors in the console output
+COLORED_OUTPUT = True
 
 # A random string that is used for signing session tokens and also passed to Flask
 SECRET_KEY = "These are generated automatically for each project."

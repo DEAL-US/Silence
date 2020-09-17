@@ -1,3 +1,7 @@
+# 1.0.4
+- Added logo and updated README
+- Added `ENABLE_SUMMARY` and `COLORED_OUTPUT` configuration parameters
+
 # 1.0.3
 - Changed repo ownership
 

@@ -11,8 +11,17 @@ import re
 
 # Regex to remove ANSI color codes from log lines
 RE_ANSI = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
-
 RE_LOG = re.compile(r'(.*) - - \[(.*)\] "(\w+) (/.*) HTTP.*" (.*) -.*')
+
+COLORS = {
+    "GREEN": Style.BRIGHT + Fore.GREEN if settings.COLORED_OUTPUT else "",
+    "MAGENTA": Style.BRIGHT + Fore.MAGENTA if settings.COLORED_OUTPUT else "",
+    "CYAN": Style.BRIGHT + Fore.CYAN if settings.COLORED_OUTPUT else "",
+    "YELLOW": Style.BRIGHT + Fore.YELLOW if settings.COLORED_OUTPUT else "",
+    "RED": Style.BRIGHT + Fore.RED if settings.COLORED_OUTPUT else "",
+    "WHITE": Style.BRIGHT + Fore.WHITE if settings.COLORED_OUTPUT else "",
+}
+RESET = Style.RESET_ALL if settings.COLORED_OUTPUT else ""
 
 class FlaskFilter(logging.Filter):
 
@@ -30,20 +39,20 @@ class FlaskFilter(logging.Filter):
             
             if route.startswith(settings.API_PREFIX):
                 api_web = "[API]"
-                api_color = Fore.MAGENTA
+                api_color = COLORS["MAGENTA"]
             else:
                 api_web = "[WEB]"
-                api_color = Fore.CYAN
+                api_color = COLORS["CYAN"]
 
             if code[0] in ('2', '3'):
-                code_color = Fore.GREEN
+                code_color = COLORS["GREEN"]
             elif code[0] == '4':
-                code_color = Fore.YELLOW
+                code_color = COLORS["YELLOW"]
             elif code[0] == '5':
-                code_color = Fore.RED
+                code_color = COLORS["RED"]
             else:
-                code_color = Fore.WHITE
+                code_color = COLORS["WHITE"]
 
-            record.msg = f"{date} | {api_color}{Style.BRIGHT}{api_web}{Style.RESET_ALL} " +\
-                  f"{verb} {route} from {addr} - {code_color}{Style.BRIGHT}{code}{Style.RESET_ALL}"
+            record.msg = f"{date} | {api_color}{api_web}{RESET} " + \
+                  f"{verb} {route} from {addr} - {code_color}{code}{RESET}"
         return True
