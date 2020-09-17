@@ -33,12 +33,13 @@ def load_default_endpoints():
     if route_prefix.endswith("/"):
         route_prefix = route_prefix[:-1]
 
-    manager.API_TREE.register_endpoint({
-            "route": route_prefix,
-            "method": "GET",
-            "desc": "Returns the data regarding the API endpoints",
-    })
-    manager.APP.add_url_rule(route_prefix, "APItreeHELP", default_endpoints.show_api_endpoints, methods=["GET"])
+    if settings.ENABLE_SUMMARY:
+        manager.API_TREE.register_endpoint({
+                "route": route_prefix,
+                "method": "GET",
+                "desc": "Returns the data regarding the API endpoints",
+        })
+        manager.APP.add_url_rule(route_prefix, "APItreeHELP", default_endpoints.show_api_endpoints, methods=["GET"])
 
     if settings.ENABLE_LOGIN:
         login_route = f"{route_prefix}/login"
