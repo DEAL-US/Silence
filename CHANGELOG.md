@@ -1,5 +1,5 @@
 # 1.0.4-dev
-- ...
+- Fixed a bug where `silence createdb` wouldn't work for certain database names
 
 # 1.0.4
 - Added logo and updated README
