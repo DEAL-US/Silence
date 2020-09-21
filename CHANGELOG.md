@@ -1,3 +1,6 @@
+# 1.0.5
+- Fixed a bug where `silence createdb` wouldn't work for certain database names
+
 # 1.0.4
 - Added logo and updated README
 - Added `ENABLE_SUMMARY` and `COLORED_OUTPUT` configuration parameters
