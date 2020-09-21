@@ -1,3 +1,6 @@
+# 1.0.5-dev
+- ...
+
 # 1.0.5
 - Fixed a bug where `silence createdb` wouldn't work for certain database names
 
