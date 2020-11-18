@@ -44,6 +44,11 @@ ENABLE_SUMMARY = True
 # Enables or disables colors in the console output
 COLORED_OUTPUT = True
 
+# Controls whether DECIMAL types are converted to strings when serializing them to JSON
+# By default the are converted into floats, which keep them as numeric values, but it may
+# cause inaccuracies for certain values that cannot be stored exactly in a float
+DECIMALS_AS_STRINGS = False
+
 # A random string that is used for signing session tokens and also passed to Flask
 SECRET_KEY = "These are generated automatically for each project."
 
