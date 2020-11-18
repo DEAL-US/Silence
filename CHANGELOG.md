@@ -1,4 +1,4 @@
-# 1.0.5-dev
+# 1.0.6
 - Fixed compatibility with DECIMAL columns
 - Added a new `-v`/`--version` command
 
