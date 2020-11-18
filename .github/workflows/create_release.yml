@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - fix-release-action
 
 jobs:
   build:
@@ -21,6 +20,8 @@ jobs:
           version=${version//./\\.}   
           changelog="$(cat CHANGELOG.md | perl -0 -ne 'print $1 if s|.*?#\s*'"$version"'.*?\n(.*?)\n#.*||s')"
           changelog="${changelog//'%'/'%25'}"
+          changelog="${changelog//$'\n'/'\\n'}"
+          changelog="${changelog//$'\r'/'\\r'}"
           echo "release_info=$changelog" >> $GITHUB_ENV
           echo "prerelease=$prerelease" >> $GITHUB_ENV
       - name: Create Release
