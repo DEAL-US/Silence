@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+from silence import __version__
 from silence.cli.commands import run, createdb, new
 
 ###############################################################################
@@ -21,6 +22,7 @@ def run_from_command_line():
     
     # Force the user to select one of the available commands,
     # and allow them to provide additional options after it.
+    parser.add_argument("-v", "--version", action="version", version=f"Silence v{__version__}")
     parser.add_argument("command", choices=["run", "createdb", "new"])
     parser.add_argument("options", nargs="*")
 
