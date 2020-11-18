@@ -1,5 +1,3 @@
-from flask import jsonify
-
 ###############################################################################
 # Exceptions used throughout the framework.
 # They're very simple so we'll just keep them here for convenience.

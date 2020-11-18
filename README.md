@@ -40,6 +40,7 @@ The project settings can be found in `settings.py`. The available configuration 
 - `ENABLE_REGISTER` Enables the /register endpoint (bool, default: `True`)
 - `ENABLE_SUMMARY` Enables the API summary endpoint (`GET API_PREFIX`) (bool, default: `True`)
 - `COLORED_OUTPUT` Enables colors in the console output (bool, default: `True`)
+- `DECIMALS_AS_STRINGS` Controls whether Decimal types are serialized as `str` instead of `float` (bool, default: `False`)
 - `USER_AUTH_DATA` Configures which information to use for login and register
     - `table` Name of the table containing your users (str, default: `users`)
     - `identifier` Column of this table containing the unique identifiers used for login (str, default: `username`)

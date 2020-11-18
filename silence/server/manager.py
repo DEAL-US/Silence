@@ -9,6 +9,7 @@ from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
 from silence.logging.flask_filter import FlaskFilter
+from silence.utils.decimal_json_encoder import DecimalFriendlyEncoder
 
 from os.path import join
 from os import getcwd
@@ -37,6 +38,9 @@ def setup():
 
     # Add our Flask filter to customize Flask logging messages
     logging.getLogger("werkzeug").addFilter(FlaskFilter())
+
+    # Override the default JSON encoder so that it works with the Decimal type
+    APP.json_encoder = DecimalFriendlyEncoder
 
     # Set up the error handle for our custom exception type
     @APP.errorhandler(HTTPError)
