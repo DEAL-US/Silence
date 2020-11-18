@@ -21,9 +21,7 @@ jobs:
           version=${version//./\\.}   
           changelog="$(cat CHANGELOG.md | perl -0 -ne 'print $1 if s|.*?#\s*'"$version"'.*?\n(.*?)\n#.*||s')"
           changelog="${changelog//'%'/'%25'}"
-          changelog="${changelog//$'\n'/'\\n'}"
-          changelog="${changelog//$'\r'/'\\r'}"
-          echo "release_info=$changelog" >> release_changelog.txt
+          echo "$changelog" >> release_changelog.txt
           echo "prerelease=$prerelease" >> $GITHUB_ENV
       - name: Create Release
         id: create_release
