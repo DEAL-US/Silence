@@ -5,6 +5,9 @@
 # Just In Case™
 Silence-CI-Project/
 
+# VSCode folder
+.vscode/
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
