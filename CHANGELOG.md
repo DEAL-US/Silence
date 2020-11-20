@@ -1,5 +1,6 @@
 # 1.0.6-dev
 - Fixed encoding errors that resulted in 500 errors
+- The endpoint loader now doesn't try to load non-Python files, which resulted in a fatal error
 
 # 1.0.6
 - Fixed compatibility with DECIMAL columns
