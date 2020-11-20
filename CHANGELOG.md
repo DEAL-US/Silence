@@ -1,5 +1,5 @@
 # 1.0.6-dev
-- ...
+- Fixed encoding errors that resulted in 500 errors
 
 # 1.0.6
 - Fixed compatibility with DECIMAL columns
