@@ -16,7 +16,8 @@ def load_user_endpoints():
     logger.debug("Looking for custom endpoints...")
 
     # Load every .py file inside the api/ folder
-    for pyfile in listdir("api"):
+    pyfiles = [f for f in listdir("api") if f.endswith(".py")]
+    for pyfile in pyfiles:
         module_name = "api." + splitext(pyfile)[0]
         logger.debug(f"Found endpoint file: {module_name}")
 

@@ -4,13 +4,13 @@ from itsdangerous.exc import BadSignature, SignatureExpired
 from silence.settings import settings
 from silence.exceptions import TokenError
 from silence.logging.default_logger import logger
-from silence.utils.decimal_json_encoder import DecimalFriendlySerializer
+from silence.utils.silence_json_encoder import SilenceJSONSerializer
 
 ###############################################################################
 # Token management: creation and checking
 ###############################################################################
 
-auth = Serializer(settings.SECRET_KEY, serializer=DecimalFriendlySerializer)
+auth = Serializer(settings.SECRET_KEY, serializer=SilenceJSONSerializer)
 
 def create_token(data):
     token = auth.dumps(data)
