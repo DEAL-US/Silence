@@ -1,3 +1,6 @@
+# 1.0.7-dev
+- ...
+
 # 1.0.7
 - Fixed encoding errors that resulted in 500 errors
 - The endpoint loader now doesn't try to load non-Python files, which resulted in a fatal error
