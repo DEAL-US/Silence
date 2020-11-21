@@ -16,15 +16,25 @@ def load_user_endpoints():
     logger.debug("Looking for custom endpoints...")
 
     # Load every .py file inside the api/ folder
-    pyfiles = [f for f in listdir("api") if f.endswith(".py")]
-    for pyfile in pyfiles:
-        module_name = "api." + splitext(pyfile)[0]
-        logger.debug(f"Found endpoint file: {module_name}")
 
+    for folder in ("api", "endpoints"):
         try:
-            importlib.import_module(module_name)
-        except ImportError:
-            raise RuntimeError(f"Could not load the API file {module_name}")
+            pyfiles = [f for f in listdir(folder) if f.endswith(".py")]
+        except FileNotFoundError:
+            continue
+
+        if folder == "api" and pyfiles:
+            logger.warning("Please rename the folder that contains your endpoints to 'endpoints/' instead of 'api/'")
+            logger.warning("Support for the 'api/' folder will be dropped in the future.")
+
+        for pyfile in pyfiles:
+            module_name = folder + "." + splitext(pyfile)[0]
+            logger.debug(f"Found endpoint file: {module_name}")
+
+            try:
+                importlib.import_module(module_name)
+            except ImportError:
+                raise RuntimeError(f"Could not load the API file {module_name}")
     
 ###############################################################################
 # Register the Silence-provided endpoints

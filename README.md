@@ -47,6 +47,7 @@ The project settings can be found in `settings.py`. The available configuration 
     - `password` Column of this table containing the hashed passwords (str, default: `password`)
 - `SECRET_KEY` Random string used for signing session tokens and Flask security. Generated automatically upon project creation when using `silence new`.
 - `MAX_TOKEN_AGE` Time in seconds during which a session token is valid after it has been issued (int, default: `86400`)
+- `CHECK_FOR_UPDATES` Whether to check for new Silence versions when using `silence run` (bool, default: `True`)
 
 ## Creating the database
 Silence provides the `silence createdb` command to automatically execute any number of SQL scripts to create your database and/or set it to a controlled initial state. 
@@ -62,7 +63,7 @@ Once this has been configured, `silence createdb` will execute the specified fil
 ## Defining your API endpoints
 The Silence philosophy is that API endpoints are wrappers around SQL operations, and thus they can be defined in a relatively simple manner. As an example, we will demonstrate how to create basic CRUD endpoints for a `Department` table whose columns are `(departmentId, name, city)`.
 
-We begin by creating a `department.py` file inside the project's `api/` folder. The name of this file is not relevant, and all files inside the `api/` folder containing endpoint declarations will be automatically detected and imported.
+We begin by creating a `department.py` file inside the project's `endpoints/` folder. The name of this file is not relevant, and all files inside the `endpoints/` folder containing endpoint declarations will be automatically detected and imported.
 
 Endpoint declarations are done through the `silence.decorators.endpoint` decorator, so we have to import it:
 
