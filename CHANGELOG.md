@@ -1,4 +1,4 @@
-# 1.0.7-dev
+# 1.1.0
 - Added a check for new Silence versions when using `silence run`, and a `CHECK_FOR_UPDATES` configuration parameter to opt out of this check
 - Add support for storing the endpoint files in a folder named `endpoints/` instead of `api/`. The support for an `api/` folder will be dropped in the future.
 - Display a warning message if endpoints are found in the `api/` folder instead of `endpoints/`
