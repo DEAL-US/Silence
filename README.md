@@ -47,6 +47,7 @@ The project settings can be found in `settings.py`. The available configuration 
     - `password` Column of this table containing the hashed passwords (str, default: `password`)
 - `SECRET_KEY` Random string used for signing session tokens and Flask security. Generated automatically upon project creation when using `silence new`.
 - `MAX_TOKEN_AGE` Time in seconds during which a session token is valid after it has been issued (int, default: `86400`)
+- `CHECK_FOR_UPDATES` Whether to check for new Silence versions when using `silence run` (bool, default: `True`)
 
 ## Creating the database
 Silence provides the `silence createdb` command to automatically execute any number of SQL scripts to create your database and/or set it to a controlled initial state. 
