@@ -1,5 +1,5 @@
 # 1.0.7-dev
-- ...
+- Added a check for new Silence versions when using `silence run`, and a `CHECK_FOR_UPDATES` configuration parameter to opt out of this check.
 
 # 1.0.7
 - Fixed encoding errors that resulted in 500 errors
