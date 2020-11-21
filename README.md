@@ -63,7 +63,7 @@ Once this has been configured, `silence createdb` will execute the specified fil
 ## Defining your API endpoints
 The Silence philosophy is that API endpoints are wrappers around SQL operations, and thus they can be defined in a relatively simple manner. As an example, we will demonstrate how to create basic CRUD endpoints for a `Department` table whose columns are `(departmentId, name, city)`.
 
-We begin by creating a `department.py` file inside the project's `api/` folder. The name of this file is not relevant, and all files inside the `api/` folder containing endpoint declarations will be automatically detected and imported.
+We begin by creating a `department.py` file inside the project's `endpoints/` folder. The name of this file is not relevant, and all files inside the `endpoints/` folder containing endpoint declarations will be automatically detected and imported.
 
 Endpoint declarations are done through the `silence.decorators.endpoint` decorator, so we have to import it:
 
