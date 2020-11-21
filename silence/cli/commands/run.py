@@ -11,7 +11,7 @@ def handle(argv):
 
     new_ver = check_for_new_version()
     if new_ver:
-        logger.warning(f"A new Silence version ({new_ver}) is available. Run 'pip install --upgrade Silence' to upgrade.")
+        logger.warning(f"A new Silence version (v{new_ver}) is available. Run 'pip install --upgrade Silence' to upgrade.")
 
     server_manager.setup()
     server_manager.run()
