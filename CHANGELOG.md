@@ -1,5 +1,5 @@
 # 1.1.0-dev
-- ...
+- Updated README
 
 # 1.1.0
 - Added a check for new Silence versions when using `silence run`, and a `CHECK_FOR_UPDATES` configuration parameter to opt out of this check

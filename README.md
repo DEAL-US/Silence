@@ -521,7 +521,7 @@ All contributions are welcome provided that they follow our [Code of Conduct](CO
 We keep a [TO-DO](TO-DO.md) with the changes that we'd like to implement in the future. Feel free to open an issue if you need clarifications with any of its items.
 
 ## Disclaimer
-Silence has been designed and built with educational-only use in mind. It makes no specific efforts to ensure efficiency, security, or fitness to purposes other than educational ones. We do **NOT** recommend its use in a production environment of any kind.
+Silence has been designed and built with educational-only use in mind. It makes no specific efforts to ensure efficiency, security, or fitness to purposes other than educational ones. We have not tested Silence for its use in a production environment of any kind.
 
 ## License
 [MIT License](LICENSE)
