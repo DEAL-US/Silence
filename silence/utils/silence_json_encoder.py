@@ -1,6 +1,6 @@
 # Thanks to https://stackoverflow.com/a/3885198/5604339 :)
 import decimal
-import json
+from flask import json
 from datetime import datetime
 
 from silence.settings import settings
