@@ -1,6 +1,7 @@
 # 1.1.0-dev
 - Updated README
 - Fixed 500 errors when simplejson was installed alongside Silence
+- Fixed SQL params not always being filled correctly in GET requests if more than one param is used
 
 # 1.1.0
 - Added a check for new Silence versions when using `silence run`, and a `CHECK_FOR_UPDATES` configuration parameter to opt out of this check

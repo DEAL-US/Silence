@@ -76,8 +76,7 @@ def endpoint(route, method, sql, auth_required=False, description=None):
                 check_session()
 
             # Collect all url pattern params
-            request_params = kwargs
-            url_pattern_params = tuple(request_params[param] for param in url_params)
+            request_url_params_dict = kwargs
 
             # Convert the silence-style placeholders in the SQL query to proper MySQL placeholders
             query_string = silence_to_mysql(sql)
@@ -92,6 +91,7 @@ def endpoint(route, method, sql, auth_required=False, description=None):
                 decorator()
 
                 # The URL params have been checked to be enough to fill all SQL params
+                url_pattern_params = tuple(request_url_params_dict[param] for param in sql_params)
                 res = dal.api_safe_query(query_string, url_pattern_params)
                 
                 # Filter these results according to the URL query string, if there is one
@@ -115,8 +115,8 @@ def endpoint(route, method, sql, auth_required=False, description=None):
 
                 # We have checked that sql_params is a subset of url_params U body_params,
                 # construct a joint param object and use it to fill the SQL placeholders
-                for i, param in enumerate(url_params):
-                    body_params[param] = url_pattern_params[i]
+                for param in url_params:
+                    body_params[param] = request_url_params_dict[param]
 
                 param_tuple = tuple(body_params[param] for param in sql_params)
 
@@ -214,9 +214,9 @@ def flaskify_url(url):
 
 # Checks whether all SQL params can be filled with the provided params
 def check_params_match(sql_params, user_params, route):
-    sql_params = set(sql_params)
-    user_params = set(user_params)
-    diff = sql_params.difference(user_params)
+    sql_params_set = set(sql_params)
+    user_params_set = set(user_params)
+    diff = sql_params_set.difference(user_params_set)
 
     if diff:
         params_str = ", ".join(f"${param}" for param in diff)
