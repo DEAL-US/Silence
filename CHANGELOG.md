@@ -1,3 +1,6 @@
+# 1.1.1-dev
+- ...
+
 # 1.1.1
 - Updated README
 - Fixed 500 errors when simplejson was installed alongside Silence
