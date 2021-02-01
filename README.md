@@ -24,7 +24,7 @@ This will download a sample, working project that you can adapt to your needs. I
 ## Configuring your project
 The project settings can be found in `settings.py`. The available configuration parameters are:
 - `DEBUG_ENABLED` Controls whether debug messages and Flask's debug mode are active (bool, default: `False`)
-- `LISTEN_ADDRESS` IP address in which the web server will listen to requests (str, default: `"0.0.0.0"`, all interfaces)
+- `LISTEN_ADDRESS` IP address in which the web server will listen to requests (str, default: `"127.0.0.1"`)
 - `HTTP_PORT` Port in which the web server will listen to requests (int, default: `8080`)
 - `SQL_SCRIPTS` Sequence of files inside the `sql/` folder to run when the `silence createdb` command is issued (list[str], default: `[]`)
 - `API_PREFIX` URL prefix for API requests (str, default: `/api`, do not set empty)
@@ -45,7 +45,7 @@ The project settings can be found in `settings.py`. The available configuration 
     - `table` Name of the table containing your users (str, default: `users`)
     - `identifier` Column of this table containing the unique identifiers used for login (str, default: `username`)
     - `password` Column of this table containing the hashed passwords (str, default: `password`)
-- `SECRET_KEY` Random string used for signing session tokens and Flask security. Generated automatically upon project creation when using `silence new`.
+- `SECRET_KEY` Random string used for signing session tokens and Flask security. Generated automatically upon project creation when using `silence new`. **No default is provided** and not setting one will result in an error.
 - `MAX_TOKEN_AGE` Time in seconds during which a session token is valid after it has been issued (int, default: `86400`)
 - `CHECK_FOR_UPDATES` Whether to check for new Silence versions when using `silence run` (bool, default: `True`)
 

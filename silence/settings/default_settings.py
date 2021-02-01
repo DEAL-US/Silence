@@ -6,7 +6,7 @@
 DEBUG_ENABLED = False
 
 # The address and port in which the API and the web server will be deployed
-LISTEN_ADDRESS = "0.0.0.0"  # Listen on all interfaces by default
+LISTEN_ADDRESS = "127.0.0.1"  # Listen only on localhost by default
 HTTP_PORT = 8080
 
 # The sequence of SQL scripts located in the sql/ folder that must
@@ -48,9 +48,6 @@ COLORED_OUTPUT = True
 # By default the are converted into floats, which keep them as numeric values, but it may
 # cause inaccuracies for certain values that cannot be stored exactly in a float
 DECIMALS_AS_STRINGS = False
-
-# A random string that is used for signing session tokens and also passed to Flask
-SECRET_KEY = "These are generated automatically for each project."
 
 # Maximum validity time of a session token in seconds
 MAX_TOKEN_AGE = 86400
