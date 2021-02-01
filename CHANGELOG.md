@@ -1,5 +1,5 @@
 # 1.1.1-dev
-- ...
+- Set the default address for the webserver to `127.0.0.1` instead of `0.0.0.0`
 
 # 1.1.1
 - Updated README

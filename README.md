@@ -24,7 +24,7 @@ This will download a sample, working project that you can adapt to your needs. I
 ## Configuring your project
 The project settings can be found in `settings.py`. The available configuration parameters are:
 - `DEBUG_ENABLED` Controls whether debug messages and Flask's debug mode are active (bool, default: `False`)
-- `LISTEN_ADDRESS` IP address in which the web server will listen to requests (str, default: `"0.0.0.0"`, all interfaces)
+- `LISTEN_ADDRESS` IP address in which the web server will listen to requests (str, default: `"127.0.0.1"`)
 - `HTTP_PORT` Port in which the web server will listen to requests (int, default: `8080`)
 - `SQL_SCRIPTS` Sequence of files inside the `sql/` folder to run when the `silence createdb` command is issued (list[str], default: `[]`)
 - `API_PREFIX` URL prefix for API requests (str, default: `/api`, do not set empty)
