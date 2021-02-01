@@ -49,9 +49,6 @@ COLORED_OUTPUT = True
 # cause inaccuracies for certain values that cannot be stored exactly in a float
 DECIMALS_AS_STRINGS = False
 
-# A random string that is used for signing session tokens and also passed to Flask
-SECRET_KEY = "These are generated automatically for each project."
-
 # Maximum validity time of a session token in seconds
 MAX_TOKEN_AGE = 86400
 

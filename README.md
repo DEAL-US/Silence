@@ -45,7 +45,7 @@ The project settings can be found in `settings.py`. The available configuration 
     - `table` Name of the table containing your users (str, default: `users`)
     - `identifier` Column of this table containing the unique identifiers used for login (str, default: `username`)
     - `password` Column of this table containing the hashed passwords (str, default: `password`)
-- `SECRET_KEY` Random string used for signing session tokens and Flask security. Generated automatically upon project creation when using `silence new`.
+- `SECRET_KEY` Random string used for signing session tokens and Flask security. Generated automatically upon project creation when using `silence new`. **No default is provided** and not setting one will result in an error.
 - `MAX_TOKEN_AGE` Time in seconds during which a session token is valid after it has been issued (int, default: `86400`)
 - `CHECK_FOR_UPDATES` Whether to check for new Silence versions when using `silence run` (bool, default: `True`)
 
