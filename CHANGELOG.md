@@ -1,3 +1,6 @@
+# 1.1.2-dev
+- ...
+
 # 1.1.2
 - Set the default address for the webserver to `127.0.0.1` instead of `0.0.0.0`
 - Removed the default `SECRET_KEY`, it is now always required to provide one
