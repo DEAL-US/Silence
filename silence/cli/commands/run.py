@@ -4,7 +4,7 @@ from silence.utils.check_update import check_for_new_version
 from silence import __version__
 
 
-def handle(argv):
+def handle(args):
     from silence.server import manager as server_manager
     
     logger.info(f"Silence v{__version__}")
