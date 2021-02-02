@@ -55,8 +55,6 @@ MAX_TOKEN_AGE = 86400
 # Default settings for creating a new project
 DEFAULT_TEMPLATE_NAME = "employees"
 GITHUB_TEMPLATES_OWNER = "IISSI-US"
-PROJECT_TEMPLATE_NAME = "silence-app"
-PROJECT_TEMPLATE_REPO = "https://github.com/IISSI-US/Silence-project-template.git"
 
 # Enables or disables checking for new Silence updates when running 'silence run'
 CHECK_FOR_UPDATES = True
