@@ -23,7 +23,7 @@ def run_from_command_line():
     parser = argparse.ArgumentParser(
         description="Silence: An educational framework for deploying RESTful APIs and Web applications."
     )
-    subparsers = parser.add_subparsers(help="sub-command help", dest="command")
+    subparsers = parser.add_subparsers(help="Description:", dest="command")
     
     # Force the user to select one of the available commands,
     # and allow them to provide additional options after it.
@@ -42,7 +42,6 @@ def run_from_command_line():
 
     parser_createdb = subparsers.add_parser("createdb", help="Runs the provided SQL scripts in the adequate order in the database")
     parser_run = subparsers.add_parser("run", help="Starts the web server")
-
 
     # Show the help dialog if the command is issued without any arguments
     if len(sys.argv) == 1:

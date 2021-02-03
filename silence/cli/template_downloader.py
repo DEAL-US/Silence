@@ -17,9 +17,6 @@ def save(url, path):
 
 def git_clone(git_url, clone_dir):
     git_url = git_url.strip()
-    if not git_url.lower().endswith(".git"):
-        raise ValueError("Invalid Git URL")
-
     repo_name = re.sub(r"\.git$", "", git_url, 0, re.IGNORECASE | re.MULTILINE)
     repo_zip = repo_name + "/archive/master.zip"
 

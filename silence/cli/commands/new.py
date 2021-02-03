@@ -18,11 +18,7 @@ def handle(args):
     else:
         # We have to download a repo from a URL
         repo_url = args["url"]
-        if not repo_url.endswith(".git"):
-            repo_url += ".git"
 
     download_from_github(project_name, repo_url)
-
     extra_text = f"using the template '{template}'" if template else "from the provided URL"
-
     print(f'The Silence project "{project_name}" has been created {extra_text}.')
