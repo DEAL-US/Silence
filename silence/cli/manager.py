@@ -1,9 +1,11 @@
 import argparse
 import sys
+import logging
 
 from silence import __version__
-from silence.cli.commands import run, createdb, new, list_templates
 from silence.settings import settings
+from silence.logging.default_logger import logger
+from silence.cli.commands import run, createdb, new, list_templates
 
 ###############################################################################
 # Command line interface manager
@@ -28,6 +30,7 @@ def run_from_command_line():
     parser.add_argument("-v", "--version", action="version", version=f"Silence v{__version__}")
 
     parser_list = subparsers.add_parser("list-templates", help="Lists the available project templates")
+    parser_list.add_argument("--debug", action="store_true", help="Enables the debug mode")
     
     parser_new = subparsers.add_parser("new", help="Creates a new project")
     parser_new.add_argument("name", help="The new project's name")
@@ -35,9 +38,11 @@ def run_from_command_line():
     group.add_argument("--template", help="Template name to use when creating the new project")
     group.add_argument("--url", help="URL to a Git repo containing a project to clone")
     group.add_argument("--blank", action="store_true", help="Alias to --template blank")
+    parser_new.add_argument("--debug", action="store_true", help="Enables the debug mode")
 
     parser_createdb = subparsers.add_parser("createdb", help="Runs the provided SQL scripts in the adequate order in the database")
     parser_run = subparsers.add_parser("run", help="Starts the web server")
+
 
     # Show the help dialog if the command is issued without any arguments
     if len(sys.argv) == 1:
@@ -50,5 +55,15 @@ def run_from_command_line():
         sys.exit(1)
 
     args = parser.parse_args()
+
+    # If --debug is set, configure the logging level and the global settings
+    # This is useful for commands that have no access to a custom settings.py
+    # file, such as "new" and "list-templates"
+    if args.debug:
+        settings.DEBUG_ENABLED = True
+        logger.setLevel(logging.DEBUG)
+        for handler in logger.handlers:
+            handler.setLevel(logging.DEBUG)
+
     command = args.command.lower()
     HANDLERS[command](args)

@@ -1,6 +1,8 @@
 from silence.settings import settings
 from silence.logging.default_logger import logger
+
 import requests
+import traceback
 import sys
 
 def handle(args):
@@ -9,8 +11,10 @@ def handle(args):
     try:
         repo_data = requests.get(query_url).json()
     except Exception as exc:
-        logger.exception(exc)
+        logger.debug(traceback.format_exc())
         logger.error("An error has occurred when querying GitHub's API to obtain the list of templates.")
+        if not settings.DEBUG_ENABLED:
+            logger.error("Add --debug to see the full stack trace.")
         sys.exit(1)
 
     templates = []
