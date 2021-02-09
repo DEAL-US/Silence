@@ -14,7 +14,7 @@ def handle(args):
     project_name = args["name"]
 
     if template:
-        repo_url = f"https://github.com/{settings.GITHUB_TEMPLATES_OWNER}/silence-template-{template}.git"
+        repo_url = f"https://github.com/{settings.GITHUB_TEMPLATES_OWNER}/silence-template-{template}"
     else:
         # We have to download a repo from a URL
         repo_url = args["url"]
