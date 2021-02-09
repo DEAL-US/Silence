@@ -1,4 +1,4 @@
-<p align="center"><img width="100%" src="img/logo.png" alt="Silence logo"></p>
+<p align="center"><img width="100%" src="img/logo.svg" alt="Silence logo"></p>
 <p align="center"><a href="https://travis-ci.com/IISSI-US/Silence"><img src="https://travis-ci.com/IISSI-US/Silence.svg?branch=master"></a> <a href="https://pypi.org/project/Silence/"><img src="https://pypip.in/v/silence/badge.png"></a></p>
 
 <hr>
@@ -19,7 +19,12 @@ Silence also requires a connection to a MySQL/MariaDB database.
 ## Creating a new project
 Once Silence has been installed via pip, the `silence` command becomes available. To create a new project, run `silence new <name>`, where `<name>` is the name of the new project.
 
-This will download a sample, working project that you can adapt to your needs. If you have a repo with your own Silence project template that you wish to download instead, you can run `silence new <name> <repo_url.git>`.
+This will download an example project template that you can adapt to your needs. There are many different templates available. If you wish to download a different one, you can use `silence new <name> --template <template-name>`.
+
+Alternatively, you can use `silence new <name> --blank` to download a blank template, or `silence new --url <url-to-a-repo>` to download a project hosted in the specified repository.
+
+## Project templates
+We have a variety of different examples implemented using Silence, which we call templates. You can find a list of all available templates using `silence list-templates`, and download one as shown previously.
 
 ## Configuring your project
 The project settings can be found in `settings.py`. The available configuration parameters are:

@@ -1,44 +1,51 @@
 import re
 import zipfile
 import requests
+import sys
+
+from silence.logging.default_logger import logger
 
 from os import listdir, remove, getcwd
-from os.path import join, isfile, basename
+from os.path import join, isfile, isdir, basename
 from urllib.parse import urlparse
 from shutil import move, rmtree
 from secrets import token_urlsafe
+from pathlib import Path
 
-# Adapted to our needs from https://github.com/x011/dload/
-def save(url, path):
-    r = requests.get(url)
-    with open(path, 'wb') as f:
-        f.write(r.content)
-    return path
-
-def git_clone(git_url, clone_dir):
-    git_url = git_url.strip()
-    if not git_url.lower().endswith(".git"):
-        raise ValueError("Invalid Git URL")
-
-    repo_name = re.sub(r"\.git$", "", git_url, 0, re.IGNORECASE | re.MULTILINE)
-    repo_zip = repo_name + "/archive/master.zip"
-
-    if isfile("master.zip"):
-        remove("master.zip")
-
-    fn = basename(urlparse(repo_zip).path)
-    zip_path = save(repo_zip, join(getcwd(), fn))
-
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        zip_ref.extractall(clone_dir)
-
-    if isfile(zip_path):
-        remove(zip_path)
+RE_REPO_URL = re.compile(r"https?:\/\/(.*?)\/(.*?)\/(.*)")
 
 def download_from_github(project_name, repo_url):
-    git_clone(repo_url, project_name + "/")
+    # Check that the current directory does not contain a folder with the same name
+    if isdir(project_name):
+        logger.error(f"A folder named '{project_name}' already exists in the current directory.")
+        sys.exit(1)
 
-    # Unpack it (everything is inside the <name>-master folder)
+    # Remove the trailing .git or slash if they exist
+    # We could use .removesuffix, but it was added in 3.9... maybe if we bump
+    # the required Python version some time in the future
+    suffixes = (".git", "/")
+    for suffix in suffixes:
+        if repo_url.endswith(suffix):
+            repo_url = repo_url[:-len(suffix)]
+
+    # Check that the repo URL is acceptable
+    m = RE_REPO_URL.match(repo_url.lower())
+    if not m:
+        logger.error("Invalid repo URL, please check your spelling and try again.")
+        sys.exit(1)
+
+    host, username, repo_name = m.groups()
+
+    # Check that the host is supported
+    if host not in ("github.com", "github.eii.us.es"):
+        logger.error("Only repos hosted in github.com or github.eii.us.es are supported.")
+        sys.exit(1)
+
+    # Download it (this takes care of querying the relevant API to find out
+    # how the default branch is called, and exiting if the repo does not exist)
+    git_clone(host, username, repo_name, project_name + "/")
+
+    # Unpack it (everything is inside the <name>-<branch> folder)
     branch_folder_name = listdir(project_name)[0]
     
     # Move everything inside that folder outside
@@ -49,12 +56,71 @@ def download_from_github(project_name, repo_url):
     # Remove the now empty folder
     rmtree(branch_folder)
 
-    # Generate the random string for the Flask secret key
-    # and add it to the settings.py file
-    secret_key = token_urlsafe(32)
+    # Look for .gitkeep files and remove them (especially useful in the case
+    # of the blank template project)
+    for gitkeep_path in Path(project_name).rglob(".gitkeep"):
+        remove(gitkeep_path)
 
-    with open(join(project_name, "settings.py"), "a", encoding="utf-8") as f:
-        f.write("\n\n")
-        f.write("# A random string that is used for security purposes\n")
-        f.write("# (this has been generated automatically upon project creation)\n")
-        f.write(f'SECRET_KEY = "{secret_key}"\n')
+    # Read the settings.py file of the downloaded project, removing the existing
+    # SECRET_KEY if it exists and creating a new one. Will also raise a warning
+    # if the project does not contain a settings.py file.
+    settings_path = join(project_name, "settings.py")
+
+    try:
+        settings_lines = open(settings_path, "r", encoding="utf-8").readlines()
+        settings_lines = list(filter(lambda line: not line.startswith("SECRET_KEY"), settings_lines))
+
+        # Generate the random string for the secret key
+        # and add it to the settings.py file
+        secret_key = token_urlsafe(32)
+
+        settings_lines += [
+            "\n",
+            "# A random string that is used for security purposes\n",
+            "# (this has been generated automatically upon project creation)\n",
+            f'SECRET_KEY = "{secret_key}"\n'
+        ]
+
+        open(settings_path, "w", encoding="utf-8").writelines(settings_lines)
+
+    except FileNotFoundError:
+        logger.warning("The downloaded project does not have a settings.py file " +
+         "at its root, it may not be a valid Silence project.")
+
+def git_clone(host, username, repo_name, clone_dir):
+    # Get the default branch (we've checked previously that the host is one of
+    # the following)
+    api_url = {
+        "github.com": f"https://api.github.com/repos/{username}/{repo_name}",
+        "github.eii.us.es": f"https://github.eii.us.es/api/v3/repos/{username}/{repo_name}"
+    }[host]
+
+    api_response = requests.get(api_url)
+    if api_response.status_code == 404:
+        logger.error("Repo not found")
+        sys.exit(1)
+
+    branch = api_response.json()["default_branch"]
+
+    git_url = f"https://{host}/{username}/{repo_name}"
+    repo_file = f"{branch}.zip"
+    repo_zip = git_url + f"/archive/{repo_file}"
+
+    if isfile(repo_file):
+        remove(repo_file)
+
+    fn = basename(urlparse(repo_zip).path)
+    zip_path = save(repo_zip, join(getcwd(), fn))
+
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(clone_dir)
+
+    if isfile(zip_path):
+        remove(zip_path)
+
+# Adapted to our needs from https://github.com/x011/dload/
+def save(url, path):
+    r = requests.get(url)
+    with open(path, 'wb') as f:
+        f.write(r.content)
+    return path

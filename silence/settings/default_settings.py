@@ -10,7 +10,7 @@ LISTEN_ADDRESS = "127.0.0.1"  # Listen only on localhost by default
 HTTP_PORT = 8080
 
 # The sequence of SQL scripts located in the sql/ folder that must
-# be ran when the 'silence createdb' command is issued
+# be executed when the 'silence createdb' command is issued
 SQL_SCRIPTS = []
 
 # The URL prefix for all API endpoints
@@ -53,8 +53,8 @@ DECIMALS_AS_STRINGS = False
 MAX_TOKEN_AGE = 86400
 
 # Default settings for creating a new project
-PROJECT_TEMPLATE_NAME = "silence-app"
-PROJECT_TEMPLATE_REPO = "https://github.com/IISSI-US/Silence-project-template.git"
+DEFAULT_TEMPLATE_NAME = "employees"
+GITHUB_TEMPLATES_OWNER = "IISSI-US"
 
 # Enables or disables checking for new Silence updates when running 'silence run'
 CHECK_FOR_UPDATES = True
