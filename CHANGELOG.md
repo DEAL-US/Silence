@@ -1,5 +1,16 @@
 # 1.1.2-dev
-- ...
+- Improvements to `silence new`:
+    - It now requires a project name, i.e., you cannot use `silence new` without at least one argument.
+    - It downloads a certain template by default, right now, 'employees'.
+    - A different template can be specified using the `--template` argument.
+    - A GitHub repo URL can be provided using the `--url` argument. Note that `--template` and `--url` are mutually exclusive.
+    - The `--blank` parameter is provided as a shorthand for `--template blank`.
+    - It now removes any `.gitkeep` files found in the downloaded project.
+    - If a `SECRET_KEY` is already set for the downloaded project, `silence new` deletes it and provides a new, randomly generated one.
+    - A warning is issued if a `settings.py` file cannot be found in the downloaded project.
+    - It automatically determines the default branch name for the repository to download, instead of assuming "master" (yes, I'm looking at you, "main").
+- A new command, `silence list-templates`, retrieves the list of existing project templates.
+- Minor: Vectorized logo shown in README.md.
 
 # 1.1.2
 - Set the default address for the webserver to `127.0.0.1` instead of `0.0.0.0`
