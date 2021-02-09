@@ -58,7 +58,7 @@ def run_from_command_line():
     # If --debug is set, configure the logging level and the global settings
     # This is useful for commands that have no access to a custom settings.py
     # file, such as "new" and "list-templates"
-    if args.debug:
+    if "debug" in args and args.debug:
         settings.DEBUG_ENABLED = True
         logger.setLevel(logging.DEBUG)
         for handler in logger.handlers:
