@@ -17,7 +17,7 @@ before_script:
   - sudo mysql -e "GRANT ALL ON testing.* TO 'silence'@'localhost';"
 
 script:
-  - silence new ci_app https://github.com/IISSI-US/Silence-CI-Project.git
+  - silence new ci_app --url https://github.com/IISSI-US/Silence-CI-Project.git
   - cd ci_app
   - silence createdb
   - silence run &
