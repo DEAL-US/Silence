@@ -1,4 +1,4 @@
-# 1.1.2-dev
+# 1.2.0
 - Improvements to `silence new`:
     - It now requires a project name, i.e., you cannot use `silence new` without at least one argument.
     - It downloads a certain template by default, right now, 'employees'.
