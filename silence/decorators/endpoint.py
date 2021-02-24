@@ -28,7 +28,7 @@ RE_QUERY_PARAM = re.compile(r"^.*\$\w+/?$")
 # This is where the fun at
 ###############################################################################
 
-def endpoint(route, method, sql, auth_required=False, description=None):
+def endpoint(route, method, sql, auth_required=False, description=None, logged_user=False):
     logger.debug(f"Setting up endpoint {method} {route}")
 
     # Construct the API route taking the prefix into account
@@ -73,10 +73,18 @@ def endpoint(route, method, sql, auth_required=False, description=None):
             # If this endpoint requires authentication, check that the
             # user has provided a session token and that it is valid
             if auth_required:
-                check_session()
+                userId = check_session()
 
             # Collect all url pattern params
             request_url_params_dict = kwargs
+
+            # If endpoint requires the logged userId it adds the pair (author, loggedUserId)
+            if logged_user:
+                if not auth_required:
+                    userId = check_session()
+                if userId!=None:
+                    request_url_params_dict["author"] = userId
+                
 
             # Convert the silence-style placeholders in the SQL query to proper MySQL placeholders
             query_string = silence_to_mysql(sql)
@@ -108,16 +116,18 @@ def endpoint(route, method, sql, auth_required=False, description=None):
                 # setting them to None if they have not been provided
                 form = request.json if request.is_json else request.form
                 body_params = {param: form.get(param, None) for param in decorated_func_args}
-
+                
                 # Call the decorated function with these parameters to allow the
                 # user to validate them
                 decorator(**body_params)
-
+                
                 # We have checked that sql_params is a subset of url_params U body_params,
                 # construct a joint param object and use it to fill the SQL placeholders
                 for param in url_params:
                     body_params[param] = request_url_params_dict[param]
-
+                
+                if logged_user and auth_required:
+                    body_params["author"] = userId
                 param_tuple = tuple(body_params[param] for param in sql_params)
 
                 # Run the execute query
@@ -135,18 +145,27 @@ def endpoint(route, method, sql, auth_required=False, description=None):
 
 ###############################################################################
 # Session token checker
+
+
 def check_session():
     token = request.headers.get("Token", default=None)
     if not token:
         raise HTTPError(401, "Unauthorized")
 
     try:
-        check_token(token)
+        auth_data = check_token(token)
+        key = f"{low_first(settings.USER_AUTH_DATA['table'][:-1])}Id"
+        logger.debug(f"logged userId = {auth_data[key]}")
+        return auth_data[key]
     except TokenError as exc:
         raise HTTPError(401, str(exc))
 
 ###############################################################################
 # Aux stuff for the handler function
+
+#lower first letter
+def low_first(string):
+    return string[0].lower()+string[1:]
 
 # Implements filtering, ordering and paging using query strings
 def filter_query_results(data, args):
@@ -216,6 +235,7 @@ def flaskify_url(url):
 def check_params_match(sql_params, user_params, route):
     sql_params_set = set(sql_params)
     user_params_set = set(user_params)
+    user_params_set.add("author")
     diff = sql_params_set.difference(user_params_set)
 
     if diff:
