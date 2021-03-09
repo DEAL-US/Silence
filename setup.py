@@ -20,7 +20,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="http://github.com/IISSI-US/Silence",
-    author="Agustín Borrego',
+    author="Agustín Borrego",
     author_email="borrego@us.es",
     license="MIT",
     packages=find_packages(),
