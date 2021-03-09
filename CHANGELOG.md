@@ -1,5 +1,5 @@
 # 1.2.0-dev
-- ...
+- Added `cryptography` to dependencies for compatibility with MySQL.
 
 # 1.2.0
 - Improvements to `silence new`:
