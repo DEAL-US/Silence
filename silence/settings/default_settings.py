@@ -41,6 +41,9 @@ ENABLE_LOGIN = True
 ENABLE_REGISTER = True
 ENABLE_SUMMARY = True
 
+# Enables or disables the listing of the loaded endpoints on startup
+SHOW_ENDPOINT_LIST = True
+
 # Enables or disables colors in the console output
 COLORED_OUTPUT = True
 
@@ -48,6 +51,10 @@ COLORED_OUTPUT = True
 # By default the are converted into floats, which keep them as numeric values, but it may
 # cause inaccuracies for certain values that cannot be stored exactly in a float
 DECIMALS_AS_STRINGS = False
+
+# Sets the max-age value (seconds) in the Cache-Control HTTP header for static files
+# Defaults to 0 (effectively disabling caching by the browser) for development purposes
+HTTP_CACHE_TIME = 0
 
 # Maximum validity time of a session token in seconds
 MAX_TOKEN_AGE = 86400

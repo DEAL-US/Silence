@@ -20,5 +20,5 @@ def handle(args):
         repo_url = args["url"]
 
     download_from_github(project_name, repo_url)
-    extra_text = f"using the template '{template}'" if template else "from the provided URL"
+    extra_text = f"using the template '{template}'" if template else "from the provided repo"
     print(f'The Silence project "{project_name}" has been created {extra_text}.')

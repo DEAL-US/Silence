@@ -13,6 +13,7 @@ from secrets import token_urlsafe
 from pathlib import Path
 
 RE_REPO_URL = re.compile(r"https?:\/\/(.*?)\/(.*?)\/(.*)")
+RE_SECRET_KEY = re.compile(r"""SECRET_KEY\s*=\s*['"]([a-zA-Z0-9-\_=\/+]+)['"]""")
 
 def download_from_github(project_name, repo_url):
     # Check that the current directory does not contain a folder with the same name
@@ -67,21 +68,21 @@ def download_from_github(project_name, repo_url):
     settings_path = join(project_name, "settings.py")
 
     try:
-        settings_lines = open(settings_path, "r", encoding="utf-8").readlines()
-        settings_lines = list(filter(lambda line: not line.startswith("SECRET_KEY"), settings_lines))
-
-        # Generate the random string for the secret key
-        # and add it to the settings.py file
+        settings_content = open(settings_path, "r", encoding="utf-8").read()
         secret_key = token_urlsafe(32)
 
-        settings_lines += [
-            "\n",
-            "# A random string that is used for security purposes\n",
-            "# (this has been generated automatically upon project creation)\n",
-            f'SECRET_KEY = "{secret_key}"\n'
-        ]
+        if "SECRET_KEY" in settings_content:
+            # SECRET_KEY already present, overwrite it
+            settings_content = RE_SECRET_KEY.sub(f'SECRET_KEY = "{secret_key}"', settings_content)
 
-        open(settings_path, "w", encoding="utf-8").writelines(settings_lines)
+        else:
+            # SECRET_KEY not present, add it with the extra comments
+            settings_content += "\n" + \
+                "# A random string that is used for security purposes\n" + \
+                "# (this has been generated automatically upon project creation)\n" + \
+                f'SECRET_KEY = "{secret_key}"\n'
+
+        open(settings_path, "w", encoding="utf-8").write(settings_content)
 
     except FileNotFoundError:
         logger.warning("The downloaded project does not have a settings.py file " +
