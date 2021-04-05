@@ -41,6 +41,9 @@ ENABLE_LOGIN = True
 ENABLE_REGISTER = True
 ENABLE_SUMMARY = True
 
+# Enables or disables the listing of the loaded endpoints on startup
+SHOW_ENDPOINT_LIST = True
+
 # Enables or disables colors in the console output
 COLORED_OUTPUT = True
 

@@ -45,7 +45,7 @@ def load_default_endpoints():
         route_prefix = route_prefix[:-1]
 
     if settings.ENABLE_SUMMARY:
-        manager.API_TREE.register_endpoint({
+        manager.API_SUMMARY.register_endpoint({
                 "route": route_prefix,
                 "method": "GET",
                 "desc": "Returns the data regarding the API endpoints",
@@ -54,8 +54,7 @@ def load_default_endpoints():
 
     if settings.ENABLE_LOGIN:
         login_route = f"{route_prefix}/login"
-        manager.API_TREE.add_url(login_route)
-        manager.API_TREE.register_endpoint({
+        manager.API_SUMMARY.register_endpoint({
             "route": login_route,
             "method": "POST",
             "desc": "Starts a new session, returning a session token and the user data if the login is successful",
@@ -64,8 +63,7 @@ def load_default_endpoints():
 
     if settings.ENABLE_REGISTER:
         register_route = f"{route_prefix}/register"
-        manager.API_TREE.add_url(register_route)
-        manager.API_TREE.register_endpoint({
+        manager.API_SUMMARY.register_endpoint({
             "route": register_route,
             "method": "POST",
             "desc": "Creates a new user, returning a session token and the user data if the register is successful",

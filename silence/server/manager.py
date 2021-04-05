@@ -4,12 +4,12 @@ from werkzeug.exceptions import HTTPException
 import click
 
 from silence.server.endpoint_loader import load_user_endpoints, load_default_endpoints
-from silence.server.api_tree import APITree
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
 from silence.logging.flask_filter import FlaskFilter
 from silence.utils.silence_json_encoder import SilenceJSONEncoder
+from silence.server.api_summary import APISummary
 
 from os.path import join
 from os import getcwd
@@ -24,7 +24,7 @@ import logging
 static_folder = join(getcwd(), "docs") if settings.RUN_WEB else None
 APP = Flask(__name__, static_folder=static_folder)
 cors = CORS(APP, resources={f"{settings.API_PREFIX}*": {"origins": "*"}})
-API_TREE = APITree()
+API_SUMMARY = APISummary()
 
 def setup():
     # Configures the web server
@@ -75,6 +75,9 @@ def setup():
     if settings.RUN_API:
         load_default_endpoints()
         load_user_endpoints()
+
+        if settings.SHOW_ENDPOINT_LIST:
+            API_SUMMARY.print_endpoints()
 
     # Load the web static files
     if settings.RUN_WEB:
