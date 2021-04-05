@@ -30,6 +30,7 @@ def setup():
     # Configures the web server
     APP.secret_key = settings.SECRET_KEY 
     APP.config["SESSION_TYPE"] = "filesystem"
+    APP.config["SEND_FILE_MAX_AGE_DEFAULT"] = settings.HTTP_CACHE_TIME 
 
     # Mute Flask's startup messages
     def noop(*args, **kwargs): pass

@@ -49,6 +49,10 @@ COLORED_OUTPUT = True
 # cause inaccuracies for certain values that cannot be stored exactly in a float
 DECIMALS_AS_STRINGS = False
 
+# Sets the max-age value (seconds) in the Cache-Control HTTP header for static files
+# Defaults to 0 (effectively disabling caching by the browser) for development purposes
+HTTP_CACHE_TIME = 0
+
 # Maximum validity time of a session token in seconds
 MAX_TOKEN_AGE = 86400
 
