@@ -1,3 +1,7 @@
+# 1.2.3
+- Changed the serialization of datetime objects to follow ISO 8601.
+- Set the MIME type of `.js` files to `application/javascript` manually, to prevent the wrong type from being dispatched due to bad configurations of the Windows registry.
+
 # 1.2.2
 - Added a new `HTTP_CACHE_TIME` setting to control caching of static web files. Defaults to 0 for easier development, which means that all static files (HTML, JS, CSS...) are not cached by web browsers.
 - The list of all loaded endpoints is now displayed when using `silence new`. Added a new `SHOW_ENDPOINT_LIST` setting to disable this behavior.
