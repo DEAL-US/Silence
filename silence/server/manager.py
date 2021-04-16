@@ -14,6 +14,7 @@ from silence.server.api_summary import APISummary
 from os.path import join
 from os import getcwd
 import traceback
+import mimetypes
 import logging
 
 ###############################################################################
@@ -42,6 +43,11 @@ def setup():
 
     # Override the default JSON encoder so that it works with the Decimal type
     APP.json_encoder = SilenceJSONEncoder
+
+    # Manually set up the MIME type for .js files
+    # This patches a known issue on Windows, where the MIME type for JS files
+    # is sometimes incorrectly set to text/plain in the registry
+    mimetypes.add_type("application/javascript", ".js", strict=True)
 
     # Set up the error handle for our custom exception type
     @APP.errorhandler(HTTPError)
