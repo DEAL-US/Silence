@@ -1,4 +1,4 @@
-# 1.2.2-dev
+# 1.2.3
 - Changed the serialization of datetime objects to follow ISO 8601.
 - Set the MIME type of `.js` files to `application/javascript` manually, to prevent the wrong type from being dispatched due to bad configurations of the Windows registry.
 
