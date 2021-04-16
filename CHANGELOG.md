@@ -1,4 +1,4 @@
-# 1.2.1-dev
+# 1.2.2
 - Added a new `HTTP_CACHE_TIME` setting to control caching of static web files. Defaults to 0 for easier development, which means that all static files (HTML, JS, CSS...) are not cached by web browsers.
 - The list of all loaded endpoints is now displayed when using `silence new`. Added a new `SHOW_ENDPOINT_LIST` setting to disable this behavior.
 - The `SECRET_KEY` is now changed in-place when creating a project from a repo URL if it already exists, instead of always adding it in a new line with the info comments.
