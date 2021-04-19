@@ -10,6 +10,8 @@ class SilenceJSONEncoder(json.JSONEncoder):
         if isinstance(o, decimal.Decimal):
             func = str if settings.DECIMALS_AS_STRINGS else float
             return func(o)
+        elif isinstance(o, datetime):
+            return o.isoformat()
 
         try:
             return super().default(o)
