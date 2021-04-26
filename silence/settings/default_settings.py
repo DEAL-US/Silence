@@ -34,7 +34,11 @@ USER_AUTH_DATA = {
     "table": "users",
     "identifier": "username",
     "password": "password",
+    "role": "role",
 }
+
+# Default role to assign the user when registering via /register
+DEFAULT_ROLE_REGISTER = None
 
 # Enables or disables the /login, /register and summary (/base) endpoints separately
 ENABLE_LOGIN = True

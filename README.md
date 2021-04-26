@@ -51,6 +51,8 @@ The project settings can be found in `settings.py`. The available configuration 
     - `table` Name of the table containing your users (str, default: `users`)
     - `identifier` Column of this table containing the unique identifiers used for login (str, default: `username`)
     - `password` Column of this table containing the hashed passwords (str, default: `password`)
+    - `role` Column of this table containing the role of the user (**optional**, str, default: `role`)
+- `DEFAULT_ROLE_REGISTER` Role to assign to the users that register via the `/register` endpoint (str, default: `None`)
 - `SECRET_KEY` Random string used for signing session tokens and Flask security. Generated automatically upon project creation when using `silence new`. **No default is provided** and not setting one will result in an error.
 - `HTTP_CACHE_TIME` Sets the `max-age` value in the `Cache-Control` HTTP header for static files sent by the server. In practice, this controls for how long these files are cached by the web browser. (int, default: `0` for development purposes)
 - `MAX_TOKEN_AGE` Time in seconds during which a session token is valid after it has been issued (int, default: `86400`)

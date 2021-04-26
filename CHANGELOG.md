@@ -1,3 +1,9 @@
+# BETA
+- Added fine-grained endpoint access by role:
+    - Added a new optional `role` key to specify the role column in `USER_AUTH_DATA`.
+    - Added a new `DEFAULT_ROLE_REGISTER` setting to specify the role that should be assigned to new users when using the `/register` endpoint.
+    - Added a new `allowed_roles` parameters for the `@endpoint` decorator, which receives a list of the roles that can access the endpoint. There is a special value, `*`, which allows all roles to use the endpoint.
+
 # 1.2.3-dev
 - Changed the serialization of datetime objects to follow ISO 8601.
 

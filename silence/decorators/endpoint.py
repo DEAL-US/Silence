@@ -1,19 +1,20 @@
 from functools import wraps
 from flask import jsonify, request
 
-from silence.auth.tokens import check_token
-from silence.server import manager as server_manager
 from silence.db import dal
 from silence import sql as SQL
 from silence.sql import get_sql_op
-from silence.sql.converter import silence_to_mysql
 from silence.settings import settings
-from silence.exceptions import EndpointError, HTTPError, TokenError
-from silence.logging.default_logger import logger
 from silence.utils.min_type import Min
+from silence.auth.tokens import check_token
+from silence.logging.default_logger import logger
+from silence.sql.converter import silence_to_mysql
+from silence.server import manager as server_manager
+from silence.exceptions import EndpointError, HTTPError, TokenError
 
-import inspect
 import re
+import sys
+import inspect
 
 OP_VERBS = {
     SQL.SELECT: 'get',
@@ -28,7 +29,7 @@ RE_QUERY_PARAM = re.compile(r"^.*\$\w+/?$")
 # This is where the fun at
 ###############################################################################
 
-def endpoint(route, method, sql, auth_required=False, description=None):
+def endpoint(route, method, sql, auth_required=False, allowed_roles=["*"], description=None):
     logger.debug(f"Setting up endpoint {method} {route}")
 
     # Construct the API route taking the prefix into account
@@ -39,6 +40,9 @@ def endpoint(route, method, sql, auth_required=False, description=None):
 
     # Warn if the pair SQL operation - HTTP verb is not the proper one
     check_method(sql, method, route)
+
+    # Warn if the values of auth_required and allowed_roles don't make sense together
+    check_auth_roles(auth_required, allowed_roles, method, route)
 
     # Extract the list of parameters that the user expects to receive
     # in the URL and in the SQL string
@@ -73,7 +77,7 @@ def endpoint(route, method, sql, auth_required=False, description=None):
             # If this endpoint requires authentication, check that the
             # user has provided a session token and that it is valid
             if auth_required:
-                check_session()
+                check_session(allowed_roles)
 
             # Collect all url pattern params
             request_url_params_dict = kwargs
@@ -134,15 +138,24 @@ def endpoint(route, method, sql, auth_required=False, description=None):
 
 ###############################################################################
 # Session token checker
-def check_session():
+def check_session(allowed_roles):
     token = request.headers.get("Token", default=None)
     if not token:
         raise HTTPError(401, "Unauthorized")
 
     try:
-        check_token(token)
+        user_data = check_token(token)
     except TokenError as exc:
         raise HTTPError(401, str(exc))
+
+    # Check if the user's role is allowed to access this endpoint
+    role_col_name = settings.USER_AUTH_DATA.get("role", None)
+    if role_col_name:
+        # Only check the role if we know the role column
+        # Find the role of the user from the user data
+        user_role = next((v for k, v in user_data.items() if k.lower() == role_col_name.lower()), None)
+        if user_role not in allowed_roles and "*" not in allowed_roles:
+            raise HTTPError(401, "Unauthorized")
 
 ###############################################################################
 # Aux stuff for the handler function
@@ -198,8 +211,31 @@ def check_method(sql, verb, endpoint):
             )
     else:
         # What has the user put here?
-        raise EndpointError(f"The SQL query '{sql}' in the endpoint {endpoint} is not supported," +
+        logger.error(f"The SQL query '{sql}' in the endpoint {endpoint} is not supported," +
                              " please use only SELECT/INSERT/UPDATE/DELETE.")
+        sys.exit(1)
+
+def check_auth_roles(auth_required, allowed_roles, method, route):
+    # Raise an error if allowed_roles is not a list
+    if not isinstance(allowed_roles, list):
+        logger.error(f"The value '{allowed_roles}' for the allowed_roles parameter in " +
+                            f"endpoint {method.upper()} {route} is not allowed, it must be a " +
+                             "list of allowed roles.")
+        sys.exit(1)
+
+    # Warn if the user has specified some roles but auth_required is false,
+    # since it will result in all users having access
+    if not auth_required and len(allowed_roles) > 0 and allowed_roles != ["*"]:
+        logger.warn(f"You have specified allowed roles in endpoint {method.upper()} {route}, " +
+                     "but auth_required is False. This will result in all users having access " +
+                     "regardless of their role.")
+
+    # Warn if the user has specified an empty list of roles, and auth_required is true,
+    # because it will result in noone having access
+    if auth_required and len(allowed_roles) == 0:
+        logger.warn(f"You have set auth_required to True in endpoint {method.upper()} {route}, " +
+                     "but the list of allowed roles is empty. This will result in noone being able " +
+                     "to access the endpoint.")
 
 # Returns a list of $params in a SQL query or endpoint route,
 # without the $'s
@@ -219,6 +255,7 @@ def check_params_match(sql_params, user_params, route):
 
     if diff:
         params_str = ", ".join(f"${param}" for param in diff)
-        raise EndpointError(f"Error creating endpoint {route}: the parameters " +
+        logger.error(f"Error creating endpoint {route}: the parameters " +
                             f"{params_str} are expected by the SQL query but they are not provided in the URL " +
                             "or the request body.")
+        sys.exit(1)
