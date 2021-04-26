@@ -44,6 +44,7 @@ The project settings can be found in `settings.py`. The available configuration 
 - `ENABLE_LOGIN` Enables the /login endpoint (bool, default: `True`)
 - `ENABLE_REGISTER` Enables the /register endpoint (bool, default: `True`)
 - `ENABLE_SUMMARY` Enables the API summary endpoint (`GET API_PREFIX`) (bool, default: `True`)
+- `SHOW_ENDPOINT_LIST` Controls whether the list of all available endpoints is displayed when using `silence run` (bool, default: `True`)
 - `COLORED_OUTPUT` Enables colors in the console output (bool, default: `True`)
 - `DECIMALS_AS_STRINGS` Controls whether Decimal types are serialized as `str` instead of `float` (bool, default: `False`)
 - `USER_AUTH_DATA` Configures which information to use for login and register
@@ -51,6 +52,7 @@ The project settings can be found in `settings.py`. The available configuration 
     - `identifier` Column of this table containing the unique identifiers used for login (str, default: `username`)
     - `password` Column of this table containing the hashed passwords (str, default: `password`)
 - `SECRET_KEY` Random string used for signing session tokens and Flask security. Generated automatically upon project creation when using `silence new`. **No default is provided** and not setting one will result in an error.
+- `HTTP_CACHE_TIME` Sets the `max-age` value in the `Cache-Control` HTTP header for static files sent by the server. In practice, this controls for how long these files are cached by the web browser. (int, default: `0` for development purposes)
 - `MAX_TOKEN_AGE` Time in seconds during which a session token is valid after it has been issued (int, default: `86400`)
 - `CHECK_FOR_UPDATES` Whether to check for new Silence versions when using `silence run` (bool, default: `True`)
 

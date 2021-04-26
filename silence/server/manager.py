@@ -4,16 +4,17 @@ from werkzeug.exceptions import HTTPException
 import click
 
 from silence.server.endpoint_loader import load_user_endpoints, load_default_endpoints
-from silence.server.api_tree import APITree
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
 from silence.logging.flask_filter import FlaskFilter
 from silence.utils.silence_json_encoder import SilenceJSONEncoder
+from silence.server.api_summary import APISummary
 
 from os.path import join
 from os import getcwd
 import traceback
+import mimetypes
 import logging
 
 ###############################################################################
@@ -24,12 +25,13 @@ import logging
 static_folder = join(getcwd(), "docs") if settings.RUN_WEB else None
 APP = Flask(__name__, static_folder=static_folder)
 cors = CORS(APP, resources={f"{settings.API_PREFIX}*": {"origins": "*"}})
-API_TREE = APITree()
+API_SUMMARY = APISummary()
 
 def setup():
     # Configures the web server
     APP.secret_key = settings.SECRET_KEY 
     APP.config["SESSION_TYPE"] = "filesystem"
+    APP.config["SEND_FILE_MAX_AGE_DEFAULT"] = settings.HTTP_CACHE_TIME 
 
     # Mute Flask's startup messages
     def noop(*args, **kwargs): pass
@@ -41,6 +43,11 @@ def setup():
 
     # Override the default JSON encoder so that it works with the Decimal type
     APP.json_encoder = SilenceJSONEncoder
+
+    # Manually set up the MIME type for .js files
+    # This patches a known issue on Windows, where the MIME type for JS files
+    # is sometimes incorrectly set to text/plain in the registry
+    mimetypes.add_type("application/javascript", ".js", strict=True)
 
     # Set up the error handle for our custom exception type
     @APP.errorhandler(HTTPError)
@@ -74,6 +81,9 @@ def setup():
     if settings.RUN_API:
         load_default_endpoints()
         load_user_endpoints()
+
+        if settings.SHOW_ENDPOINT_LIST:
+            API_SUMMARY.print_endpoints()
 
     # Load the web static files
     if settings.RUN_WEB:

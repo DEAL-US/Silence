@@ -16,7 +16,7 @@ from silence.server import manager as server_manager
 ###############################################################################
 
 def show_api_endpoints():
-    return jsonify(server_manager.API_TREE.get_endpoint_list()), 200
+    return jsonify(server_manager.API_SUMMARY.get_endpoint_list()), 200
 
 def login():
     USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD = get_login_settings()
