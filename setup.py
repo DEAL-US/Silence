@@ -32,7 +32,7 @@ setup(
     install_requires=[
         "colorama~=0.4.3",
         "cryptography~=3.4.6",
-        "Flask-Cors==3.0.8",
+        "Flask-Cors==3.0.9",
         "Flask==1.1.2",
         "itsdangerous~=1.1.0",
         "PyMySQL~=0.9.3",
