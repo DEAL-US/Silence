@@ -37,15 +37,33 @@ def load_user_endpoints():
     
     auto_dir = endpoints_dir + "\\default"
 
-    endpoint_paths = [endpoints_dir + f"\\{f}" for f in listdir(endpoints_dir) if f.endswith('.json')]
-    endpoint_paths += [auto_dir + f"\\{f}" for f in listdir(auto_dir) if f.endswith('.json')]
+    endpoint_paths_json = [endpoints_dir + f"\\{f}" for f in listdir(endpoints_dir) if f.endswith('.json')]
+    endpoint_paths_json += [auto_dir + f"\\{f}" for f in listdir(auto_dir) if f.endswith('.json')]
 
-    for jsonfile in endpoint_paths:
+    for jsonfile in endpoint_paths_json:
         with open(jsonfile, "r") as ep:
             mid = json.load(ep)
             endpoints = list(mid.values())
             for endpoint in endpoints:
-                setup_endpoint(endpoint['route'], endpoint['method'], endpoint['sql'], endpoint['auth_required'], endpoint['allowed_roles'], endpoint['description'], endpoint['request_body_params'])
+
+                kwargs_nones = dict(auth_required = endpoint.get('auth_required'), allowed_roles = endpoint.get('allowed_roles'), 
+                description = endpoint.get('description'), request_body_params = endpoint.get('request_body_params'))
+
+                kwargs = {k: v for k, v in kwargs_nones.items() if v is not None}
+
+                setup_endpoint(endpoint['route'], endpoint['method'], endpoint['sql'], **kwargs)
+
+    # SUPPORT FOR .PY FILES:
+    pyfiles = [f for f in listdir(endpoints_dir) if f.endswith('.py')]
+    mod_aux = endpoints_dir.split("\\")
+    folder = mod_aux[len(mod_aux)-1].strip()
+    for pyfile in pyfiles:
+        module_name = folder + "." + splitext(pyfile)[0]
+        logger.debug(f"Found endpoint file: {module_name}")
+        try:
+            importlib.import_module(module_name)
+        except ImportError:
+            raise RuntimeError(f"Could not load the API file {module_name}")
 
 
 ###############################################################################
@@ -156,10 +174,10 @@ def generate_get_all(table):
     res["route"] = f"/{name}"
     res["method"] = "GET"
     res["sql"] = f"SELECT * FROM {name}"
-    res["auth_required"] = False
-    res["allowed_roles"] = ["*"]
+    # res["auth_required"] = False
+    # res["allowed_roles"] = ["*"]
     res["description"] = f"Gets all {name}s"
-    res["request_body_params"] = []
+    # res["request_body_params"] = []
     return res
 
 def generate_get_by_id(table, pk):
@@ -168,10 +186,10 @@ def generate_get_by_id(table, pk):
     res["route"] = f"/{name}/${pk}"
     res["method"] = "GET"
     res["sql"] = f"SELECT * FROM {name} WHERE {pk} = ${pk}"
-    res["auth_required"] = False
-    res["allowed_roles"] = ["*"]
+    # res["auth_required"] = False
+    # res["allowed_roles"] = ["*"]
     res["description"] = f"Gets a {name} with corresponding primary key"
-    res["request_body_params"] = []
+    # res["request_body_params"] = []
     return res
 
 def generate_create(table, pk):
@@ -182,8 +200,8 @@ def generate_create(table, pk):
     res["route"] = f"/{name}"
     res["method"] = "POST"
     res["sql"] = f"INSERT INTO {name}" + params_to_string(param_list, "", is_create=True) + " VALUES " + params_to_string(param_list, "$", is_create=True)
-    res["auth_required"] = False
-    res["allowed_roles"] = ["*"]
+    # res["auth_required"] = False
+    # res["allowed_roles"] = ["*"]
     res["description"] = f"creates a new {name}"
     res["request_body_params"] = param_list
     return res
@@ -196,8 +214,8 @@ def generate_update(table, pk):
     res["route"] = f"/{name}/${pk}"
     res["method"] = "PUT"
     res["sql"] = f"UPDATE {name} SET " + params_to_string(param_list, "", is_update=True) + f" WHERE {pk} = ${pk}"
-    res["auth_required"] = False
-    res["allowed_roles"] = ["*"]
+    # res["auth_required"] = False
+    # res["allowed_roles"] = ["*"]
     res["description"] = f"updates an existing {name} with corresponding primary key"
     res["request_body_params"] = param_list
     return res
@@ -208,10 +226,10 @@ def generate_delete(table,pk):
     res["route"] = f"/{name}/${pk}"
     res["method"] = "DELETE"
     res["sql"] = f"DELETE FROM {name} WHERE {pk} = ${pk}"
-    res["auth_required"] = False
-    res["allowed_roles"] = ["*"]
+    # res["auth_required"] = False
+    # res["allowed_roles"] = ["*"]
     res["description"] = f"deletes an existing {name} with corresponding primaery key"
-    res["request_body_params"] = []
+    # res["request_body_params"] = []
     return res
 
 def params_to_string(param_list, char_add, is_create = False, is_update = False):

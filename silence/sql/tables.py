@@ -1,5 +1,4 @@
 from silence.db.dal import query
-from silence.sql.table_cols import get_table_cols
 
 from silence.logging.default_logger import logger
 
@@ -26,3 +25,19 @@ def get_views():
 def get_primary_key(table_name):
     res = query(q = f"SHOW KEYS FROM {table_name} WHERE Key_name = 'PRIMARY'")
     return res
+
+
+global TABLE_COLUMNS
+TABLE_COLUMNS = {}
+
+# Returns the list of names for the columns of a table, storing it
+# after the first query for a given table
+def get_table_cols(table_name):
+    global TABLE_COLUMNS
+
+    if table_name not in TABLE_COLUMNS:
+        cols = query(f"SHOW COLUMNS FROM {table_name}")
+        col_names = [col["Field"] for col in cols]
+        TABLE_COLUMNS[table_name] = col_names
+    
+    return TABLE_COLUMNS[table_name]
