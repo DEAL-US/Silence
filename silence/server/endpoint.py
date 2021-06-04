@@ -26,12 +26,12 @@ OP_VERBS = {
 RE_QUERY_PARAM = re.compile(r"^.*\$\w+/?$")
 
 ###############################################################################
-# This is where the fun at
+# This is where the fun at v2
 ###############################################################################
 
-def endpoint(route, method, sql, auth_required=False, allowed_roles=["*"], description=None):
+def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"], description=None, request_body_params = []):
     logger.debug(f"Setting up endpoint {method} {route}")
-
+    
     # Construct the API route taking the prefix into account
     route_prefix = settings.API_PREFIX
     if route_prefix.endswith("/"):
@@ -49,6 +49,15 @@ def endpoint(route, method, sql, auth_required=False, allowed_roles=["*"], descr
     sql_params = extract_params(sql)
     url_params = extract_params(route)
 
+    # setup request body params with $ as expected by the parser
+    # for p in enumerate(request_body_params, 0): 
+    #     request_body_params[p[0]] = "$"+p[1]
+
+    logger.info(f"the url parameters passed will be {url_params}")
+    logger.info(f"the sql parameters passed will be {sql_params}")
+    logger.info(f"the request body parameters passed will be {request_body_params}")
+    logger.info("\n")
+
     # Get the required SQL operation
     sql_op = get_sql_op(sql)
 
@@ -57,84 +66,73 @@ def endpoint(route, method, sql, auth_required=False, allowed_roles=["*"], descr
     if sql_op in (SQL.SELECT, SQL.DELETE):
         check_params_match(sql_params, url_params, route)
 
-    # wrapper is the inner decorator, so that the outer one can receive parameters
-    def wrapper(func):
-        @wraps(func)
-        # The function itself that is being decorated (func)
-        def decorator(*args, **kwargs):
-            func(*args, **kwargs)
+    # If it's a SELECT or a DELETE, make sure that all SQL params can be
+    # obtained from the url AND the request body
+    # TODO: needs some way to get request body params as decorated functions are no more.
+    if sql_op in (SQL.INSERT, SQL.UPDATE):
+        check_params_match(sql_params, url_params + request_body_params, route)
 
-        # Get the list of arguments expected by the decorated function
-        decorated_func_args = inspect.getargspec(func)[0]
+    # The handler function that will be passed to flask
+    def route_handler(*args, **kwargs):
+        # If this endpoint requires authentication, check that the
+        # user has provided a session token and that it is valid
+        if auth_required:
+            check_session(allowed_roles)
 
-        # If it's a SELECT or a DELETE, make sure that all SQL params can be
-        # obtained from the url AND the request body
-        if sql_op in (SQL.INSERT, SQL.UPDATE):
-            check_params_match(sql_params, url_params + decorated_func_args, route)
+        # Collect all url pattern params
+        request_url_params_dict = kwargs
 
-        # The handler function that will be passed to flask
-        def route_handler(*args, **kwargs):
-            # If this endpoint requires authentication, check that the
-            # user has provided a session token and that it is valid
-            if auth_required:
-                check_session(allowed_roles)
+        # Convert the silence-style placeholders in the SQL query to proper MySQL placeholders
+        query_string = silence_to_mysql(sql)
 
-            # Collect all url pattern params
-            request_url_params_dict = kwargs
-
-            # Convert the silence-style placeholders in the SQL query to proper MySQL placeholders
-            query_string = silence_to_mysql(sql)
-
-            # Default outputs
-            res = None
-            status = 200
-            
-            # SELECT/GET operations
-            if sql_op == SQL.SELECT:
-                # Call the decorated function, just in case (though it should do nothing)
-                decorator()
-
-                # The URL params have been checked to be enough to fill all SQL params
-                url_pattern_params = tuple(request_url_params_dict[param] for param in sql_params)
-                res = dal.api_safe_query(query_string, url_pattern_params)
-                
-                # Filter these results according to the URL query string, if there is one
-                # Possible TO-DO: do this by directly editing the SQL query for extra efficiency
-                res = filter_query_results(res, request.args)
-
-                # In our teaching context, it is safe to assume that if the URL ends
-                # with a parameter and we have no results, we should return a 404 code
-                if RE_QUERY_PARAM.match(route) and not res:
-                    raise HTTPError(404, "Not found")
-
-            else:  # POST/PUT/DELETE operations
-                # Construct a dict for all params expected in the request body,
-                # setting them to None if they have not been provided
-                form = request.json if request.is_json else request.form
-                body_params = {param: form.get(param, None) for param in decorated_func_args}
-
-                # Call the decorated function with these parameters to allow the
-                # user to validate them
-                decorator(**body_params)
-
-                # We have checked that sql_params is a subset of url_params U body_params,
-                # construct a joint param object and use it to fill the SQL placeholders
-                for param in url_params:
-                    body_params[param] = request_url_params_dict[param]
-
-                param_tuple = tuple(body_params[param] for param in sql_params)
-
-                # Run the execute query
-                res = dal.api_safe_update(query_string, param_tuple)
-
-            return jsonify(res), status
+        # Default outputs
+        res = None
+        status = 200
         
-        # flaskify_url() adapts the URL so that all $variables are converted to Flask-style <variables>
-        server_manager.APP.add_url_rule(flaskify_url(full_route), method + route, route_handler, methods=[method])
-        server_manager.API_SUMMARY.register_endpoint({"route": full_route, "method": method.upper(), "description": description})
+        # SELECT/GET operations
+        if sql_op == SQL.SELECT:
+            # Call the decorated function, just in case (though it should do nothing)
+            # (no.)
+            # decorator()
 
-        return decorator
-    return wrapper
+            # The URL params have been checked to be enough to fill all SQL params
+            url_pattern_params = tuple(request_url_params_dict[param] for param in sql_params)
+            res = dal.api_safe_query(query_string, url_pattern_params)
+            
+            # Filter these results according to the URL query string, if there is one
+            # Possible TO-DO: do this by directly editing the SQL query for extra efficiency
+            res = filter_query_results(res, request.args)
+
+            # In our teaching context, it is safe to assume that if the URL ends
+            # with a parameter and we have no results, we should return a 404 code
+            if RE_QUERY_PARAM.match(route) and not res:
+                raise HTTPError(404, "Not found")
+
+        else:  # POST/PUT/DELETE operations
+            # Construct a dict for all params expected in the request body,
+            # setting them to None if they have not been provided
+            form = request.json if request.is_json else request.form
+            body_params = {param: form.get(param, None) for param in decorated_func_args}
+
+            # Call the decorated function with these parameters to allow the
+            # user to validate them ( no more )
+            # decorator(**body_params)
+
+            # We have checked that sql_params is a subset of url_params U body_params,
+            # construct a joint param object and use it to fill the SQL placeholders
+            for param in url_params:
+                body_params[param] = request_url_params_dict[param]
+
+            param_tuple = tuple(body_params[param] for param in sql_params)
+
+            # Run the execute query
+            res = dal.api_safe_update(query_string, param_tuple)
+
+        return jsonify(res), status
+    
+    # flaskify_url() adapts the URL so that all $variables are converted to Flask-style <variables>
+    server_manager.APP.add_url_rule(flaskify_url(full_route), method + route, route_handler, methods=[method])
+    server_manager.API_SUMMARY.register_endpoint({"route": full_route, "method": method.upper(), "description": description})
 
 ###############################################################################
 # Session token checker
