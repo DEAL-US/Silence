@@ -83,8 +83,12 @@ def setup():
         create_entity_endpoints()
         load_user_endpoints()
 
+
+
         if settings.SHOW_ENDPOINT_LIST:
             API_SUMMARY.print_endpoints()
+    
+    
 
     # Load the web static files
     if settings.RUN_WEB:

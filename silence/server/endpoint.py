@@ -49,15 +49,6 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
     sql_params = extract_params(sql)
     url_params = extract_params(route)
 
-    # setup request body params with $ as expected by the parser
-    # for p in enumerate(request_body_params, 0): 
-    #     request_body_params[p[0]] = "$"+p[1]
-
-    logger.info(f"the url parameters passed will be {url_params}")
-    logger.info(f"the sql parameters passed will be {sql_params}")
-    logger.info(f"the request body parameters passed will be {request_body_params}")
-    logger.info("\n")
-
     # Get the required SQL operation
     sql_op = get_sql_op(sql)
 
