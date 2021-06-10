@@ -3,7 +3,7 @@ from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 import click
 
-from silence.server.endpoint_loader import load_user_endpoints, load_default_endpoints, create_entity_endpoints
+from silence.server.endpoint_loader import load_user_endpoints, load_default_endpoints
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
@@ -80,15 +80,11 @@ def setup():
     # Load the user-provided API endpoints and the default ones
     if settings.RUN_API:
         load_default_endpoints()
-        create_entity_endpoints()
+        # create_entity_endpoints()
         load_user_endpoints()
-
-
 
         if settings.SHOW_ENDPOINT_LIST:
             API_SUMMARY.print_endpoints()
-    
-    
 
     # Load the web static files
     if settings.RUN_WEB:

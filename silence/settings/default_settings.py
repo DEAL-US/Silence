@@ -69,3 +69,6 @@ GITHUB_TEMPLATES_OWNER = "IISSI-US"
 
 # Enables or disables checking for new Silence updates when running 'silence run'
 CHECK_FOR_UPDATES = True
+
+# Enables the createapi command
+ENABLE_ENDPOINT_AUTO_GENERATION = True

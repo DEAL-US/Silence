@@ -8,15 +8,12 @@ from silence.sql.tables import get_table_cols
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
-from silence.server import manager as server_manager
+
 
 ###############################################################################
 # Defines the default endpoints provided by Silence,
 # mainly /login and /register
 ###############################################################################
-
-def show_api_endpoints():
-    return jsonify(server_manager.API_SUMMARY.get_endpoint_list()), 200
 
 def login():
     USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD, ROLE_FIELD = get_login_settings()

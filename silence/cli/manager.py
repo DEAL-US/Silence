@@ -5,7 +5,7 @@ import logging
 from silence import __version__
 from silence.settings import settings
 from silence.logging.default_logger import logger
-from silence.cli.commands import run, createdb, new, list_templates
+from silence.cli.commands import run, createdb, new, list_templates, createapi
 
 ###############################################################################
 # Command line interface manager
@@ -16,7 +16,8 @@ HANDLERS = {
     "run": run.handle,
     "createdb": createdb.handle,
     "new": new.handle,
-    "list-templates": list_templates.handle
+    "list-templates": list_templates.handle,
+    "createapi": createapi.handle
 }
 
 def run_from_command_line():
@@ -42,6 +43,7 @@ def run_from_command_line():
 
     parser_createdb = subparsers.add_parser("createdb", help="Runs the provided SQL scripts in the adequate order in the database")
     parser_run = subparsers.add_parser("run", help="Starts the web server")
+    parser_createapi = subparsers.add_parser("createapi" , help="Reads the database and generates CRUD operations which aren't defined by the user already. ")
 
     # Show the help dialog if the command is issued without any arguments
     if len(sys.argv) == 1:
