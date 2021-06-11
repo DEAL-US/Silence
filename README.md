@@ -82,7 +82,7 @@ the keys must contain at least `route, method, sql` and can optionally contain `
 
 We define an endpoint to retrieve all existing Departments like this:
 
-```
+```json
 "getAll":{
   "route": "/departments",
   "method": "GET",
@@ -118,7 +118,7 @@ GET /api/departments
 
 URL parameters can be defined and passed on to the SQL query. For example, we can also define an endpoint to retrieve a certain Department by its departmentId:
 
-```
+```json
 "getById":{
   "route": "/departments/$departmentId",
   "method": "GET",
@@ -163,23 +163,23 @@ Editing data through POST and PUT requests follows the same guidelines, however,
 
 An endpoint to create a new Department is associated with a SQL INSERT operation:
 
-```py
-from silence.exceptions import HTTPError
-
-@endpoint(
-    route="/departments",
-    method="POST",
-    sql="INSERT INTO Departments (name, city) VALUES ($name, $city)",
-    description="Creates a new department"
-)
-def create(name, city):
-    if len(name) < 3:
-        raise HTTPError(400, "The department's name should have at least 3 characters")
+```json
+"create":{
+  "route": "/departments",
+  "method": "POST",
+  "sql": "INSERT INTO departments(name, city) VALUES ($name, $city)",
+  "auth_required": true,
+  "description": "creates a new departments",
+  "request_body_params": [
+    "name",
+    "city"
+  ]
+}
 ```
 
-Note that, in this case, the SQL query expects the parameters `$name` and `$city`, but they are not defined in the URL pattern. Instead, they are expected in the HTTP POST body. We declare this by setting them as parameters of the associated Python function: `create(name, city)`.
+Note that, in this case, the SQL query expects the parameters `$name` and `$city`, but they are not defined in the URL pattern. Instead, they are expected in the HTTP POST body. We declare this by adding them in the `request_body_params` list.
 
-By doing so, Silence knows that you're expecting to receive them in the body of the received HTTP request and can check your SQL query for unexpected parameters, and you can perform validations on the received parameters. You should declare these parameters as arguments of the associated function even if you don't want to validate them.
+By doing so, Silence knows that you're expecting to receive them in the body of the received HTTP request and can check your SQL query for unexpected parameters.
 
 Silence can extract parameters from request bodies encoded in `application/x-www-form-urlencoded` or `application/json`:
 
@@ -196,32 +196,20 @@ Content-Type: application/json
 
 For SQL operations other than SELECT, Silence returns the ID of the last modified row (in this case, it represents the ID assigned to the newly created resource).
 
-The previously shown example also displays how the `HTTPError` exception can be used to validate received requests:
-
-```json
-POST /api/departments
-Content-Type: application/json
-{"name": "..", "city": "Seville"}
-
-(400 BAD REQUEST)
-{
-  "code": 400,
-  "message": "The department's name should have at least 3 characters"
-}
-```
-
 PUT requests are similar and combine both URL and body parameters, as udpate requests are aimed towards an already existing resource:
 
-```py
-@endpoint(
-    route="/departments/$departmentId",
-    method="PUT",
-    sql="UPDATE Departments SET name = $name, city = $city WHERE departmentId = $departmentId",
-    description="Updates an existing department"
-)
-def update(name, city):
-    if len(name) < 3:
-        raise HTTPError(400, "The department's name should have at least 3 characters")
+```json
+"update":{
+  "route": "/departments/$departmentId",
+  "method": "PUT",
+  "sql": "UPDATE departments SET name = $name, city = $city WHERE departmentId = $departmentId",
+  "auth_required": true,
+  "description": "updates an existing departments with corresponding primary key",
+  "request_body_params": [
+    "name",
+    "city"
+  ]
+}
 ```
 
 Silence makes sure that all parameters included in your SQL string can be obtained from either the request URL (declared in your route pattern) or the request body (declared in your function arguments).
@@ -229,15 +217,14 @@ Silence makes sure that all parameters included in your SQL string can be obtain
 ### DELETE operations
 An example of an endpoint to delete a Department by its departmentId is as follows:
 
-```py
-@endpoint(
-    route="/departments/$departmentId",
-    method="DELETE",
-    sql="DELETE FROM Departments WHERE departmentId = $departmentId",
-    description="Removes an existing department",
-)
-def delete():
-    pass
+```json
+"delete":{
+  "route": "/departments/$departmentId",
+  "method": "DELETE",
+  "sql": "DELETE FROM departments WHERE departmentId = $departmentId",
+  "auth_required": true,
+  "description": "deletes an existing departments with corresponding primary key"
+} 
 ```
 
 In this case only the URL parameter is needed, and thus nothing is validated in the associated function.
@@ -374,18 +361,20 @@ Content-Type: application/json
 The response data is the same as in `/register`.
 
 ### Restricting endpoints to logged users
-All `@endpoint()` declarations accept an optional `auth_required` argument that can be set to `True` if the endpoint is intended to be used only by logged users:
+All endpoint declarations accept an optional `auth_required` argument that can be set to `true` if the endpoint is intended to be used only by logged users:
 
-```py
-@endpoint(
-    route="/departments",
-    method="GET",
-    sql="SELECT * FROM Departments",
-    description="Shows all departments",
-    auth_required=True  # <=======
-)
-def get_all():
-    pass
+```json
+"create":{
+  "route": "/departments",
+  "method": "POST",
+  "sql": "INSERT INTO departments(name, city) VALUES ($name, $city)",
+  "auth_required": true, <<======
+  "description": "creates a new departments",
+  "request_body_params": [
+    "name",
+    "city"
+  ]
+}
 ```
 
 When an endpoint is protected in this manner, the user has to prove that they have a current session by sending their session token **as an HTTP header**, under the key `Token`:
@@ -504,6 +493,13 @@ These parameters can be combined in any way and work for all GET endpoints.
 Silence also serves as a web server for static files (unless explicitly disabled via the `RUN_WEB` setting). The `docs/` folder inside your project is the web root, and thus you can place your web application there to be deployed by Silence.
 
 The web server has no prefix. Accessing `http://<address>/` will hit the `index.html` file located in the root of the `docs/` folder. Any subfolders will work as expected, with the only exception of a route that creates a conflict with the API prefix (for example, if your API prefix is `/api`, do not create an `api/` folder directly in the root of `docs/`).
+
+## Endpoint and api files auto generation
+Silence also offers a tool to generate basic CRUD operations for all entities that have been declared in the .sql files.
+By running the `silence createapi` silence will create a `/endpoints/default` folder and populate it with a .json file for each of the entities in the database,
+it will also check if a particular endpoint was declared in the base folder by comparing its route and method parameters and refrain from creating them if found.
+
+This tool is avaliable by default unless explicitly turned off in setting by setting `ENABLE_ENDPOINT_AUTO_GENERATION` to `false`.
 
 ## Running the server
 Once you have configured your project, database and defined your endpoints, you can launch the web server with:
