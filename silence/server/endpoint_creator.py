@@ -120,7 +120,10 @@ def create_entity_endpoints(existing_routes_method_pairs):
     auto_dir = endpoints_dir + "/default"
 
     logger.debug(f"selected endpoint directory -->  {auto_dir}")
-    rmtree(auto_dir)
+    try:
+        rmtree(auto_dir)
+    except FileNotFoundError():
+        logger.debug("Folder is not there, creating it.")
     
     logger.debug(f"re-creating directory -->  {auto_dir}")
     mkdir(auto_dir)
