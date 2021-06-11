@@ -122,7 +122,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
     logger.debug(f"selected endpoint directory -->  {auto_dir}")
     try:
         rmtree(auto_dir)
-    except FileNotFoundError():
+    except FileNotFoundError:
         logger.debug("Folder is not there, creating it.")
     
     logger.debug(f"re-creating directory -->  {auto_dir}")
