@@ -57,6 +57,7 @@ The project settings can be found in `settings.py`. The available configuration 
 - `HTTP_CACHE_TIME` Sets the `max-age` value in the `Cache-Control` HTTP header for static files sent by the server. In practice, this controls for how long these files are cached by the web browser. (int, default: `0` for development purposes)
 - `MAX_TOKEN_AGE` Time in seconds during which a session token is valid after it has been issued (int, default: `86400`)
 - `CHECK_FOR_UPDATES` Whether to check for new Silence versions when using `silence run` (bool, default: `True`)
+- `ENABLE_ENDPOINT_AUTO_GENERATION` Allows for the use of the `silence createapi` (bool, default:`True`)
 
 ## Creating the database
 Silence provides the `silence createdb` command to automatically execute any number of SQL scripts to create your database and/or set it to a controlled initial state. 
@@ -72,31 +73,23 @@ Once this has been configured, `silence createdb` will execute the specified fil
 ## Defining your API endpoints
 The Silence philosophy is that API endpoints are wrappers around SQL operations, and thus they can be defined in a relatively simple manner. As an example, we will demonstrate how to create basic CRUD endpoints for a `Department` table whose columns are `(departmentId, name, city)`.
 
-We begin by creating a `department.py` file inside the project's `endpoints/` folder. The name of this file is not relevant, and all files inside the `endpoints/` folder containing endpoint declarations will be automatically detected and imported.
+We begin by creating a `department.json` file inside the project's `endpoints/` folder. The name of this file is not relevant, and all files inside the `endpoints/` folder containing endpoint declarations will be automatically detected and imported.
 
-Endpoint declarations are done through the `silence.decorators.endpoint` decorator, so we have to import it:
-
-```py
-from silence.decorators import endpoint
-```
-
-Endpoints require an URL route, an associated HTTP verb and the SQL query to execute, and they are bound to a Python function that will be executed every time it is called. Optionally, they can also include a description and be limited only to logged users.
+We setup a simple object containing all of the endpoints with the following structure:
+the keys must contain at least `route, method, sql` and can optionally contain `auth_required, allowed_roles, description, request_body_params` 
 
 ### GET operations
 
 We define an endpoint to retrieve all existing Departments like this:
 
-```py
-@endpoint(
-    route="/departments",
-    method="GET",
-    sql="SELECT * FROM Departments",
-    description="Shows all departments"
-)
-def get_all():
-    pass
 ```
-For GET operations, the associated function is empty, as there is nothing to check.
+"getAll":{
+  "route": "/departments",
+  "method": "GET",
+  "sql": "SELECT * FROM departments",
+  "description": "Gets all departments"
+}
+```
 
 Note that the endpoint route is defined without the global `/api` prefix, it is automatically added later by Silence. In this case, whenever anyone performs an HTTP `GET` request against `/api/departments`, the SQL query will be executed and the results will be displayed as JSON.
 
@@ -125,15 +118,13 @@ GET /api/departments
 
 URL parameters can be defined and passed on to the SQL query. For example, we can also define an endpoint to retrieve a certain Department by its departmentId:
 
-```py
-@endpoint(
-    route="/departments/$departmentId",
-    method="GET",
-    sql="SELECT * FROM Departments WHERE departmentId = $departmentId",
-    description="Shows one department by ID"
-)
-def get_by_id():
-    pass
+```
+"getById":{
+  "route": "/departments/$departmentId",
+  "method": "GET",
+  "sql": "SELECT * FROM departments WHERE departmentId = $departmentId",
+  "description": "Gets a departments with corresponding primary key"
+},
 ```
 
 In this case, the URL parameter is defined using the `$param` syntax so Silence knows that it is a variable part of the URL pattern. It is passed to the SQL query using the same syntax by specifying the same parameter name. You can capture and pass as many parameters as you want, in any order, in this manner. Silence checks that all parameters in the SQL query can be obtained through the URL pattern.
