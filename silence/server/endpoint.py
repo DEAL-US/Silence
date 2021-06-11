@@ -82,10 +82,6 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
         
         # SELECT/GET operations
         if sql_op == SQL.SELECT:
-            # Call the decorated function, just in case (though it should do nothing)
-            # (no.)
-            # decorator()
-
             # The URL params have been checked to be enough to fill all SQL params
             url_pattern_params = tuple(request_url_params_dict[param] for param in sql_params)
             res = dal.api_safe_query(query_string, url_pattern_params)
@@ -100,14 +96,9 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
                 raise HTTPError(404, "Not found")
 
         else:  # POST/PUT/DELETE operations
-            # Construct a dict for all params expected in the request body,
-            # setting them to None if they have not been provided
+            #Construct a dict for all params expected in the request body, setting them to None if they have not been provided
             form = request.json if request.is_json else request.form
-            body_params = {param: form.get(param, None) for param in decorated_func_args}
-
-            # Call the decorated function with these parameters to allow the
-            # user to validate them ( no more )
-            # decorator(**body_params)
+            body_params = {param: form.get(param, None) for param in request_body_params}
 
             # We have checked that sql_params is a subset of url_params U body_params,
             # construct a joint param object and use it to fill the SQL placeholders
