@@ -1,4 +1,4 @@
-# 1.2.3-dev
+# 1.2.4
 - Changed the serialization of datetime objects to follow ISO 8601.
 - Bumped Flask-CORS to 3.0.9.
 - Migrated the CI testing from Travis to GitHub Actions.
