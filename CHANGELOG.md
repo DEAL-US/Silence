@@ -1,6 +1,7 @@
 # 1.2.3-dev
 - Changed the serialization of datetime objects to follow ISO 8601.
 - Bumped Flask-CORS to 3.0.9.
+- Migrated the CI testing from Travis to GitHub Actions.
 
 # 1.2.3
 - Set the MIME type of `.js` files to `application/javascript` manually, to prevent the wrong type from being dispatched due to bad configurations of the Windows registry.
