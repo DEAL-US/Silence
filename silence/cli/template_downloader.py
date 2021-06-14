@@ -101,8 +101,7 @@ def git_clone(host, username, repo_name, clone_dir):
         logger.error("Repo not found")
         sys.exit(1)
 
-    branch = api_response.json()["default_branch"]
-
+    branch = api_response.json().get("default_branch", "master")
     git_url = f"https://{host}/{username}/{repo_name}"
     repo_file = f"{branch}.zip"
     repo_zip = git_url + f"/archive/{repo_file}"
