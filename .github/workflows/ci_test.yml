@@ -14,7 +14,7 @@ jobs:
       mariadb:
         image: mariadb:latest
         ports:
-          - 3306
+          - 3306:3306
         env:
           MYSQL_USER: silence
           MYSQL_PASSWORD: 123456
@@ -36,7 +36,6 @@ jobs:
         run: |
           silence new ci_app --url https://github.com/IISSI-US/Silence-CI-Project.git
           cd ci_app
-          sleep 10
           silence createdb
           silence run &
           sleep 15
