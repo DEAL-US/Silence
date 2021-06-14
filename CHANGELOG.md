@@ -1,4 +1,4 @@
-# BETA
+# 2.0.0-BETA
 - Added fine-grained endpoint access by role:
     - Added a new optional `role` key to specify the role column in `USER_AUTH_DATA`.
     - Added a new `DEFAULT_ROLE_REGISTER` setting to specify the role that should be assigned to new users when using the `/register` endpoint.
@@ -6,7 +6,7 @@
     - Added a new way of creating endpoints as.json files
     - Added a new `createapi` command to auto generate the .json endpoint files and .js api consumption files automatically based on the database tables and already defined endpoints by the user, this feature can be allowed through `ENABLE_ENDPOINT_AUTO_GENERATION` in the settings.py file.
 
-# 1.2.3-dev
+# 1.2.4
 - Changed the serialization of datetime objects to follow ISO 8601.
 - Bumped Flask-CORS to 3.0.9.
 - Migrated the CI testing from Travis to GitHub Actions.
