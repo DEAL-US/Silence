@@ -1,7 +1,7 @@
 import importlib
 import json
 
-from os import listdir, getcwd, path, mkdir
+from os import listdir, getcwd, path, mkdir, makedirs
 from os.path import splitext
 
 from silence.sql.tables import get_tables, get_views, get_primary_key
@@ -30,6 +30,9 @@ def create_api():
 def generate_API_file_for_endpoints(endpoints, name):
     curr_dir = getcwd()
     api_path = curr_dir + "/docs/js/api"
+    
+    if not path.isdir(api_path):
+        makedirs(api_path)
 
     logger.info(f"Generating api files for {name}")
 

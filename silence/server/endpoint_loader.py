@@ -39,8 +39,12 @@ def load_user_endpoints():
     auto_dir = endpoints_dir + "\\default"
 
     endpoint_paths_json_user = [endpoints_dir + f"\\{f}" for f in listdir(endpoints_dir) if f.endswith('.json')]
-    endpoint_paths_json_default = [auto_dir + f"\\{f}" for f in listdir(auto_dir) if f.endswith('.json')]
-    endpoint_paths_json = endpoint_paths_json_user + endpoint_paths_json_default
+
+    if(path.isdir(auto_dir)):
+        endpoint_paths_json_default = [auto_dir + f"\\{f}" for f in listdir(auto_dir) if f.endswith('.json')]
+        endpoint_paths_json = endpoint_paths_json_user + endpoint_paths_json_default
+    else:
+        endpoint_paths_json = endpoint_paths_json_user
 
     for jsonfile in endpoint_paths_json:
         with open(jsonfile, "r") as ep:

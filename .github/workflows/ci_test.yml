@@ -34,9 +34,10 @@ jobs:
           pip install .
       - name: Test Silence
         run: |
-          silence new ci_app --url https://github.com/IISSI-US/Silence-CI-Project.git
+          silence new ci_app --url https://github.com/miguel-bermudo/Silence-CI-Project
           cd ci_app
           silence createdb
+          silence createapi
           silence run &
           sleep 15
           cd test
