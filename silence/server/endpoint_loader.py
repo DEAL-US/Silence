@@ -22,8 +22,8 @@ def load_user_endpoints():
 
     # Load every .json file inside the endpoints/ or api/ folders
     curr_dir = getcwd()
-    endpoints_dir_new = curr_dir + "\\endpoints"
-    endpoints_dir_old = curr_dir + "\\api"
+    endpoints_dir_new = curr_dir + "/endpoints"
+    endpoints_dir_old = curr_dir + "/api"
 
     if path.isdir(endpoints_dir_old):
         warnign_old_folder()
@@ -36,12 +36,12 @@ def load_user_endpoints():
     elif path.isdir(endpoints_dir_new):
         endpoints_dir = endpoints_dir_new
     
-    auto_dir = endpoints_dir + "\\default"
+    auto_dir = endpoints_dir + "/default"
 
-    endpoint_paths_json_user = [endpoints_dir + f"\\{f}" for f in listdir(endpoints_dir) if f.endswith('.json')]
+    endpoint_paths_json_user = [endpoints_dir + f"/{f}" for f in listdir(endpoints_dir) if f.endswith('.json')]
 
     if(path.isdir(auto_dir)):
-        endpoint_paths_json_default = [auto_dir + f"\\{f}" for f in listdir(auto_dir) if f.endswith('.json')]
+        endpoint_paths_json_default = [auto_dir + f"/{f}" for f in listdir(auto_dir) if f.endswith('.json')]
         endpoint_paths_json = endpoint_paths_json_user + endpoint_paths_json_default
     else:
         endpoint_paths_json = endpoint_paths_json_user
@@ -61,7 +61,7 @@ def load_user_endpoints():
 
     # SUPPORT FOR .PY FILES:
     pyfiles = [f for f in listdir(endpoints_dir) if f.endswith('.py')]
-    mod_aux = endpoints_dir.split("\\")
+    mod_aux = endpoints_dir.split("/")
     folder = mod_aux[len(mod_aux)-1].strip()
     for pyfile in pyfiles:
         module_name = folder + "." + splitext(pyfile)[0]
