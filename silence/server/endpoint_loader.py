@@ -25,6 +25,9 @@ def load_user_endpoints():
     endpoints_dir_new = curr_dir + "/endpoints"
     endpoints_dir_old = curr_dir + "/api"
 
+    if not path.isdir(endpoints_dir_old) and not path.isdir(endpoints_dir_new):
+        mkdir(endpoints_dir_new)
+
     if path.isdir(endpoints_dir_old):
         warnign_old_folder()
         endpoints_dir = endpoints_dir_old
