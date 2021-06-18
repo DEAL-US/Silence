@@ -4,8 +4,8 @@ import json
 from os import listdir, getcwd, path, mkdir
 from os.path import splitext
 
-import silence.server.manager as server_manager
-import silence.server.endpoint as server_endpoint
+from silence.server import manager as server_manager
+from silence.server import endpoint as server_endpoint
 
 from silence.settings import settings
 from silence.logging.default_logger import logger
