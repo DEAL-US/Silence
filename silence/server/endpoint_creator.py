@@ -146,7 +146,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
         endpoints = {}
         table[1].remove(pk)
 
-        name = table[0]
+        name = table[0].lower()
         ep_tuples = []
 
         logger.info(f"Generating endpoints for {name}")
