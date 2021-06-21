@@ -105,10 +105,10 @@ def generate_api_text(operation, description, method, route, id_plain = "", has_
     }},"""
     return file_content
 
-###############################################################################
-# Get the entities from the database and the existing user endpoints and 
-# create CRUD endpoint files (json) for the remaining ones.
-###############################################################################
+#############################################################################
+# Get the entities from the database and the existing user endpoints and    #
+# create CRUD endpoint files (json) for the remaining ones.                 #
+#############################################################################
 def create_entity_endpoints(existing_routes_method_pairs):
     # Folder handling
 
@@ -208,23 +208,19 @@ def get_user_endpoints():
 
     # Load every .json file inside the endpoints/ or api/ folders
     curr_dir = getcwd()
-    endpoints_dir_new = curr_dir + "/endpoints"
-    endpoints_dir_old = curr_dir + "/api"
+    endpoints_dir = curr_dir + "/endpoints"
+    # endpoints_dir_old = curr_dir + "/api"
 
-    if not path.isdir(endpoints_dir_old) and not path.isdir(endpoints_dir_new):
-        mkdir(endpoints_dir_new)
+    if not path.isdir(endpoints_dir):
+        mkdir(endpoints_dir)
 
+    # if path.isdir(endpoints_dir_old):
+    #     warnign_old_folder()
+    #     endpoints_dir = endpoints_dir_old
 
-    if path.isdir(endpoints_dir_old):
-        warnign_old_folder()
-        endpoints_dir = endpoints_dir_old
-
-        if path.isdir(endpoints_dir_new):
-            endpoints_dir = endpoints_dir_new
-            logger.warning("You appear to have both api/ and endpoints/ folders, the latter will be used.")
-    
-    elif path.isdir(endpoints_dir_new):
-        endpoints_dir = endpoints_dir_new
+    #     if path.isdir(endpoints_dir_new):
+    #         endpoints_dir = endpoints_dir_new
+    #         logger.warning("You appear to have both api/ and endpoints/ folders, the latter will be used.")
 
     endpoint_paths_json_user = [endpoints_dir + f"/{f}" for f in listdir(endpoints_dir) if f.endswith('.json')]
     endpoint_route_method_pairs = []
@@ -239,29 +235,29 @@ def get_user_endpoints():
            
 
     # SUPPORT FOR .PY FILES:
-    pyfiles = [endpoints_dir + f"/{f}" for f in listdir(endpoints_dir) if f.endswith('.py')]
-    endpoint_pairs = []
-    for pyfile in pyfiles:
-        with open(pyfile,"r") as f:
-            reader = f.read()
+    # pyfiles = [endpoints_dir + f"/{f}" for f in listdir(endpoints_dir) if f.endswith('.py')]
+    # endpoint_pairs = []
+    # for pyfile in pyfiles:
+    #     with open(pyfile,"r") as f:
+    #         reader = f.read()
 
-            for ep in reader.split("@endpoint("):
-                params = ep.split(")")[0]
-                pair = ["",""]
-                has_route, has_method = False, False
+    #         for ep in reader.split("@endpoint("):
+    #             params = ep.split(")")[0]
+    #             pair = ["",""]
+    #             has_route, has_method = False, False
 
-                for p in params.split((",")):
-                    if "route" in p:
-                        pair[0] = p.split("=")[1].replace("\"", "").strip()
-                        has_route = True
+    #             for p in params.split((",")):
+    #                 if "route" in p:
+    #                     pair[0] = p.split("=")[1].replace("\"", "").strip()
+    #                     has_route = True
                         
-                    elif "method" in p:
-                        pair[1] = p.split("=")[1].replace("\"", "").strip()
-                        has_method = True
+    #                 elif "method" in p:
+    #                     pair[1] = p.split("=")[1].replace("\"", "").strip()
+    #                     has_method = True
 
-                if has_route and has_method: endpoint_pairs.append(tuple(pair))
+    #             if has_route and has_method: endpoint_pairs.append(tuple(pair))
 
-    endpoint_route_method_pairs += endpoint_pairs
+    # endpoint_route_method_pairs += endpoint_pairs
 
     return endpoint_route_method_pairs
 
@@ -358,7 +354,3 @@ def params_to_string(param_list, char_add, is_create = False, is_update = False)
             res +=  p +" = $"+ p + ", "
         res = res[:-2]
         return res
-
-def warnign_old_folder():
-    logger.warning("Please rename the folder that contains your endpoints to 'endpoints/' instead of 'api/'")
-    logger.warning("Support for the 'api/' folder will be dropped in the future.")

@@ -22,22 +22,19 @@ def load_user_endpoints():
 
     # Load every .json file inside the endpoints/ or api/ folders
     curr_dir = getcwd()
-    endpoints_dir_new = curr_dir + "/endpoints"
-    endpoints_dir_old = curr_dir + "/api"
+    endpoints_dir = curr_dir + "/endpoints"
+    # endpoints_dir_old = curr_dir + "/api"
 
-    if not path.isdir(endpoints_dir_old) and not path.isdir(endpoints_dir_new):
-        mkdir(endpoints_dir_new)
+    if not path.isdir(endpoints_dir):
+        mkdir(endpoints_dir)
 
-    if path.isdir(endpoints_dir_old):
-        warnign_old_folder()
-        endpoints_dir = endpoints_dir_old
+    # if path.isdir(endpoints_dir_old):
+    #     warnign_old_folder()
+    #     endpoints_dir = endpoints_dir_old
 
-        if path.isdir(endpoints_dir_new):
-            endpoints_dir = endpoints_dir_new
-            logger.warning("You appear to have both api/ and endpoints/ folders, the latter will be used.")
-    
-    elif path.isdir(endpoints_dir_new):
-        endpoints_dir = endpoints_dir_new
+    #     if path.isdir(endpoints_dir_new):
+    #         endpoints_dir = endpoints_dir_new
+    #         logger.warning("You appear to have both api/ and endpoints/ folders, the latter will be used.")
     
     auto_dir = endpoints_dir + "/default"
 
@@ -63,16 +60,16 @@ def load_user_endpoints():
                 
 
     # SUPPORT FOR .PY FILES:
-    pyfiles = [f for f in listdir(endpoints_dir) if f.endswith('.py')]
-    mod_aux = endpoints_dir.split("/")
-    folder = mod_aux[len(mod_aux)-1].strip()
-    for pyfile in pyfiles:
-        module_name = folder + "." + splitext(pyfile)[0]
-        logger.debug(f"Found endpoint file: {module_name}")
-        try:
-            importlib.import_module(module_name)
-        except ImportError:
-            raise RuntimeError(f"Could not load the API file {module_name}")
+    # pyfiles = [f for f in listdir(endpoints_dir) if f.endswith('.py')]
+    # mod_aux = endpoints_dir.split("/")
+    # folder = mod_aux[len(mod_aux)-1].strip()
+    # for pyfile in pyfiles:
+    #     module_name = folder + "." + splitext(pyfile)[0]
+    #     logger.debug(f"Found endpoint file: {module_name}")
+    #     try:
+    #         importlib.import_module(module_name)
+    #     except ImportError:
+    #         raise RuntimeError(f"Could not load the API file {module_name}")
 
 
 ###############################################################################
@@ -109,11 +106,6 @@ def load_default_endpoints():
             "desc": "Creates a new user, returning a session token and the user data if the register is successful",
         })
         server_manager.APP.add_url_rule(register_route, "register", default_endpoints.register, methods=["POST"])
-
-
-def warnign_old_folder():
-    logger.warning("Please rename the folder that contains your endpoints to 'endpoints/' instead of 'api/'")
-    logger.warning("Support for the 'api/' folder will be dropped in the future.")
 
 
 def show_api_endpoints():
