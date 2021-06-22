@@ -73,7 +73,7 @@ def generate_API_file_for_endpoints(endpoints, name):
             route = f"{name}/{id_var}"
             file_content += generate_api_text(operation, description, method.lower(), route, id_plain, True)
 
-    file_content += "\n};\n\nexport {" + f"{name}APIAuto" +"};"
+    file_content += "\n};\n\nexport {" + f"{name}API_auto" +"};"
 
     api_path + f"{name}.js"
 
