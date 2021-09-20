@@ -20,8 +20,8 @@ def handle(args):
     templates = []
     for repo in repo_data:
         name = repo["name"].lower()
-        if name.startswith("silence-template"):
-            template_name = name.replace("silence-template-", "")
+        if name.startswith("silence-template-v2-"):
+            template_name = name.replace("silence-template-v2-", "")
             desc = repo["description"]
             templates.append({"name": template_name, "desc": desc})
 
