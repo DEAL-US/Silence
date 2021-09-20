@@ -1,7 +1,7 @@
 from flask import jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from silence.auth.tokens import create_token, check_token
+from silence.auth.tokens import create_token
 from silence.db import dal
 from silence.sql.builder import get_login_query, get_register_user_query
 from silence.sql.tables import get_table_cols
