@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 import click
@@ -13,7 +13,6 @@ from silence.server.api_summary import APISummary
 
 from os.path import join
 from os import getcwd
-import traceback
 import mimetypes
 import logging
 
@@ -22,7 +21,7 @@ import logging
 # configuring it and deploying the endpoints and web app.
 ###############################################################################
 
-static_folder = join(getcwd(), "docs") if settings.RUN_WEB else None
+static_folder = join(getcwd(), "web") if settings.RUN_WEB else None
 APP = Flask(__name__, static_folder=static_folder)
 cors = CORS(APP, resources={f"{settings.API_PREFIX}*": {"origins": "*"}})
 API_SUMMARY = APISummary()
@@ -80,6 +79,7 @@ def setup():
     # Load the user-provided API endpoints and the default ones
     if settings.RUN_API:
         load_default_endpoints()
+        # create_entity_endpoints()
         load_user_endpoints()
 
         if settings.SHOW_ENDPOINT_LIST:

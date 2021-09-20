@@ -1,25 +1,22 @@
 from flask import jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from silence.auth.tokens import create_token, check_token
+from silence.auth.tokens import create_token
 from silence.db import dal
 from silence.sql.builder import get_login_query, get_register_user_query
-from silence.sql.table_cols import get_table_cols
+from silence.sql.tables import get_table_cols
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
-from silence.server import manager as server_manager
+
 
 ###############################################################################
 # Defines the default endpoints provided by Silence,
 # mainly /login and /register
 ###############################################################################
 
-def show_api_endpoints():
-    return jsonify(server_manager.API_SUMMARY.get_endpoint_list()), 200
-
 def login():
-    USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD = get_login_settings()
+    USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD, ROLE_FIELD = get_login_settings()
     # Ensure that the user has sent the required fields
     form = request.json if request.is_json else request.form
     form = filter_fields_db(form, USERS_TABLE)
@@ -62,7 +59,7 @@ def login():
     return jsonify(res), 200
 
 def register():
-    USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD = get_login_settings()
+    USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD, ROLE_FIELD = get_login_settings()
     
     # Ensure that the user has sent the required fields
     form = request.json if request.is_json else request.form
@@ -87,6 +84,10 @@ def register():
     # Create the user object, replacing the password with the hashed one
     user = dict(form)
     user[PASSWORD_FIELD] = generate_password_hash(password)
+
+    # Assign a default role to the user, if specified in the settings
+    if settings.DEFAULT_ROLE_REGISTER:
+        user[ROLE_FIELD] = settings.DEFAULT_ROLE_REGISTER
 
     # Try to insert it in the DB
     # Since the /register endpoint must adapt to any possible table,
@@ -143,4 +144,9 @@ def get_login_settings():
     users_table = settings.USER_AUTH_DATA["table"]
     identifier_field = col_correct_case(settings.USER_AUTH_DATA["identifier"], users_table)
     password_field = col_correct_case(settings.USER_AUTH_DATA["password"], users_table)
-    return users_table, identifier_field, password_field
+    if "role" in settings.USER_AUTH_DATA:
+        role_field = col_correct_case(settings.USER_AUTH_DATA["role"], users_table)
+    else:
+        role_field = None
+
+    return users_table, identifier_field, password_field, role_field

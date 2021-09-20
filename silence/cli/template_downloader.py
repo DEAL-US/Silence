@@ -86,7 +86,7 @@ def download_from_github(project_name, repo_url):
 
     except FileNotFoundError:
         logger.warning("The downloaded project does not have a settings.py file " +
-         "at its root, it may not be a valid Silence project.")
+        "at its root, it may not be a valid Silence project.")
 
 def git_clone(host, username, repo_name, clone_dir):
     # Get the default branch (we've checked previously that the host is one of

@@ -34,7 +34,11 @@ USER_AUTH_DATA = {
     "table": "users",
     "identifier": "username",
     "password": "password",
+    "role": "role",
 }
+
+# Default role to assign the user when registering via /register
+DEFAULT_ROLE_REGISTER = None
 
 # Enables or disables the /login, /register and summary (/base) endpoints separately
 ENABLE_LOGIN = True
@@ -65,3 +69,6 @@ GITHUB_TEMPLATES_OWNER = "IISSI-US"
 
 # Enables or disables checking for new Silence updates when running 'silence run'
 CHECK_FOR_UPDATES = True
+
+# Enables the createapi command
+ENABLE_ENDPOINT_AUTO_GENERATION = True
