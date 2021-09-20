@@ -10,6 +10,7 @@ from silence.logging.default_logger import logger
 
 from shutil import rmtree
 
+from pprint import pformat
 
 # SILENCE CREATEAPI OPERATIONS
 
@@ -27,7 +28,7 @@ def create_api():
 ###############################################################################  
 def generate_API_file_for_endpoints(endpoints, name):
     curr_dir = getcwd()
-    api_path = curr_dir + "/docs/js/api"
+    api_path = curr_dir + "/web/js/api"
     
     if not path.isdir(api_path):
         makedirs(api_path)
@@ -209,18 +210,9 @@ def get_user_endpoints():
     # Load every .json file inside the endpoints/ or api/ folders
     curr_dir = getcwd()
     endpoints_dir = curr_dir + "/endpoints"
-    # endpoints_dir_old = curr_dir + "/api"
 
     if not path.isdir(endpoints_dir):
         mkdir(endpoints_dir)
-
-    # if path.isdir(endpoints_dir_old):
-    #     warnign_old_folder()
-    #     endpoints_dir = endpoints_dir_old
-
-    #     if path.isdir(endpoints_dir_new):
-    #         endpoints_dir = endpoints_dir_new
-    #         logger.warning("You appear to have both api/ and endpoints/ folders, the latter will be used.")
 
     endpoint_paths_json_user = [endpoints_dir + f"/{f}" for f in listdir(endpoints_dir) if f.endswith('.json')]
     endpoint_route_method_pairs = []
@@ -232,44 +224,14 @@ def get_user_endpoints():
 
             endpoint_pairs = [(endpoint['route'], endpoint['method']) for endpoint in endpoints]
             endpoint_route_method_pairs += endpoint_pairs
-           
-
-    # SUPPORT FOR .PY FILES:
-    # pyfiles = [endpoints_dir + f"/{f}" for f in listdir(endpoints_dir) if f.endswith('.py')]
-    # endpoint_pairs = []
-    # for pyfile in pyfiles:
-    #     with open(pyfile,"r") as f:
-    #         reader = f.read()
-
-    #         for ep in reader.split("@endpoint("):
-    #             params = ep.split(")")[0]
-    #             pair = ["",""]
-    #             has_route, has_method = False, False
-
-    #             for p in params.split((",")):
-    #                 if "route" in p:
-    #                     pair[0] = p.split("=")[1].replace("\"", "").strip()
-    #                     has_route = True
-                        
-    #                 elif "method" in p:
-    #                     pair[1] = p.split("=")[1].replace("\"", "").strip()
-    #                     has_method = True
-
-    #             if has_route and has_method: endpoint_pairs.append(tuple(pair))
-
-    # endpoint_route_method_pairs += endpoint_pairs
 
     return endpoint_route_method_pairs
 
 
 def dicts_to_file(dicts, name, auto_dir):
     if(dicts):
-        all_jsons = "{\n"
-        for d in list(dicts.items()):
-            all_jsons += "\""+str(d[0]) +"\":" +json.dumps(d[1], indent=2) + ",\n"
-        
-        all_jsons = all_jsons[:-2]
-        all_jsons += " \n}"
+        all_jsons = json.dumps(dicts, indent=4)
+
         with open(auto_dir+f"/{name}.json", "w") as endpoint:
             endpoint.write(all_jsons)
 
@@ -280,8 +242,8 @@ def generate_get_all(route,table):
     res["route"] = route
     res["method"] = "GET"
     res["sql"] = f"SELECT * FROM {name}"
-    # res["auth_required"] = False
-    # res["allowed_roles"] = ["*"]
+    res["auth_required"] = False
+    res["allowed_roles"] = ["*"]
     res["description"] = f"Gets all {name}"
     # res["request_body_params"] = []
 
@@ -293,8 +255,8 @@ def generate_get_by_id(route,table, pk):
     res["route"] = route
     res["method"] = "GET"
     res["sql"] = f"SELECT * FROM {name} WHERE {pk} = ${pk}"
-    # res["auth_required"] = False
-    # res["allowed_roles"] = ["*"]
+    res["auth_required"] = False
+    res["allowed_roles"] = ["*"]
     res["description"] = f"Gets a {name} with corresponding primary key"
     # res["request_body_params"] = []
     return res
@@ -308,7 +270,7 @@ def generate_create(route,table, pk):
     res["method"] = "POST"
     res["sql"] = f"INSERT INTO {name}" + params_to_string(param_list, "", is_create=True) + " VALUES " + params_to_string(param_list, "$", is_create=True)
     res["auth_required"] = True
-    # res["allowed_roles"] = ["*"]
+    res["allowed_roles"] = ["*"]
     res["description"] = f"creates a new {name}"
     res["request_body_params"] = param_list
     return res
@@ -322,7 +284,7 @@ def generate_update(route,table, pk):
     res["method"] = "PUT"
     res["sql"] = f"UPDATE {name} SET " + params_to_string(param_list, "", is_update=True) + f" WHERE {pk} = ${pk}"
     res["auth_required"] = True
-    # res["allowed_roles"] = ["*"]
+    res["allowed_roles"] = ["*"]
     res["description"] = f"updates an existing {name} with corresponding primary key"
     res["request_body_params"] = param_list
     return res
@@ -334,7 +296,7 @@ def generate_delete(route,table,pk):
     res["method"] = "DELETE"
     res["sql"] = f"DELETE FROM {name} WHERE {pk} = ${pk}"
     res["auth_required"] = True
-    # res["allowed_roles"] = ["*"]
+    res["allowed_roles"] = ["*"]
     res["description"] = f"deletes an existing {name} with corresponding primary key"
     # res["request_body_params"] = []
     return res

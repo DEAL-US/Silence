@@ -441,12 +441,18 @@ GET /api/departments?city=Sevilla
 ]
 ```
 
-Get all departments whose `city` is `Sevilla` AND their `name` is `Arte`:
+Get all departments whose `city` is `Cádiz` AND their `name` is `Arte`:
 ```json
 GET /api/departments?city=Sevilla&name=Arte
 
 (200 OK)
-[]
+[
+  {
+    "city": "C\u00e1diz",
+    "departmentId": 1,
+    "name": "Arte"
+  }
+]
 ```
 
 Get all departments ordered by decreasing departmentId:
@@ -490,9 +496,9 @@ GET /api/departments?_sort=departmentId&_order=desc&_limit=2&_page=1
 These parameters can be combined in any way and work for all GET endpoints.
 
 ## Static web server
-Silence also serves as a web server for static files (unless explicitly disabled via the `RUN_WEB` setting). The `docs/` folder inside your project is the web root, and thus you can place your web application there to be deployed by Silence.
+Silence also serves as a web server for static files (unless explicitly disabled via the `RUN_WEB` setting). The `web/` folder inside your project is the web root, and thus you can place your web application there to be deployed by Silence.
 
-The web server has no prefix. Accessing `http://<address>/` will hit the `index.html` file located in the root of the `docs/` folder. Any subfolders will work as expected, with the only exception of a route that creates a conflict with the API prefix (for example, if your API prefix is `/api`, do not create an `api/` folder directly in the root of `docs/`).
+The web server has no prefix. Accessing `http://<address>/` will hit the `index.html` file located in the root of the `web/` folder. Any subfolders will work as expected, with the only exception of a route that creates a conflict with the API prefix (for example, if your API prefix is `/api`, do not create an `api/` folder directly in the root of `web/`).
 
 ## Endpoint and api files auto generation
 Silence also offers a tool to generate basic CRUD operations for all entities that have been declared in the .sql files.

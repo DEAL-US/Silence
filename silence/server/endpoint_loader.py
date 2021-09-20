@@ -23,18 +23,9 @@ def load_user_endpoints():
     # Load every .json file inside the endpoints/ or api/ folders
     curr_dir = getcwd()
     endpoints_dir = curr_dir + "/endpoints"
-    # endpoints_dir_old = curr_dir + "/api"
 
     if not path.isdir(endpoints_dir):
         mkdir(endpoints_dir)
-
-    # if path.isdir(endpoints_dir_old):
-    #     warnign_old_folder()
-    #     endpoints_dir = endpoints_dir_old
-
-    #     if path.isdir(endpoints_dir_new):
-    #         endpoints_dir = endpoints_dir_new
-    #         logger.warning("You appear to have both api/ and endpoints/ folders, the latter will be used.")
     
     auto_dir = endpoints_dir + "/default"
 
@@ -57,20 +48,6 @@ def load_user_endpoints():
                 kwargs = {k: v for k, v in kwargs_nones.items() if v is not None}
 
                 server_endpoint.setup_endpoint(endpoint['route'], endpoint['method'], endpoint['sql'], **kwargs)
-                
-
-    # SUPPORT FOR .PY FILES:
-    # pyfiles = [f for f in listdir(endpoints_dir) if f.endswith('.py')]
-    # mod_aux = endpoints_dir.split("/")
-    # folder = mod_aux[len(mod_aux)-1].strip()
-    # for pyfile in pyfiles:
-    #     module_name = folder + "." + splitext(pyfile)[0]
-    #     logger.debug(f"Found endpoint file: {module_name}")
-    #     try:
-    #         importlib.import_module(module_name)
-    #     except ImportError:
-    #         raise RuntimeError(f"Could not load the API file {module_name}")
-
 
 ###############################################################################
 # Register the Silence-provided endpoints

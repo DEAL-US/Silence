@@ -22,7 +22,7 @@ import logging
 # configuring it and deploying the endpoints and web app.
 ###############################################################################
 
-static_folder = join(getcwd(), "docs") if settings.RUN_WEB else None
+static_folder = join(getcwd(), "web") if settings.RUN_WEB else None
 APP = Flask(__name__, static_folder=static_folder)
 cors = CORS(APP, resources={f"{settings.API_PREFIX}*": {"origins": "*"}})
 API_SUMMARY = APISummary()
