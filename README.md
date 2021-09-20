@@ -1,5 +1,8 @@
 <p align="center"><img width="100%" src="img/logo.svg" alt="Silence logo"></p>
-<p align="center"><a href="https://github.com/IISSI-US/Silence/actions/workflows/ci_test.yml"><img src="https://github.com/IISSI-US/Silence/actions/workflows/ci_test.yml/badge.svg"></a> <a href="https://pypi.org/project/Silence/"><img src="https://pypip.in/v/silence/badge.png"></a></p>
+<p align="center">
+<a href="https://github.com/IISSI-US/Silence/actions/workflows/ci_test.yml"><img src="https://github.com/IISSI-US/Silence/actions/workflows/ci_test.yml/badge.svg"></a> 
+<a href="https://pypi.org/project/Silence/"><img src="https://pypip.in/v/silence/badge.png"></a>
+<a href="https://pepy.tech/project/silence"><img src="https://static.pepy.tech/personalized-badge/silence?period=total&units=international_system&left_color=grey&right_color=yellow&left_text=Downloads"></a></p>
 
 <hr>
 
