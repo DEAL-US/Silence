@@ -1,3 +1,6 @@
+# 2.0.0-dev
+- ...
+
 # 2.0.0
 - **IMPORTANT:** Silence v2 is not compatible with projects generated using Silence v1.
 - Added fine-grained endpoint access by role:
