@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 import click
@@ -13,7 +13,6 @@ from silence.server.api_summary import APISummary
 
 from os.path import join
 from os import getcwd
-import traceback
 import mimetypes
 import logging
 

@@ -10,11 +10,10 @@ from silence.auth.tokens import check_token
 from silence.logging.default_logger import logger
 from silence.sql.converter import silence_to_mysql
 from silence.server import manager as server_manager
-from silence.exceptions import EndpointError, HTTPError, TokenError
+from silence.exceptions import HTTPError, TokenError
 
 import re
 import sys
-import inspect
 
 OP_VERBS = {
     SQL.SELECT: 'get',

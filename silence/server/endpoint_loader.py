@@ -1,8 +1,7 @@
-import importlib
 import json
 
 from os import listdir, getcwd, path, mkdir
-from os.path import splitext
+from flask import jsonify
 
 from silence.server import manager as server_manager
 from silence.server import endpoint as server_endpoint
