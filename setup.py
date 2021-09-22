@@ -14,15 +14,15 @@ with open(ver_path, "r") as f:
     version = re.compile(r""".*__version__ = ["'](.*?)['"]""", re.S).match(f.read()).group(1)
 
 setup(
-    name='Silence',
+    name="Silence",
     version=version,
-    description='An educational API+Web framework.',
+    description="An educational API+Web framework.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='http://github.com/IISSI-US/Silence',
-    author='Agustín Borrego',
-    author_email='borrego@us.es',
-    license='MIT',
+    url="http://github.com/IISSI-US/Silence",
+    author="Agustín Borrego",
+    author_email="borrego@us.es",
+    license="MIT",
     packages=find_packages(),
     entry_points={
         "console_scripts": [
@@ -30,15 +30,16 @@ setup(
         ],
     },
     install_requires=[
-        'Flask==1.1.2',
-        'Flask-Cors==3.0.8',
-        'pypika==0.37.7',
-        'PyMySQL~=0.9.3',
-        'Werkzeug~=1.0.1',
-        'itsdangerous~=1.1.0',
-        'colorama~=0.4.3',
-        'requests~=2.24.0',
+        "colorama~=0.4.3",
+        "cryptography~=3.4.6",
+        "Flask-Cors==3.0.9",
+        "Flask==1.1.2",
+        "itsdangerous~=1.1.0",
+        "PyMySQL~=0.9.3",
+        "pypika==0.37.7",
+        "requests~=2.24.0",
+        "Werkzeug~=1.0.1",
     ],
-    python_requires='~=3.6',
+    python_requires="~=3.6",
     zip_safe=False
 )

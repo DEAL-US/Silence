@@ -1,3 +1,31 @@
+# 2.0.0-dev
+- ...
+
+# 2.0.0
+- **IMPORTANT:** Silence v2 is not compatible with projects generated using Silence v1.
+- Added fine-grained endpoint access by role:
+    - Added a new optional `role` key to specify the role column in `USER_AUTH_DATA`.
+    - Added a new `DEFAULT_ROLE_REGISTER` setting to specify the role that should be assigned to new users when using the `/register` endpoint.
+    - Added a new `allowed_roles` parameters for the `@endpoint` decorator, which receives a list of the roles that can access the endpoint. There is a special value, `*`, which allows all roles to use the endpoint.
+- Added a new way of creating endpoints as JSON files
+- Added a new `createapi` command to auto generate the .json endpoint files and .js api consumption files automatically based on the database tables and already defined endpoints by the user. This feature can be toggled through `ENABLE_ENDPOINT_AUTO_GENERATION` in the `settings.py` file.
+
+# 1.2.4
+- Changed the serialization of datetime objects to follow ISO 8601.
+- Bumped Flask-CORS to 3.0.9.
+- Migrated the CI testing from Travis to GitHub Actions.
+
+# 1.2.3
+- Set the MIME type of `.js` files to `application/javascript` manually, to prevent the wrong type from being dispatched due to bad configurations of the Windows registry.
+
+# 1.2.2
+- Added a new `HTTP_CACHE_TIME` setting to control caching of static web files. Defaults to 0 for easier development, which means that all static files (HTML, JS, CSS...) are not cached by web browsers.
+- The list of all loaded endpoints is now displayed when using `silence new`. Added a new `SHOW_ENDPOINT_LIST` setting to disable this behavior.
+- The `SECRET_KEY` is now changed in-place when creating a project from a repo URL if it already exists, instead of always adding it in a new line with the info comments.
+
+# 1.2.1
+- Added `cryptography` to dependencies for compatibility with MySQL.
+
 # 1.2.0
 - Improvements to `silence new`:
     - It now requires a project name, i.e., you cannot use `silence new` without at least one argument.

@@ -14,11 +14,11 @@ def handle(args):
     project_name = args["name"]
 
     if template:
-        repo_url = f"https://github.com/{settings.GITHUB_TEMPLATES_OWNER}/silence-template-{template}"
+        repo_url = f"https://github.com/{settings.GITHUB_TEMPLATES_OWNER}/silence-template-v2-{template}"
     else:
         # We have to download a repo from a URL
         repo_url = args["url"]
 
     download_from_github(project_name, repo_url)
-    extra_text = f"using the template '{template}'" if template else "from the provided URL"
+    extra_text = f"using the template '{template}'" if template else "from the provided repo"
     print(f'The Silence project "{project_name}" has been created {extra_text}.')
