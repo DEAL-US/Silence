@@ -47,7 +47,7 @@ def load_user_endpoints():
 
                 kwargs = {k: v for k, v in kwargs_nones.items() if v is not None}
 
-                server_endpoint.setup_endpoint(endpoint['route'], endpoint['method'], endpoint['sql'], **kwargs, logged_user=("$loggedId" in endpoint['sql']))
+                server_endpoint.setup_endpoint(endpoint['route'], endpoint['method'], endpoint['sql'], **kwargs)
 
 ###############################################################################
 # Register the Silence-provided endpoints

@@ -9,6 +9,7 @@ from silence.utils.min_type import Min
 from silence.auth.tokens import check_token
 from silence.logging.default_logger import logger
 from silence.sql.converter import silence_to_mysql
+from silence.sql.tables import get_primary_key
 from silence.server import manager as server_manager
 from silence.exceptions import HTTPError, TokenError
 
@@ -28,9 +29,12 @@ RE_QUERY_PARAM = re.compile(r"^.*\$\w+/?$")
 # This is where the fun at v2
 ###############################################################################
 
-def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"], description=None, request_body_params = [], logged_user = False):
+def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"], description=None, request_body_params = []):
     logger.debug(f"Setting up endpoint {method} {route}")
     
+    # if the query is requesting the logged user.
+    logged_user= "$loggedId" in sql
+
     # Construct the API route taking the prefix into account
     route_prefix = settings.API_PREFIX
     if route_prefix.endswith("/"):
@@ -137,11 +141,10 @@ def check_session(allowed_roles):
 
     try:
         user_data = check_token(token)
-        u_data = settings.USER_AUTH_DATA['table'][:-1]
-        u_data = u_data[0].lower()+u_data[1:]
-        key = f"{u_data}Id"
-        logger.debug(f"logged userId = {user_data[key]}")
-        return user_data[key]
+        u_data = settings.USER_AUTH_DATA['table'].lower()
+        primary = get_primary_key(u_data)
+        res = user_data[primary]
+        return res
     except TokenError as exc:
         raise HTTPError(401, str(exc))
 
