@@ -9,6 +9,7 @@ from silence.utils.min_type import Min
 from silence.auth.tokens import check_token
 from silence.logging.default_logger import logger
 from silence.sql.converter import silence_to_mysql
+from silence.sql.tables import get_primary_key
 from silence.server import manager as server_manager
 from silence.exceptions import HTTPError, TokenError
 
@@ -31,6 +32,9 @@ RE_QUERY_PARAM = re.compile(r"^.*\$\w+/?$")
 def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"], description=None, request_body_params = []):
     logger.debug(f"Setting up endpoint {method} {route}")
     
+    # if the query is requesting the logged user.
+    logged_user= "$loggedId" in sql
+
     # Construct the API route taking the prefix into account
     route_prefix = settings.API_PREFIX
     if route_prefix.endswith("/"):
@@ -58,7 +62,6 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
 
     # If it's a SELECT or a DELETE, make sure that all SQL params can be
     # obtained from the url AND the request body
-    # TODO: needs some way to get request body params as decorated functions are no more.
     if sql_op in (SQL.INSERT, SQL.UPDATE):
         check_params_match(sql_params, url_params + request_body_params, route)
 
@@ -67,10 +70,19 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
         # If this endpoint requires authentication, check that the
         # user has provided a session token and that it is valid
         if auth_required:
-            check_session(allowed_roles)
-
+            userId = check_session(allowed_roles)
+        
         # Collect all url pattern params
         request_url_params_dict = kwargs
+
+        # If endpoint requires the logged userId it adds the pair (loggedId, loggedUserId)
+        if logged_user:
+            if not auth_required:
+                userId = check_session(allowed_roles)
+            if userId!=None:
+                request_url_params_dict["loggedId"] = userId
+        else:
+                request_url_params_dict["loggedId"] = None
 
         # Convert the silence-style placeholders in the SQL query to proper MySQL placeholders
         query_string = silence_to_mysql(sql)
@@ -104,6 +116,11 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
             for param in url_params:
                 body_params[param] = request_url_params_dict[param]
 
+            if logged_user and auth_required:
+                body_params["author"] = userId
+            param_tuple = tuple(body_params[param] for param in sql_params)
+
+
             param_tuple = tuple(body_params[param] for param in sql_params)
 
             # Run the execute query
@@ -124,6 +141,10 @@ def check_session(allowed_roles):
 
     try:
         user_data = check_token(token)
+        u_data = settings.USER_AUTH_DATA['table'].lower()
+        primary = get_primary_key(u_data)
+        res = user_data[primary]
+        return res
     except TokenError as exc:
         raise HTTPError(401, str(exc))
 
@@ -231,6 +252,8 @@ def check_params_match(sql_params, user_params, route):
     sql_params_set = set(sql_params)
     user_params_set = set(user_params)
     diff = sql_params_set.difference(user_params_set)
+    if("loggedId" in diff):
+        diff.remove("loggedId")
 
     if diff:
         params_str = ", ".join(f"${param}" for param in diff)
