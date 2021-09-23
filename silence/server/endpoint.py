@@ -141,7 +141,7 @@ def check_session(allowed_roles):
 
     try:
         user_data = check_token(token)
-        u_data = settings.USER_AUTH_DATA['table'].lower()
+        u_data = settings.USER_AUTH_DATA['table']
         primary = get_primary_key(u_data)
         res = user_data[primary]
         return res
