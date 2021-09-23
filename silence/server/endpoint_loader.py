@@ -17,7 +17,6 @@ from silence.logging.default_logger import logger
 # and generate the endpoints for them.
 ###############################################################################
 def load_user_endpoints():
-    logger.warning("THIS IS A FORK OF THE PROJECT, NOT THE CURRENT SILENCE VERSION PLEASE DO NOT USE.")
     logger.debug("Looking for custom endpoints...")
 
     # Load every .json file inside the endpoints/ or api/ folders
