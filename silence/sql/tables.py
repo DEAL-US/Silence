@@ -21,10 +21,10 @@ def get_views():
 
     logger.debug(f"views in database: {views}")
     return views
-    
+
 def get_primary_key(table_name):
-    res = query(q = f"SHOW KEYS FROM {table_name} WHERE Key_name = 'PRIMARY'")
-    return res
+    primary = query(f"SHOW KEYS FROM {table_name} WHERE Key_name = 'PRIMARY'")
+    return primary[0]['Column_name']
 
 
 global TABLE_COLUMNS
@@ -42,6 +42,3 @@ def get_table_cols(table_name):
     
     return TABLE_COLUMNS[table_name]
 
-def get_primary_key(table_name):
-    primary = query(f"SHOW KEYS FROM {table_name} WHERE Key_name = 'PRIMARY'")
-    return primary[0]['Column_name']

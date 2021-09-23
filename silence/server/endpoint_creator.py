@@ -120,7 +120,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
     tables = get_tables()
     
     for table in list(tables.items()):
-        pk = get_primary_key(table[0])[0]['Column_name']
+        pk = get_primary_key(table[0])
         endpoints = {}
         table[1].remove(pk)
 
