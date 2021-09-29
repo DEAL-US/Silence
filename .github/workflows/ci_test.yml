@@ -1,4 +1,4 @@
-name: Silence-test
+name: CI tests
 
 on: [push]
 
@@ -7,7 +7,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: '>= 3.6'
     runs-on: ubuntu-latest
 
     services:
@@ -41,4 +41,4 @@ jobs:
           silence run &
           sleep 15
           cd test
-          python test_endpoints.py
+          python run_tests.py
