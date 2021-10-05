@@ -26,7 +26,7 @@ def load_user_endpoints():
     if not path.isdir(endpoints_dir):
         mkdir(endpoints_dir)
     
-    auto_dir = endpoints_dir + "/default"
+    auto_dir = endpoints_dir + "/auto"
 
     endpoint_paths_json_user = [endpoints_dir + f"/{f}" for f in listdir(endpoints_dir) if f.endswith('.json')]
 

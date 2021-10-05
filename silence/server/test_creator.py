@@ -16,7 +16,7 @@ def create_tests():
 
     # Folder handling
     curr_dir = getcwd()
-    test_dir = curr_dir + "/tests/default"
+    test_dir = curr_dir + "/tests/auto"
 
     logger.debug(f"Selected test directory -->  {test_dir}")
     try:
@@ -51,6 +51,7 @@ def create_tests():
 ### THIS IS AN AUTO-GENERATED TEST SUITE, IT NEEDS TO BE COMPLETED WITH VALID DATA
 ### THESE ARE NOT ALL YOU NEED, MORE OF THEM MUST BE CREATED TO EVALUATE THE FUNCTIONAL
 ### REQUIREMENTS OF THE PROJECT AT HAND, THESE TEST ONLY TEST THE CRUD PORTION OF THE ENTITY.
+### Silence is a DEAL research team project, more info about us in https://deal.us.es
 @BASE = http://127.0.0.1:8080{settings.API_PREFIX}
 
 ### Auxiliary query
