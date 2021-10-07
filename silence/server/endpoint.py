@@ -33,7 +33,9 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
     logger.debug(f"Setting up endpoint {method} {route}")
     
     # if the query is requesting the logged user.
-    logged_user= "$loggedId" in sql
+    logged_user = "$loggedId" in sql
+    if(logged_user and not auth_required):
+        logger.warning("You're using $loggedId but are not requesting authorization, in endpoint: " + str(route))
 
     # Construct the API route taking the prefix into account
     route_prefix = settings.API_PREFIX

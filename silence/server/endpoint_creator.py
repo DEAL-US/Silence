@@ -165,7 +165,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
     for view in list(views.items()):
         endpoints = {}
         ep_tuples = []
-        name = view[0]
+        name = view[0].lower()
         logger.info(f"Generating endpoints for {name}")
 
         get_all_route = f"/{name}"
