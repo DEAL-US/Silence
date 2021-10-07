@@ -175,7 +175,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
             ep_tuples.append(endpoint)
 
         generate_API_file_for_endpoints(ep_tuples, name)
-        dicts_to_file(endpoints, view[0], auto_dir)
+        dicts_to_file(endpoints, name, auto_dir)
 
 
 def get_user_endpoints():
