@@ -119,7 +119,7 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
                 body_params[param] = request_url_params_dict[param]
 
             if logged_user and auth_required:
-                body_params["author"] = userId
+                body_params["loggedId"] = userId
             param_tuple = tuple(body_params[param] for param in sql_params)
 
 
@@ -146,18 +146,22 @@ def check_session(allowed_roles):
         u_data = settings.USER_AUTH_DATA['table']
         primary = get_primary_key(u_data)
         res = user_data[primary]
+
+        # Check if the user's role is allowed to access this endpoint
+        role_col_name = settings.USER_AUTH_DATA.get("role", None)
+        
+        if role_col_name: # Only check the role if we know the role column
+            # Find the role of the user from the user data
+            user_role = next((v for k, v in user_data.items() if k.lower() == role_col_name.lower()), None)
+
+            if user_role not in allowed_roles and "*" not in allowed_roles:
+                raise HTTPError(401, "Unauthorized")
+
         return res
     except TokenError as exc:
         raise HTTPError(401, str(exc))
 
-    # Check if the user's role is allowed to access this endpoint
-    role_col_name = settings.USER_AUTH_DATA.get("role", None)
-    if role_col_name:
-        # Only check the role if we know the role column
-        # Find the role of the user from the user data
-        user_role = next((v for k, v in user_data.items() if k.lower() == role_col_name.lower()), None)
-        if user_role not in allowed_roles and "*" not in allowed_roles:
-            raise HTTPError(401, "Unauthorized")
+    
 
 ###############################################################################
 # Aux stuff for the handler function
