@@ -154,6 +154,8 @@ def check_session(allowed_roles):
             # Find the role of the user from the user data
             user_role = next((v for k, v in user_data.items() if k.lower() == role_col_name.lower()), None)
 
+            print(f"allowed roles are {allowed_roles} and the user role is {user_role}")
+
             if user_role not in allowed_roles and "*" not in allowed_roles:
                 raise HTTPError(401, "Unauthorized")
 
