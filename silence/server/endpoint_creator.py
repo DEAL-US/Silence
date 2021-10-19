@@ -9,7 +9,7 @@ from shutil import rmtree
 # Entry point for CLI command
 def create_api():
     existing_routes_method_pairs = get_user_endpoints()
-    logger.info("found the following user defined endpoints:\n")
+    logger.info("Found the following user defined endpoints:")
     for rmp in existing_routes_method_pairs:
         logger.info(rmp)
 
