@@ -30,6 +30,7 @@ Silence has been built by the [**DEAL research group**](https://deal.us.es/) as 
   * [Restricting endpoints to logged users](#restricting-endpoints-to-logged-users)
   * [Restricting endpoints to certain user roles](#restricting-endpoints-to-certain-user-roles)
   * [URL query parameters in GET requests](#url-query-parameters-in-get-requests)
+  * [Banning or deactivating users](#banning-or-deactivating-users)
 - [Static web server](#static-web-server)
 - [Changelog](#changelog)
 - [Contributions](#contributions)
@@ -62,6 +63,7 @@ Access logs, debug messages (if allowed) and uncontained exceptions will be logg
 
 # Configuring your project
 The project settings can be found in `settings.py`. The available configuration parameters are:
+- `SECRET_KEY` Random string used for signing session tokens and Flask security. Generated automatically upon project creation when using `silence new`. **No default is provided** and not setting one will result in an error.
 - `DEBUG_ENABLED` Controls whether debug messages and Flask's debug mode are active (bool, default: `False`)
 - `LISTEN_ADDRESS` IP address in which the web server will listen to requests (str, default: `"127.0.0.1"`)
 - `HTTP_PORT` Port in which the web server will listen to requests (int, default: `8080`)
@@ -86,12 +88,13 @@ The project settings can be found in `settings.py`. The available configuration 
     - `identifier` Column of this table containing the unique identifiers used for login (str, default: `username`)
     - `password` Column of this table containing the hashed passwords (str, default: `password`)
     - `role` Column of this table containing the role of the user (**optional**, str, default: `role`)
+    - `active_status` Column of this table containing a boolean value, representing if the user is allowed to log in or not (**optional**, no default).
 - `DEFAULT_ROLE_REGISTER` Role to assign to the users that register via the `/register` endpoint (str, default: `None`)
-- `SECRET_KEY` Random string used for signing session tokens and Flask security. Generated automatically upon project creation when using `silence new`. **No default is provided** and not setting one will result in an error.
 - `HTTP_CACHE_TIME` Sets the `max-age` value in the `Cache-Control` HTTP header for static files sent by the server. In practice, this controls for how long these files are cached by the web browser. (int, default: `0` for development purposes)
 - `MAX_TOKEN_AGE` Time in seconds during which a session token is valid after it has been issued (int, default: `86400`)
+- `CHECK_USER_IS_ACTIVE` Whether to check if a user is active when logging in (bool, default: `True`). Note that this only works if `USER_AUTH_DATA.active_status` is also set to the name of the corresponding column.
 - `CHECK_FOR_UPDATES` Whether to check for new Silence versions when using `silence run` (bool, default: `True`)
-- `ENABLE_ENDPOINT_AUTO_GENERATION` Allows for the use of the `silence createapi` (bool, default:`True`)
+- `ENABLE_ENDPOINT_AUTO_GENERATION` Allows for the use of the `silence createapi` command (bool, default:`True`)
 
 # Creating the database
 Silence provides the `silence createdb` command to automatically execute any number of SQL scripts to create your database and/or set it to a controlled initial state. 
@@ -558,6 +561,24 @@ GET /api/departments?_sort=departmentId&_order=desc&_limit=2&_page=1
 ```
 
 These parameters can be combined in any way and work for all GET endpoints.
+
+## Banning or deactivating users
+If you wish to ban users from logging in while still retaining their information in your database, you can add an aditional column in your users table with a boolean attribute denoting whether they are active/allowed to log in or not.
+
+You can specify the name of this column in the settings of your project, under the `active_status` attribute of the `USER_AUTH_DATA` parameter. For example, if the column's name is `isActive`, a possible configuration would be:
+
+```py
+USER_AUTH_DATA = {
+    "table": "Employees",
+    "identifier": "email",
+    "password": "password",
+    "active_status": "isActive",
+}
+```
+
+Once this column has specified, Silence will only allow users who are active to log in.
+
+This behavior can also be turned off using the `CHECK_USER_IS_ACTIVE` configuration parameter.
 
 # Static web server
 Silence also serves as a web server for static files (unless explicitly disabled via the `RUN_WEB` setting). The `web/` folder inside your project is the web root, and thus you can place your web application there to be deployed by Silence.
