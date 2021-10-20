@@ -79,7 +79,6 @@ def setup():
     # Load the user-provided API endpoints and the default ones
     if settings.RUN_API:
         load_default_endpoints()
-        # create_entity_endpoints()
         load_user_endpoints()
 
         if settings.SHOW_ENDPOINT_LIST:
