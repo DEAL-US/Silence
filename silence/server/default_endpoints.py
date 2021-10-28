@@ -16,7 +16,7 @@ from silence.logging.default_logger import logger
 ###############################################################################
 
 def login():
-    USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD, ROLE_FIELD = get_login_settings()
+    USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD, ROLE_FIELD, ACTIVE_FIELD = get_login_settings()
     # Ensure that the user has sent the required fields
     form = request.json if request.is_json else request.form
     form = filter_fields_db(form, USERS_TABLE)
@@ -50,6 +50,13 @@ def login():
         logger.debug(f"Incorrect password")
         raise HTTPError(400, "The password is not correct")
 
+    # If a column has been specified for the "is active" field, and the check
+    # is enabled in the settings, check that the user has not been deactivated
+    if ACTIVE_FIELD is not None and settings.CHECK_USER_IS_ACTIVE:
+        if not user[ACTIVE_FIELD]:
+            logger.debug("The user is deactivated, login denied")
+            raise HTTPError(401, "This user has been deactivated")
+
     # If we've reached here the login is successful, generate a session token
     # and return it with the logged user's info
     logger.debug("Login OK")
@@ -59,7 +66,7 @@ def login():
     return jsonify(res), 200
 
 def register():
-    USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD, ROLE_FIELD = get_login_settings()
+    USERS_TABLE, IDENTIFIER_FIELD, PASSWORD_FIELD, ROLE_FIELD, ACTIVE_FIELD = get_login_settings()
     
     # Ensure that the user has sent the required fields
     form = request.json if request.is_json else request.form
@@ -88,6 +95,11 @@ def register():
     # Assign a default role to the user, if specified in the settings
     if settings.DEFAULT_ROLE_REGISTER:
         user[ROLE_FIELD] = settings.DEFAULT_ROLE_REGISTER
+
+    # Assign a default active status, if the activity check is on and none has
+    # been provided
+    if ACTIVE_FIELD and ACTIVE_FIELD not in user:
+        user[ACTIVE_FIELD] = settings.DEFAULT_ACTIVE_STATUS
 
     # Try to insert it in the DB
     # Since the /register endpoint must adapt to any possible table,
@@ -144,9 +156,15 @@ def get_login_settings():
     users_table = settings.USER_AUTH_DATA["table"]
     identifier_field = col_correct_case(settings.USER_AUTH_DATA["identifier"], users_table)
     password_field = col_correct_case(settings.USER_AUTH_DATA["password"], users_table)
+
     if "role" in settings.USER_AUTH_DATA:
         role_field = col_correct_case(settings.USER_AUTH_DATA["role"], users_table)
     else:
         role_field = None
 
-    return users_table, identifier_field, password_field, role_field
+    if "active_status" in settings.USER_AUTH_DATA:
+        active_field = col_correct_case(settings.USER_AUTH_DATA["active_status"], users_table)
+    else:
+        active_field = None
+
+    return users_table, identifier_field, password_field, role_field, active_field

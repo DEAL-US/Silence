@@ -2,8 +2,10 @@ from silence.db.dal import query
 
 from silence.logging.default_logger import logger
 
-# Returns the list of names for the columns of a table, storing it
-# after the first query for a given table
+# Caches the columns of a table, to avoid repetitive queries
+global TABLE_COLUMNS
+TABLE_COLUMNS = {}
+
 def get_tables():
     res = query(q = "SHOW FULL TABLES WHERE table_type = 'BASE TABLE';")
     tables = {}
@@ -21,14 +23,12 @@ def get_views():
 
     logger.debug(f"views in database: {views}")
     return views
-    
+
 def get_primary_key(table_name):
-    res = query(q = f"SHOW KEYS FROM {table_name} WHERE Key_name = 'PRIMARY'")
-    return res
-
-
-global TABLE_COLUMNS
-TABLE_COLUMNS = {}
+    tables = get_tables()
+    t_pure = next(t for t in get_tables() if t.lower() == table_name.lower())
+    primary = query(f"SHOW KEYS FROM {t_pure} WHERE Key_name = 'PRIMARY'")
+    return primary[0]['Column_name']
 
 # Returns the list of names for the columns of a table, storing it
 # after the first query for a given table
@@ -41,3 +41,4 @@ def get_table_cols(table_name):
         TABLE_COLUMNS[table_name] = col_names
     
     return TABLE_COLUMNS[table_name]
+

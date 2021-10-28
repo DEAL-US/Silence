@@ -63,6 +63,13 @@ HTTP_CACHE_TIME = 0
 # Maximum validity time of a session token in seconds
 MAX_TOKEN_AGE = 86400
 
+# Can disable the activity check, even if an active status column has been provided
+CHECK_USER_IS_ACTIVE = True
+
+# Default value for the "active" column for users, if the activity check is enabled
+# and no default has been provided
+DEFAULT_ACTIVE_STATUS = True
+
 # Default settings for creating a new project
 DEFAULT_TEMPLATE_NAME = "employees"
 GITHUB_TEMPLATES_OWNER = "IISSI-US"

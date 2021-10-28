@@ -19,7 +19,7 @@ setup(
     description="An educational API+Web framework.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="http://github.com/IISSI-US/Silence",
+    url="http://github.com/DEAL-US/Silence",
     author="Agustín Borrego",
     author_email="borrego@us.es",
     license="MIT",

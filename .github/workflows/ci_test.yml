@@ -1,4 +1,4 @@
-name: Silence-test
+name: CI tests
 
 on: [push]
 
@@ -34,11 +34,11 @@ jobs:
           pip install .
       - name: Test Silence
         run: |
-          silence new ci_app --url https://github.com/IISSI-US/Silence-CI-Project
+          silence new ci_app --url https://github.com/DEAL-US/Silence-CI-Project
           cd ci_app
           silence createdb
           silence createapi
           silence run &
           sleep 15
           cd test
-          python test_endpoints.py
+          python run_tests.py
