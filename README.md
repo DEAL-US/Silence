@@ -29,6 +29,7 @@ Silence has been built by the [**DEAL research group**](https://deal.us.es/) as 
   * [/login endpoint](#-login-endpoint)
   * [Restricting endpoints to logged users](#restricting-endpoints-to-logged-users)
   * [Restricting endpoints to certain user roles](#restricting-endpoints-to-certain-user-roles)
+  * [Using the ID of the currently logged in user](#using-the-id-of-the-currently-logged-in-user)
   * [URL query parameters in GET requests](#url-query-parameters-in-get-requests)
   * [Banning or deactivating users](#banning-or-deactivating-users)
 - [Static web server](#static-web-server)
@@ -483,6 +484,20 @@ Then, you can add an aditional `allowed_roles` parameter to you endpoint, whose 
 Note that **you must use a list even if you want to restrict it to a single role**. If you do not specify a list of allowed roles, a default value of `["*"]` is assumed, meaning that all logged users can access the endpoint.
 
 Just like in the previous example, to use a restricted endpoint, the user must provide their access token as a request header.
+
+## Using the ID of the currently logged in user
+There exists a special parameter, `$loggedId`, that can be used in any SQL query. When the query is executed, this parameter is replaced by the value of the primary key of the user that has accessed the endpoint. This information is obtained from the session token provided by the user, if no token is sent, then `$loggedId` is `NULL`.
+
+For example, an endpoint that returns the user data of the logged in user can be defined as:
+
+```json
+"loggedId": {
+      "route": "/employees/profile",
+      "method": "GET",
+      "sql": "SELECT * FROM Employees WHERE employeeId = $loggedId",
+      "auth_required": true
+  }
+```
 
 ## URL query parameters in GET requests
 Silence provides all user-defined GET endpoints with automatic filtering, paging and ordering via URL query params:
