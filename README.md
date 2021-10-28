@@ -93,6 +93,7 @@ The project settings can be found in `settings.py`. The available configuration 
 - `HTTP_CACHE_TIME` Sets the `max-age` value in the `Cache-Control` HTTP header for static files sent by the server. In practice, this controls for how long these files are cached by the web browser. (int, default: `0` for development purposes)
 - `MAX_TOKEN_AGE` Time in seconds during which a session token is valid after it has been issued (int, default: `86400`)
 - `CHECK_USER_IS_ACTIVE` Whether to check if a user is active when logging in (bool, default: `True`). Note that this only works if `USER_AUTH_DATA.active_status` is also set to the name of the corresponding column.
+- `DEFAULT_ACTIVE_STATUS` Default value for the column that determines whether a user is active. Used when registering new users, only applies when the activity check is on and no value has been provided during register (bool, default: `True`)
 - `CHECK_FOR_UPDATES` Whether to check for new Silence versions when using `silence run` (bool, default: `True`)
 - `ENABLE_ENDPOINT_AUTO_GENERATION` Allows for the use of the `silence createapi` command (bool, default:`True`)
 

@@ -96,6 +96,11 @@ def register():
     if settings.DEFAULT_ROLE_REGISTER:
         user[ROLE_FIELD] = settings.DEFAULT_ROLE_REGISTER
 
+    # Assign a default active status, if the activity check is on and none has
+    # been provided
+    if ACTIVE_FIELD and ACTIVE_FIELD not in user:
+        user[ACTIVE_FIELD] = settings.DEFAULT_ACTIVE_STATUS
+
     # Try to insert it in the DB
     # Since the /register endpoint must adapt to any possible table,
     # we assume that the user knows what they're doing and submits the
