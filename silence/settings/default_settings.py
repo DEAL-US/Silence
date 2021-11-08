@@ -37,6 +37,9 @@ USER_AUTH_DATA = {
     "role": "role",
 }
 
+# Allow clear text passwords to be used for login for convenience
+ALLOW_CLEAR_PASSWORDS = False
+
 # Default role to assign the user when registering via /register
 DEFAULT_ROLE_REGISTER = None
 

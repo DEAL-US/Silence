@@ -90,6 +90,7 @@ The project settings can be found in `settings.py`. The available configuration 
     - `password` Column of this table containing the hashed passwords (str, default: `password`)
     - `role` Column of this table containing the role of the user (**optional**, str, default: `role`)
     - `active_status` Column of this table containing a boolean value, representing if the user is allowed to log in or not (**optional**, no default).
+- `ALLOW_CLEAR_PASSWORDS` Allows clear text passwords stored in the users table to be used for login (bool, default: `False`)
 - `DEFAULT_ROLE_REGISTER` Role to assign to the users that register via the `/register` endpoint (str, default: `None`)
 - `HTTP_CACHE_TIME` Sets the `max-age` value in the `Cache-Control` HTTP header for static files sent by the server. In practice, this controls for how long these files are cached by the web browser. (int, default: `0` for development purposes)
 - `MAX_TOKEN_AGE` Time in seconds during which a session token is valid after it has been issued (int, default: `86400`)
