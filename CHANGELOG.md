@@ -1,3 +1,6 @@
+# 2.1.1
+- Added the setting `ALLOW_CLEAR_PASSWORDS` to allow clear text passwords stored in the users table to be used for login, defaults to `False`.
+
 # 2.1.0
 - Added the posibility to use a `$loggedId` parameter in any SQL query, which is replaced by the value of the primary key of the user performing the request. If the user is not authenticated, it becomes `NULL`. Thanks to [@S0ULIS](https://github.com/S0ULIS) for the pull request!
 - Added a new optional `active_status` attribute for `USER_AUTH_DATA`. By setting this to the name of a boolean column in the users table, Silence will check whether the user is active when logging in. This can be disabled either by not specifying this attribute, or by setting the `CHECK_USER_IS_ACTIVE` setting to `False`.

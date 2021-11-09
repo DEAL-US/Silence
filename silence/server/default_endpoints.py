@@ -45,7 +45,8 @@ def login():
     if PASSWORD_FIELD not in user:
         raise HTTPError(500, f"The user has no attribute '{PASSWORD_FIELD}'")
 
-    password_ok = check_password_hash(user[PASSWORD_FIELD], password)
+    password_ok = (settings.ALLOW_CLEAR_PASSWORDS and user[PASSWORD_FIELD] == password) \
+                    or check_password_hash(user[PASSWORD_FIELD], password)
     if not password_ok:
         logger.debug(f"Incorrect password")
         raise HTTPError(400, "The password is not correct")
