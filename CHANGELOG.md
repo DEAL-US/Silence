@@ -1,3 +1,6 @@
+# 2.1.1-dev
+- ...
+
 # 2.1.1
 - Added the setting `ALLOW_CLEAR_PASSWORDS` to allow clear text passwords stored in the users table to be used for login, defaults to `False`.
 
