@@ -2,6 +2,8 @@ from silence.db.dal import query
 
 from silence.logging.default_logger import logger
 
+from silence.settings import settings
+
 # Caches the columns of a table, to avoid repetitive queries
 global TABLE_COLUMNS
 TABLE_COLUMNS = {}
@@ -29,6 +31,11 @@ def get_primary_key(table_name):
     t_pure = next(t for t in get_tables() if t.lower() == table_name.lower())
     primary = query(f"SHOW KEYS FROM {t_pure} WHERE Key_name = 'PRIMARY'")
     return primary[0]['Column_name']
+
+def is_auto_increment(table_name, column_name):
+    auto = query(f"SELECT EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{settings.DB_CONN['database']}' AND TABLE_NAME = '{table_name}' AND COLUMN_NAME = '{column_name}'")
+    res = auto[0]['EXTRA'] == 'auto_increment'
+    return res
 
 # Returns the list of names for the columns of a table, storing it
 # after the first query for a given table
