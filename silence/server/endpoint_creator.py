@@ -131,32 +131,32 @@ def create_entity_endpoints(existing_routes_method_pairs):
         logger.info(f"Generating endpoints for {name}")
 
         get_all_route = f"/{name}"
-        if((get_all_route,"GET") not in existing_routes_method_pairs):
+        if (get_all_route, "GET") not in existing_routes_method_pairs:
             endpoints["getAll"] = generate_get_all(get_all_route, table)
             endpoint = ("getAll", get_all_route, "GET", pk, endpoints["getAll"]["description"])
             ep_tuples.append(endpoint)
 
 
         get_by_id_route = f"/{name}/${pk}"
-        if((get_by_id_route,"GET") not in existing_routes_method_pairs):
+        if (get_by_id_route, "GET") not in existing_routes_method_pairs:
             endpoints["getById"] = generate_get_by_id(get_by_id_route,table, pk)
             endpoint = ("getById", get_by_id_route, "GET", pk, endpoints["getById"]["description"])
             ep_tuples.append(endpoint)
 
         create_route = f"/{name}"
-        if((create_route, "POST") not in existing_routes_method_pairs):
+        if (create_route, "POST") not in existing_routes_method_pairs:
             endpoints["create"] = generate_create(create_route, table, pk, is_AI)
             endpoint = ("create", create_route, "POST", pk, endpoints["create"]["description"])
             ep_tuples.append(endpoint)
 
         udpate_route = f"/{name}/${pk}"
-        if((udpate_route,"PUT") not in existing_routes_method_pairs):
+        if (udpate_route, "PUT") not in existing_routes_method_pairs:
             endpoints["update"] = generate_update(udpate_route,table, pk)
             endpoint = ("update", udpate_route, "PUT", pk, endpoints["update"]["description"])
             ep_tuples.append(endpoint)
 
         delete_route = f"/{name}/${pk}"
-        if((delete_route,"DELETE") not in existing_routes_method_pairs):
+        if (delete_route,"DELETE") not in existing_routes_method_pairs:
             endpoints["delete"] = generate_delete(delete_route,table, pk)
             endpoint = ("delete", delete_route, "DELETE", pk, endpoints["delete"]["description"])
             ep_tuples.append(endpoint)
@@ -173,7 +173,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
         logger.info(f"Generating endpoints for {name}")
 
         get_all_route = f"/{name}"
-        if((get_all_route, "GET") not in existing_routes_method_pairs):
+        if (get_all_route, "GET") not in existing_routes_method_pairs:
             endpoints["getAll"] = generate_get_all(get_all_route, view)
             endpoint = ("getAll", get_all_route, "GET", pk, endpoints["getAll"]["description"])
             ep_tuples.append(endpoint)
@@ -206,7 +206,7 @@ def get_user_endpoints():
 
 
 def dicts_to_file(dicts, name, auto_dir):
-    if(dicts):
+    if dicts:
         all_jsons = json.dumps(dicts, indent=4)
 
         with open(auto_dir+f"/{name}.json", "w") as endpoint:
@@ -242,7 +242,7 @@ def generate_create(route, table, pk, is_auto_increment):
     res = {}
     name = table[0]
     param_list = table[1]
-    if(not is_auto_increment):
+    if not is_auto_increment:
         param_list.append(pk)
 
     res["route"] = route
