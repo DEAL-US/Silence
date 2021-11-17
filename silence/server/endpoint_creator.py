@@ -1,6 +1,6 @@
 import json
 from os import listdir, getcwd, path, mkdir, makedirs
-from silence.sql.tables import get_tables, get_views, get_primary_key
+from silence.sql.tables import get_tables, get_views, get_primary_key, is_auto_increment
 from silence.logging.default_logger import logger
 from shutil import rmtree
 
@@ -121,6 +121,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
     
     for table in list(tables.items()):
         pk = get_primary_key(table[0])
+        is_AI = is_auto_increment(table[0], pk)
         endpoints = {}
         table[1].remove(pk)
 
@@ -144,7 +145,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
 
         create_route = f"/{name}"
         if((create_route, "POST") not in existing_routes_method_pairs):
-            endpoints["create"] = generate_create(create_route,table, pk)
+            endpoints["create"] = generate_create(create_route, table, pk, is_AI)
             endpoint = ("create", create_route, "POST", pk, endpoints["create"]["description"])
             ep_tuples.append(endpoint)
 
@@ -237,10 +238,12 @@ def generate_get_by_id(route,table, pk):
     # res["request_body_params"] = []
     return res
 
-def generate_create(route,table, pk):
+def generate_create(route, table, pk, is_auto_increment):
     res = {}
     name = table[0]
     param_list = table[1]
+    if(not is_auto_increment):
+        param_list.append(pk)
 
     res["route"] = route
     res["method"] = "POST"
