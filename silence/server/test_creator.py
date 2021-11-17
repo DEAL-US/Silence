@@ -170,7 +170,7 @@ DELETE {{{{BASE}}}}/{name}/{{{{{name[:3]}Id}}}}
 def add_table_args(table_attributes):
     res = ""
     for i, t in enumerate(table_attributes):
-        if(i != len(table_attributes)-1):
+        if i != len(table_attributes) - 1:
             res += f"\t\"{t}\": ###REPLACE###,\n"
         else:
             res += f"\t\"{t}\": ###REPLACE###\n"

@@ -34,7 +34,7 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
     
     # if the query is requesting the logged user.
     logged_user = "$loggedId" in sql
-    if(logged_user and not auth_required):
+    if logged_user and not auth_required:
         logger.warning("You're using $loggedId but are not requesting authorization, in endpoint: " + str(route))
 
     # Construct the API route taking the prefix into account
@@ -260,7 +260,7 @@ def check_params_match(sql_params, user_params, route):
     sql_params_set = set(sql_params)
     user_params_set = set(user_params)
     diff = sql_params_set.difference(user_params_set)
-    if("loggedId" in diff):
+    if "loggedId" in diff:
         diff.remove("loggedId")
 
     if diff:
