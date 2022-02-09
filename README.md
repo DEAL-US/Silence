@@ -37,7 +37,6 @@ Silence has been built by the [**DEAL research group**](https://deal.us.es/) as 
 - [Static web server](#static-web-server)
 - [Changelog](#changelog)
 - [Contributions](#contributions)
-- [Disclaimer](#disclaimer)
 - [License](#license)
 
 # Installation
