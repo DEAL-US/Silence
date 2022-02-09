@@ -11,6 +11,8 @@ Silence is a framework that allows for a rapid deployment of a RESTful API and a
 
 Silence has been built by the [**DEAL research group**](https://deal.us.es/) as an educational and teaching tool for its use in several courses of the Degree in Computer Science at the University of Seville.
 
+**Disclaimer:** We have designed and built Silence with educational-only use in mind. Silence makes no specific efforts to ensure efficiency, security, or fitness to purposes other than educational ones. We have not built Silence for its use in a production environment of any kind.
+
 # Contents
 - [Installation](#installation)
 - [Creating a new project](#creating-a-new-project)
@@ -35,7 +37,6 @@ Silence has been built by the [**DEAL research group**](https://deal.us.es/) as 
 - [Static web server](#static-web-server)
 - [Changelog](#changelog)
 - [Contributions](#contributions)
-- [Disclaimer](#disclaimer)
 - [License](#license)
 
 # Installation
@@ -609,9 +610,6 @@ See [CHANGELOG.md](CHANGELOG.md)
 All contributions are welcome provided that they follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 We keep a [TO-DO](TO-DO.md) with the changes that we'd like to implement in the future. Feel free to open an issue if you need clarifications with any of its items.
-
-# Disclaimer
-Silence has been designed and built with educational-only use in mind. It makes no specific efforts to ensure efficiency, security, or fitness to purposes other than educational ones. We have not tested Silence for its use in a production environment of any kind.
 
 # License
 [MIT License](LICENSE)
