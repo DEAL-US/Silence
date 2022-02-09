@@ -1,6 +1,5 @@
-import json
-from os import listdir, getcwd, path, mkdir, makedirs
-from silence.sql.tables import get_tables, get_views, get_primary_key, get_table_cols
+from os import getcwd, mkdir
+from silence.sql.tables import get_tables, get_primary_key, get_table_cols
 from silence.logging.default_logger import logger
 from silence.settings import settings
 from shutil import rmtree
