@@ -3,6 +3,7 @@ from silence.sql.tables import get_tables, get_primary_key, get_table_cols
 from silence.logging.default_logger import logger
 from silence.settings import settings
 from shutil import rmtree
+from pathlib import Path
 
 # SILENCE CREATETEST OPERATIONS
 
@@ -24,7 +25,7 @@ def create_tests():
         logger.debug("Folder is not there, creating it.")
 
     logger.debug(f"re-creating directory -->  {test_dir}")
-    mkdir(test_dir)
+    Path(test_dir).mkdir(parents=True, exist_ok=True)
 
     # Test files creation
     tables = get_tables()
