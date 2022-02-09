@@ -1,4 +1,4 @@
-# 2.1.2-dev
+# 2.1.3
 - Fixed a bug where tests could not be automatically generated if a `tests/` folder was not present.
 
 # 2.1.2
