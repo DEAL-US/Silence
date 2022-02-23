@@ -61,25 +61,28 @@ def create_tests():
 # @name {name}
 GET {{{{BASE}}}}/{name}
 
-### Register a new {table_name_auth} and save the generated token 
+### Login a(n) {table_name_auth} and save the generated token 
 ### This token is used in several of the below tests it should be executed second.
-# @name register
-POST {{{{BASE}}}}/register 
+# @name login
+POST {{{{BASE}}}}/login 
 Content-Type: application/json 
 
 {{ 
 """
-        TEST += add_table_args(auth_table_attributes)
+        t_args = [settings.USER_AUTH_DATA["identifier"], settings.USER_AUTH_DATA["password"]]
+        TEST += add_table_args(t_args)
         TEST += f"""}}
 
 ###
-@token = {{{{register.response.body.sessionToken}}}}
+@token = {{{{login.response.body.sessionToken}}}}
 """
-# TESTS BEGIN
         TEST += f"""
+
+### TESTS BEGIN
+
 ### Test 01: Get one existing {name} by its id.
 ### positive test 
-@{name[:3]}Id = {{{name}.response.body.0.{pk}}}
+@{name[:3]}Id = {{{{{name}.response.body.0.{pk}}}}}
 GET {{{{BASE}}}}/{name}/{{{{{name[:3]}Id}}}} 
 Content-Type: application/json 
 
@@ -92,7 +95,8 @@ Content-Type: application/json
 
 ### Test 03: Add a new {name} successfully
 ### Positive test 
-### We assume that the token has been aquired by the register request.
+### We assume that the token has been aquired by the login request.
+# @name new{name}
 POST {{{{BASE}}}}/{name} 
 Content-Type: application/json 
 Token: {{{{token}}}} 
@@ -101,6 +105,12 @@ Token: {{{{token}}}}
 """
         TEST += add_table_args(table_attributes)
         TEST += f"""}} 
+
+### Check the created {name}
+
+@new{name}id = {{{{new{name}.response.body.lastId}}}}
+GET {{{{BASE}}}}/{name}/{{{{new{name}id}}}}
+Content-Type: application/json 
 
 ### Test 04: Add a new {name} without a session token
 ### Negative test 
@@ -124,6 +134,11 @@ Token: {{{{token}}}}
 
         TEST += add_table_args(table_attributes)
         TEST += f"""}}
+
+### Check the modified {name}
+
+GET {{{{BASE}}}}/{name}/{{{{new{name}id}}}}
+Content-Type: application/json 
 
 ### Test 06: Try to modify an existing {name} without a session token
 ### Negative test
@@ -149,23 +164,28 @@ Token: {{{{token}}}}
 """
         TEST += add_table_args(table_attributes)
         TEST += f"""}}
+
+### Check the created {name}
+@{name[:3]}delId = {{{{created{name[:3]}ToDelete.response.body.lastId}}}}
+GET {{{{BASE}}}}/{name}/{{{{{name[:3]}delId}}}}
+Content-Type: application/json 
+
 ### Delete the {name}
-@deptId = {{created{name[:3]}ToDelete.response.body.lastId}}
-DELETE {{{{BASE}}}}/{name}/{{{{{name[:3]}Id}}}}
+DELETE {{{{BASE}}}}/{name}/{{{{{name[:3]}delId}}}}
 Token: {{{{token}}}}
 
-### Test 08: Try to delete a department without a session token
+### Check the deleted {name}
+GET {{{{BASE}}}}/{name}/{{{{{name[:3]}delId}}}}
+Content-Type: application/json 
+
+### Test 08: Try to delete a {name} without a session token
 ### Negative test
 DELETE {{{{BASE}}}}/{name}/{{{{{name[:3]}Id}}}}
 
 """
-
-
         # WRITE TEST TO FILE.
         with open(test_dir+f"/{name}.http", "w") as test:
             test.write(TEST)
-
-
 
 def add_table_args(table_attributes):
     res = ""
