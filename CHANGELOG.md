@@ -1,3 +1,6 @@
+# 2.1.4
+- Altered the test creator suite to better show the user what the different tests are doing, as well as replace the registration default test with a login one.
+
 # 2.1.3
 - Fixed a bug where tests could not be automatically generated if a `tests/` folder was not present.
 
