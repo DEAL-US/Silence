@@ -80,8 +80,8 @@ def setup():
     # if that is the case
     if settings.ALLOW_CLEAR_PASSWORDS:
         logger.warning("This project allows clear text passwords in the DB to be used for login\n" +
-                       "(ALLOW_CLEAR_PASSWORDS is set to True)\n" +
-                       "This is NOT RECOMMENDED outside testing purposes.")
+                       "(ALLOW_CLEAR_PASSWORDS = True)\n" +
+                       "This is NOT RECOMMENDED except for testing purposes.")
 
     # Load the user-provided API endpoints and the default ones
     if settings.RUN_API:
