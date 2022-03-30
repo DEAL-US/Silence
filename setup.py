@@ -34,7 +34,7 @@ setup(
         "cryptography~=36.0.2",
         "Flask-Cors==3.0.10",
         "Flask==2.0.3",
-        "itsdangerous~=2.1.2",
+        "itsdangerous~=2.0.1",
         "PyMySQL~=1.0.2",
         "pypika==0.48.9",
         "requests~=2.27.1",
