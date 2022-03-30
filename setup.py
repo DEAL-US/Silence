@@ -38,7 +38,7 @@ setup(
         "PyMySQL~=1.0.2",
         "pypika==0.48.9",
         "requests~=2.27.1",
-        "Werkzeug~=2.1.0",
+        "Werkzeug~=2.0.3",
     ],
     python_requires="~=3.6",
     zip_safe=False
