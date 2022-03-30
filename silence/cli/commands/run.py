@@ -13,6 +13,7 @@ def handle(args):
     new_ver = check_for_new_version()
     if new_ver:
         logger.warning(f"A new Silence version (v{new_ver}) is available. Run 'pip install --upgrade Silence' to upgrade.")
+        logger.warning("To see what's new, visit: https://github.com/DEAL-US/Silence/blob/master/CHANGELOG.md")
 
     server_manager.setup()
     server_manager.run()
