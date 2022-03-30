@@ -86,12 +86,16 @@ def generate_api_text(operation, description, method, route, id_plain = "", has_
     unique_res_text = ""
     if unique_result:
         unique_res_text += "[0]"
+
+    form_data_arg = has_body_param_text
+    if not id_plain:
+        form_data_arg = "formData"
     
     file_content = f"""    /**
     * {description}
     */
-    {operation}: async function({has_body_param_text}{id_plain}) {{
-        let response = await axios.{method}(`${{BASE_URL}}/{route}`,{has_body_param_text}requestOptions);
+    {operation}: async function({form_data_arg}{id_plain}) {{
+        let response = await axios.{method}(`${{BASE_URL}}/{route}`, {has_body_param_text}requestOptions);
         return response.data{unique_res_text};
     }},"""
     return file_content
