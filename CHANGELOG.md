@@ -1,4 +1,4 @@
-# 2.1.5-dev
+# 2.1.6
 - Fixed the logging style after updating Flask.
 
 # 2.1.5
