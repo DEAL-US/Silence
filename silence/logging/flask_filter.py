@@ -1,4 +1,3 @@
-from concurrent.futures import thread
 from silence.settings import settings
 
 import colorama
