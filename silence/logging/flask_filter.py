@@ -1,7 +1,10 @@
+from concurrent.futures import thread
 from silence.settings import settings
 
+import colorama
 from colorama import Fore, Style
 
+from datetime import datetime
 import logging
 import re
 
@@ -9,9 +12,14 @@ import re
 # Filters and modifies Flask's log records in-place
 ###############################################################################
 
+colorama.init()
+
 # Regex to remove ANSI color codes from log lines
 RE_ANSI = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
-RE_LOG = re.compile(r'(.*) - - \[(.*)\] "(\w+) (/.*) HTTP.*" (.*) -.*')
+
+# Regex to detect server log lines from Flask (werkzeug)
+RE_LOG = re.compile(r'(.*) - - \[.*\] "%s" %s %s')
+RE_REQ_DATA = re.compile(r'(\w+) (/.*) HTTP.*')
 
 COLORS = {
     "GREEN": Style.BRIGHT + Fore.GREEN if settings.COLORED_OUTPUT else "",
@@ -32,17 +40,24 @@ class FlaskFilter(logging.Filter):
             record.msg = msg[3:]
             return True
 
-        # Construct the full message by adding the
-        # variable arguments to the message
-        msg = RE_ANSI.sub('', msg)
-        args = tuple(RE_ANSI.sub('', x) for x in record.args)
-
-        msg = msg % args
-
+        # If the log line is a Flask log line, parse it and
+        # style it appropriately
         m = RE_LOG.match(msg)
         if m:
-            addr, date, verb, route, code = m.groups()
-            
+            # The address is parsed from the message
+            addr = m.group(1)
+
+            # The rest of the data comes from the args tuple in the log record
+            args = record.args
+            code = args[1]
+
+            # The address and the route are present in the first arg,
+            # but we must remove color codes first before parsing
+            addr_and_route = RE_ANSI.sub("", args[0])
+            m_addr = RE_REQ_DATA.match(addr_and_route)
+            verb = m_addr.group(1)
+            route = m_addr.group(2)
+
             if route.startswith(settings.API_PREFIX):
                 api_web = "[API]"
                 api_color = COLORS["MAGENTA"]
@@ -59,10 +74,15 @@ class FlaskFilter(logging.Filter):
             else:
                 code_color = COLORS["WHITE"]
 
+            # Finally, the date is created from scratch here
+            date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
             record.msg = f"{date} | {api_color}{api_web}{RESET} " + \
                   f"{verb} {route} from {addr} - {code_color}{code}{RESET}"
             record.args = ()
-        else:
-            print("MSG:", msg)
-            print("ARGS:", record.args)
-        return True
+
+        # Pass it on to Silence's logger, which implements
+        # blocking to prevent multiple lines from overlapping,
+        # and filter it out from this one
+        logging.getLogger("silence").handle(record)
+        return False

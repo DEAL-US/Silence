@@ -69,7 +69,14 @@ def setup():
             return res, code
         
         # We're facing an uncontrolled server exception
-        logger.exception(exc)
+        # Only show the full stack trace in debug mode
+        # Otherwise, just show the exception message
+        if settings.DEBUG_ENABLED:
+            logger.exception(exc)
+        else:
+            error_msg = str(exc)
+            error_msg += "\n(Enable debug mode to see full stack trace)"
+            logger.error(error_msg)
 
         exc_type = type(exc).__name__
         msg = str(exc)
