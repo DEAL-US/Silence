@@ -1,4 +1,4 @@
-# 2.1.6-dev
+# 2.1.7
 - Some improvements to logging:
     - Full stack traces are now only printed if the debug mode is active, otherwise, just the error string is shown.
     - The month in the access logs is now numerical instead of textual.
