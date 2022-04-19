@@ -1,5 +1,5 @@
 # 2.1.5-dev
-- ...
+- Fixed the logging style after updating Flask.
 
 # 2.1.5
 - Big upgrade to all dependencies, especially to Flask to prevent a bug in Flask 1.X due to a recently upgraded transitive dependency (pallets/flask#4494).

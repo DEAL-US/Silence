@@ -32,7 +32,13 @@ class FlaskFilter(logging.Filter):
             record.msg = msg[3:]
             return True
 
+        # Construct the full message by adding the
+        # variable arguments to the message
         msg = RE_ANSI.sub('', msg)
+        args = tuple(RE_ANSI.sub('', x) for x in record.args)
+
+        msg = msg % args
+
         m = RE_LOG.match(msg)
         if m:
             addr, date, verb, route, code = m.groups()
@@ -55,4 +61,8 @@ class FlaskFilter(logging.Filter):
 
             record.msg = f"{date} | {api_color}{api_web}{RESET} " + \
                   f"{verb} {route} from {addr} - {code_color}{code}{RESET}"
+            record.args = ()
+        else:
+            print("MSG:", msg)
+            print("ARGS:", record.args)
         return True
