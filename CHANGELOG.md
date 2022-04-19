@@ -1,3 +1,10 @@
+# 2.1.7
+- Some improvements to logging:
+    - Full stack traces are now only printed if the debug mode is active, otherwise, just the error string is shown.
+    - The month in the access logs is now numerical instead of textual.
+    - Colors are (hopefully!) no longer mixed up on Windows when access and non-access log appear in quick succession.
+    - Fixed some bugs from the previous update and made detection of Flask logs more robust.
+
 # 2.1.6
 - Fixed the logging style after updating Flask.
 
