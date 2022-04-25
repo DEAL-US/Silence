@@ -1,6 +1,6 @@
 import json
 from os import listdir, getcwd, path, mkdir, makedirs
-from silence.sql.tables import get_tables, get_views, get_primary_key, is_auto_increment
+from silence.sql.tables import get_tables, get_views, get_primary_key, get_primary_key_views, is_auto_increment
 from silence.logging.default_logger import logger
 from shutil import rmtree
 
@@ -78,24 +78,23 @@ const {name}API_auto = {{"""
     with open(f"{api_path}/_{name}.js", "w") as api_point:
         api_point.write(file_content)
 
-def generate_api_text(operation, description, method, route, id_plain = "", has_body_params = False, unique_result = False):
-    has_body_param_text = ""
-    if has_body_params:
-        has_body_param_text = "formData, "
-            
+def generate_api_text(operation, description, method, route, id_plain="", has_body_params = False, unique_result = False):
     unique_res_text = ""
     if unique_result:
         unique_res_text += "[0]"
 
-    form_data_arg = has_body_param_text
-    if not id_plain:
-        form_data_arg = "formData"
+    form_data_text = ""
+    if has_body_params:
+        form_data_text = "formData"
+
+    if id_plain != "" and form_data_text != "":
+        form_data_text += ", "
     
     file_content = f"""    /**
     * {description}
     */
-    {operation}: async function({form_data_arg}{id_plain}) {{
-        let response = await axios.{method}(`${{BASE_URL}}/{route}`, {has_body_param_text}requestOptions);
+    {operation}: async function({form_data_text}{id_plain}) {{
+        let response = await axios.{method}(`${{BASE_URL}}/{route}`, {"formData, " if has_body_params else ""}requestOptions);
         return response.data{unique_res_text};
     }},"""
     return file_content
@@ -140,7 +139,6 @@ def create_entity_endpoints(existing_routes_method_pairs):
             endpoint = ("getAll", get_all_route, "GET", pk, endpoints["getAll"]["description"])
             ep_tuples.append(endpoint)
 
-
         get_by_id_route = f"/{name}/${pk}"
         if (get_by_id_route, "GET") not in existing_routes_method_pairs:
             endpoints["getById"] = generate_get_by_id(get_by_id_route,table, pk)
@@ -175,11 +173,18 @@ def create_entity_endpoints(existing_routes_method_pairs):
         ep_tuples = []
         name = view[0].lower()
         logger.info(f"Generating endpoints for {name}")
+        primary_keys = get_primary_key_views(view[0])
 
         get_all_route = f"/{name}"
         if (get_all_route, "GET") not in existing_routes_method_pairs:
             endpoints["getAll"] = generate_get_all(get_all_route, view)
             endpoint = ("getAll", get_all_route, "GET", pk, endpoints["getAll"]["description"])
+            ep_tuples.append(endpoint)
+        
+        for pk in primary_keys:
+            route = f"/{name}/${pk}"
+            endpoints[f"getBy{pk}"] = generate_get_by_primary_key_view(view, pk)
+            endpoint = (f"getBy{pk}", route, "GET", pk, endpoints[f"getBy{pk}"]["description"])
             ep_tuples.append(endpoint)
 
         generate_API_file_for_endpoints(ep_tuples, name)
@@ -216,8 +221,19 @@ def dicts_to_file(dicts, name, auto_dir):
         with open(auto_dir+f"/{name}.json", "w") as endpoint:
             endpoint.write(all_jsons)
 
+def generate_get_by_primary_key_view(view, pk):
+    res = {}
+    name = view[0]
+    res["route"] = f"/{name}/${pk}"
+    res["method"] = "GET"
+    res["sql"] = f"SELECT * FROM {name} WHERE {pk} = ${pk}"
+    res["auth_required"] = False
+    res["allowed_roles"] = ["*"]
+    res["description"] = f"Gets an entry from '{name}' by its {pk}"
+    # res["request_body_params"] = []
+    return res
 
-def generate_get_all(route,table):
+def generate_get_all(route, table):
     res = {}
     name = table[0]
     res["route"] = route
@@ -230,7 +246,7 @@ def generate_get_all(route,table):
 
     return res
 
-def generate_get_by_id(route,table, pk):
+def generate_get_by_id(route, table, pk):
     res = {}
     name = table[0]
     res["route"] = route

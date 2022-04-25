@@ -27,10 +27,23 @@ def get_views():
     return views
 
 def get_primary_key(table_name):
-    tables = get_tables()
     t_pure = next(t for t in get_tables() if t.lower() == table_name.lower())
     primary = query(f"SHOW KEYS FROM {t_pure} WHERE Key_name = 'PRIMARY'")
     return primary[0]['Column_name']
+
+def get_primary_key_views(view_name):
+    all_primary_keys = []
+    for t in get_tables():
+        primary = query(f"SHOW KEYS FROM {t} WHERE Key_name = 'PRIMARY'")
+        all_primary_keys.append(primary[0]['Column_name'])
+    
+    primary_keys = []
+    view_columns = query(f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{settings.DB_CONN['database']}' AND TABLE_NAME = '{view_name}'")
+    for v in view_columns:
+        if(v["COLUMN_NAME"] in all_primary_keys):
+            primary_keys.append(v["COLUMN_NAME"])
+
+    return primary_keys
 
 def is_auto_increment(table_name, column_name):
     auto = query(f"SELECT EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{settings.DB_CONN['database']}' AND TABLE_NAME = '{table_name}' AND COLUMN_NAME = '{column_name}'")
