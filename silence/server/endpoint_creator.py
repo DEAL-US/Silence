@@ -104,19 +104,22 @@ def generate_api_text(operation, description, method, route, id_plain="", has_bo
 # create CRUD endpoint files (json) for the remaining ones.                 #
 #############################################################################
 def create_entity_endpoints(existing_routes_method_pairs):
+    '''
+    Reset the "auto" folder for endpoints and iterate over the databases tables and views,
+    generating the corresponding endpoints for each of them.
+    '''
     # Folder handling
-
     curr_dir = getcwd()
     endpoints_dir = curr_dir + "/endpoints"
     auto_dir = endpoints_dir + "/auto"
 
-    logger.debug(f"Selected endpoint directory -->  {auto_dir}")
+    logger.debug(f"Endpoint directory -->  {auto_dir}")
     try:
         rmtree(auto_dir)
     except FileNotFoundError:
-        logger.debug("Folder is not there, creating it.")
+        logger.debug("Endpoint folder not found.")
     
-    logger.debug(f"re-creating directory -->  {auto_dir}")
+    logger.debug(f"Creating directory --> {auto_dir}")
     mkdir(auto_dir)
 
     # Endpoint files creation
@@ -132,6 +135,8 @@ def create_entity_endpoints(existing_routes_method_pairs):
 
         logger.info(f"Generating endpoints for {name}")
 
+        # Use the corresponding generate_xxx_xxx method to create the 
+        # endpoint information and apend it to the enpoints dict.
         get_all_route = f"/{name}"
         if (get_all_route, "GET") not in existing_routes_method_pairs:
             endpoints["getAll"] = generate_get_all(get_all_route, table)
@@ -162,6 +167,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
             endpoint = ("delete", delete_route, "DELETE", pk, endpoints["delete"]["description"])
             ep_tuples.append(endpoint)
 
+        # Create the .js files for the API.
         generate_API_file_for_endpoints(ep_tuples, name)
         dicts_to_file(endpoints, name, auto_dir)
     
@@ -191,18 +197,24 @@ def create_entity_endpoints(existing_routes_method_pairs):
 
 
 def get_user_endpoints():
+    '''
+    Searches in the endpoints directory of the silence project for every .json file which we assume is an endpoint file.
+    gets the route and method as pairs for every empoint found and returns them
+    '''
     logger.debug("Looking for user endpoints")
 
-    # Load every .json file inside the endpoints/ or api/ folders
     curr_dir = getcwd()
     endpoints_dir = curr_dir + "/endpoints"
 
+    # create endpoint dir if its not there.
     if not path.isdir(endpoints_dir):
         mkdir(endpoints_dir)
 
+    # get every .json file in the directory
     endpoint_paths_json_user = [endpoints_dir + f"/{f}" for f in listdir(endpoints_dir) if f.endswith('.json')]
     endpoint_route_method_pairs = []
 
+    # form (route,method) pairs for every endpoint found and return them
     for jsonfile in endpoint_paths_json_user:
         with open(jsonfile, "r") as ep:
             endpoints = list(json.load(ep).values())
