@@ -11,19 +11,23 @@ TABLE_COLUMNS = {}
 def get_tables():
     res = query(q = "SHOW FULL TABLES WHERE table_type = 'BASE TABLE';")
     tables = {}
-    for t in res:
-        tables[list(t.values())[0]] = get_table_cols(list(t.values())[0])
+    for table_data in res:
+        # Grab the value that is not "BASE TABLE", which will be the name of the table
+        table_name = next(x for x in table_data.values() if x != "BASE TABLE")
+        tables[table_name] = get_table_cols(table_name)
 
-    logger.debug(f"tables in database: {tables}")
+    logger.debug(f"Tables in database: {tables}")
     return tables
 
 def get_views():
     res = query(q = "SHOW FULL TABLES WHERE table_type = 'VIEW';")
     views = {}
-    for v in res:
-        views[list(v.values())[0]] = get_table_cols(list(v.values())[0])
+    for view_data in res:
+        # Grab the value that is not "VIEW", which will be the name of the view
+        view_name = next(x for x in view_data.values() if x != "VIEW")
+        views[view_name] = get_table_cols(view_name)
 
-    logger.debug(f"views in database: {views}")
+    logger.debug(f"Views in database: {views}")
     return views
 
 def get_primary_key(table_name):
@@ -61,4 +65,3 @@ def get_table_cols(table_name):
         TABLE_COLUMNS[table_name] = col_names
     
     return TABLE_COLUMNS[table_name]
-
