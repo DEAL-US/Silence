@@ -121,7 +121,6 @@ def create_entity_endpoints(existing_routes_method_pairs):
 
     # Endpoint files creation
     tables = get_tables()
-    
     for table in list(tables.items()):
         pk = get_primary_key(table[0])
         is_AI = is_auto_increment(table[0], pk)
@@ -183,8 +182,8 @@ def create_entity_endpoints(existing_routes_method_pairs):
         
         for pk in primary_keys:
             route = f"/{name}/${pk}"
-            endpoints[f"getBy{pk}"] = generate_get_by_primary_key_view(view, pk)
-            endpoint = (f"getBy{pk}", route, "GET", pk, endpoints[f"getBy{pk}"]["description"])
+            endpoints[f"getBy{pk.capitalize()}"] = generate_get_by_primary_key_view(view, pk)
+            endpoint = (f"getBy{pk.capitalize()}", route, "GET", pk, endpoints[f"getBy{pk.capitalize()}"]["description"])
             ep_tuples.append(endpoint)
 
         generate_API_file_for_endpoints(ep_tuples, name)
