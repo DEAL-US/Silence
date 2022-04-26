@@ -114,7 +114,7 @@ def make_endpoint_data(name, route, method, table_name, cols, pk):
             f"Creates a new entry in '{table_name}'"
         ),
         "update": (
-            f"UPDATE {table_name} SET " + params_to_string(cols) + f" WHERE {pk} = ${pk}",
+            f"UPDATE {table_name} SET " + params_to_string(cols, is_update=True) + f" WHERE {pk} = ${pk}",
             f"Updates an existing entry in '{table_name}' by its primary key"
         ),
         "delete": (
@@ -222,5 +222,7 @@ def get_user_endpoints():
 
     return endpoint_route_method_pairs
 
-def params_to_string(param_list, char_add=""):
-    return "(" + ", ".join(char_add + x for x in param_list) + ")"
+def params_to_string(param_list, char_add="", is_update=False):
+    add_pref = lambda x: char_add + x if not is_update else f"{x} = ${x}"
+    res = ", ".join(add_pref(x) for x in param_list)
+    return f"({res})" if not is_update else res
