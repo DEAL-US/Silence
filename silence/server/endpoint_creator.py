@@ -52,13 +52,13 @@ def create_entity_endpoints(existing_routes_method_pairs):
 
         if is_table:
             pk = get_primary_key(table_name)
-            route_one = f"/{table_name}/${pk}"
+            route_one = f"/{table_name.lower()}/${pk}"
 
             if is_auto_increment(table_name, pk):
                 columns.remove(pk)
 
         # Create the basic CRUD endpoints if they haven't been defined yet
-        route_all = f"/{table_name}"
+        route_all = f"/{table_name.lower()}"
         crud_endpoints = [
             ("GET", "getAll", route_all),
             ("GET", "getById", route_one),
