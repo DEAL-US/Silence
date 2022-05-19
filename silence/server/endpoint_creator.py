@@ -1,5 +1,6 @@
 from silence.sql.tables import get_tables, get_views, get_primary_key, is_auto_increment, get_primary_key_views
 from silence.logging.default_logger import logger
+from silence.settings import settings
 
 from os import listdir, getcwd, path, mkdir, makedirs
 from shutil import rmtree
@@ -95,6 +96,17 @@ def create_entity_endpoints(existing_routes_method_pairs):
             json_str = json.dumps(endpoints_to_json, indent=4)
             with open(auto_dir + f"/{table_name}.json", "w") as f:
                 f.write(json_str)
+
+    # Finally, generate the .js API module for the allowed auth operations
+    auth_endpoints = {}
+    if settings.ENABLE_LOGIN:
+        auth_endpoints["login"] = { "route": "/login", "method": "POST", "description": "Logs in using an identifier and password" }
+
+    if settings.ENABLE_REGISTER:
+        auth_endpoints["register"] = { "route": "/register", "method": "POST", "description": "Registers a new user and stores the password safely in the database" }
+
+    if auth_endpoints:
+        generate_API_file_for_endpoints(auth_endpoints, "auth", None)
 
 ###############################################################################
 # Creates a dict with the auto-generated data for a basic CRUD endpoint
