@@ -1,5 +1,6 @@
 # 2.1.7-dev
 - Fixes and improvements to the serialization of date/time objects to ensure compatibility with MySQL.
+- Silence now issues a warning when a configuration setting in `settings.py` is unknown.
 
 # 2.1.7
 - Some improvements to logging:
