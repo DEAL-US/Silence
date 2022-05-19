@@ -1,4 +1,4 @@
-from os import getcwd, mkdir
+from os import getcwd
 from silence.sql.tables import get_tables, get_primary_key, get_table_cols
 from silence.logging.default_logger import logger
 from silence.settings import settings
