@@ -1,4 +1,4 @@
-# 2.1.7-dev
+# 2.1.8
 - Silence now issues a warning when a configuration setting in `settings.py` is unknown.
 - Added autogeneration of a JS module for login and register, if they are enabled.
 - `DATE` and `TIME` columns are now also serialized in ISO format.
