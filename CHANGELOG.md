@@ -1,7 +1,10 @@
 # 2.1.7-dev
-- Fixes and improvements to the serialization of date/time objects to ensure compatibility with MySQL.
 - Silence now issues a warning when a configuration setting in `settings.py` is unknown.
-- Added autogeneration of a JS module for login and register.
+- Added autogeneration of a JS module for login and register, if they are enabled.
+- `DATE` and `TIME` columns are now also serialized in ISO format.
+- Autogenerate additional JS methods to query views by the primary keys from other tables that they contain.
+- The `createapi` and `createtests` commands now support tables without a PK.
+- Some code refactoring and improvements.
 
 # 2.1.7
 - Some improvements to logging:
