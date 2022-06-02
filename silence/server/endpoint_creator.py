@@ -85,7 +85,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
                 endpoints_to_js[endpoint_name] = {
                     "route": f"{route_all}?{pk}=${pk}",
                     "method": "GET",
-                    "description": f"Gets entries from '{table_name}' by their {pk}"
+                    "description": f"Gets an array entries from '{table_name}' by their {pk}.\n{' '*8}Note that this always returns an array."
                 }
 
         # Create *all* the .js files for the API.
