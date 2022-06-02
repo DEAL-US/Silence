@@ -13,7 +13,6 @@ from pathlib import Path
 # create CRUD test files (http) for them. #
 ###########################################
 def create_tests():
-
     # Folder handling
     curr_dir = getcwd()
     test_dir = curr_dir + "/tests/auto"
@@ -24,35 +23,34 @@ def create_tests():
     except FileNotFoundError:
         logger.debug("Folder is not there, creating it.")
 
-    logger.debug(f"re-creating directory -->  {test_dir}")
+    logger.debug(f"Re-creating directory -->  {test_dir}")
     Path(test_dir).mkdir(parents=True, exist_ok=True)
 
     # Test files creation
     tables = get_tables()
-    table_name_auth = next(t for t in tables.keys() if t.lower() == settings.USER_AUTH_DATA["table"].lower())
-    pk_auth = get_primary_key(table_name_auth)
-    auth_table_attributes = get_table_cols(table_name_auth)
-    auth_table_attributes.remove(pk_auth)
+    table_name_auth = settings.USER_AUTH_DATA["table"].lower()
 
     for table in list(tables.items()):
-        pk = get_primary_key(table[0])
+        name = table[0].lower()
+        pk = get_primary_key(name)
+        if pk is None:
+                logger.warning(f"The table '{name}' does not have a primary key. No tests will be created for it.")
+                continue
         try:
             table[1].remove(pk) # the auth table will already have its primary key removed.
         except:
             pass
         
-        name = table[0].lower()
-        logger.info(f"Generating test for {name}")
+        logger.info(f"Generating tests for {name}")
         table_name = next(t for t in tables if t.lower() == name)
         table_attributes = get_table_cols(table_name)
-        # TEST HEADER
 
         TEST = f"""
-### THIS IS AN AUTO-GENERATED TEST SUITE, IT NEEDS TO BE COMPLETED WITH VALID DATA
-### THESE ARE NOT ALL YOU NEED, MORE OF THEM MUST BE CREATED TO EVALUATE THE FUNCTIONAL
-### REQUIREMENTS OF THE PROJECT AT HAND, THESE TEST ONLY TEST THE CRUD PORTION OF THE ENTITY.
+### This is an auto-generated test suite, it needs to be completed with valid data.
+### These are not all tests you need, more of them should be created to evaluate the functional
+### requirements of your project. These tests only test the CRUD endpoints of the entity.
 ### Silence is a DEAL research team project, more info about us in https://deal.us.es
-@BASE = http://127.0.0.1:8080{settings.API_PREFIX}
+@BASE = http://{settings.LISTEN_ADDRESS}:{settings.HTTP_PORT}{settings.API_PREFIX}
 
 ### Auxiliary query
 ### Positive test

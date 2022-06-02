@@ -33,7 +33,11 @@ def get_views():
 def get_primary_key(table_name):
     t_pure = next(t for t in get_tables() if t.lower() == table_name.lower())
     primary = query(f"SHOW KEYS FROM {t_pure} WHERE Key_name = 'PRIMARY'")
-    return primary[0]['Column_name']
+    
+    if primary:
+        return primary[0]['Column_name']
+    else:
+        return None
 
 def get_primary_key_views(view_name):
     all_primary_keys = []
