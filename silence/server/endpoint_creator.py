@@ -55,7 +55,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
             pk = get_primary_key(table_name)
             route_one = f"/{table_name.lower()}/${pk}"
 
-            if is_auto_increment(table_name, pk):
+            if pk and is_auto_increment(table_name, pk):
                 columns.remove(pk)
 
         # Create the basic CRUD endpoints if they haven't been defined yet
@@ -69,8 +69,8 @@ def create_entity_endpoints(existing_routes_method_pairs):
         ]
 
         for method, name, route in crud_endpoints:
-            # If this is a view, create only "getAll"
-            if name != "getAll" and not is_table: 
+            # If this is a view or a table without a PK, create only "getAll"
+            if name != "getAll" and (not is_table or pk is None): 
                 continue
 
             endpoints_to_js[name] = make_endpoint_data(name, route, method, table_name, columns, pk)

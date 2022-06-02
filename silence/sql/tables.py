@@ -1,3 +1,4 @@
+from requests import get
 from silence.db.dal import query
 
 from silence.logging.default_logger import logger
@@ -41,9 +42,10 @@ def get_primary_key(table_name):
 
 def get_primary_key_views(view_name):
     all_primary_keys = []
-    for t in get_tables():
-        primary = query(f"SHOW KEYS FROM {t} WHERE Key_name = 'PRIMARY'")
-        all_primary_keys.append(primary[0]['Column_name'])
+    for table in get_tables():
+        pk = get_primary_key(table)
+        if pk:
+            all_primary_keys.append(pk)
     
     primary_keys = []
     view_columns = query(f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{settings.DB_CONN['database']}' AND TABLE_NAME = '{view_name}'")
