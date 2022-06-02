@@ -32,10 +32,13 @@ RE_QUERY_PARAM = re.compile(r"^.*\$\w+/?$")
 def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"], description=None, request_body_params = []):
     logger.debug(f"Setting up endpoint {method} {route}")
     
-    # if the query is requesting the logged user.
+    # Check if the query is requesting the logged user's ID
+    # If it is and the endpoint does not required authentication,
+    # warn that it may be NULL
     logged_user = "$loggedId" in sql
     if logged_user and not auth_required:
-        logger.warning("You're using $loggedId but are not requesting authorization, in endpoint: " + str(route))
+        logger.warning(f"The endpoint {method.upper()} {route} uses $loggedId but does not require authentication.\n"
+                        "Keep in mind that the logged user's ID may be NULL.")
 
     # Construct the API route taking the prefix into account
     route_prefix = settings.API_PREFIX
@@ -69,24 +72,22 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
 
     # The handler function that will be passed to flask
     def route_handler(*args, **kwargs):
+        # Get the user's data from the session token
+        logged_user_data = get_logged_user()
+
         # If this endpoint requires authentication, check that the
-        # user has provided a session token and that it is valid
+        # user is logged in and has the proper role
         if auth_required:
-            userId = check_session(allowed_roles)
+            check_session(logged_user_data, allowed_roles)
         
         # Collect all url pattern params
         request_url_params_dict = kwargs
 
-        # If endpoint requires the logged userId it adds the pair (loggedId, loggedUserId)
+        # If the endpoint requires the logged user's ID, we add it to the available params
         if logged_user:
-            if not auth_required:
-                userId = check_session(allowed_roles)
-            if userId!=None:
-                request_url_params_dict["loggedId"] = userId
-        else:
-                request_url_params_dict["loggedId"] = None
+            request_url_params_dict["loggedId"] = get_current_user_id(logged_user_data)
 
-        # Convert the silence-style placeholders in the SQL query to proper MySQL placeholders
+        # Convert the Silence-style placeholders in the SQL query to proper MySQL placeholders
         query_string = silence_to_mysql(sql)
 
         # Default outputs
@@ -118,11 +119,6 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
             for param in url_params:
                 body_params[param] = request_url_params_dict[param]
 
-            if logged_user and auth_required:
-                body_params["loggedId"] = userId
-            param_tuple = tuple(body_params[param] for param in sql_params)
-
-
             param_tuple = tuple(body_params[param] for param in sql_params)
 
             # Run the execute query
@@ -135,44 +131,59 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
     server_manager.API_SUMMARY.register_endpoint({"route": full_route, "method": method.upper(), "description": description})
 
 ###############################################################################
-# Session token checker
-def check_session(allowed_roles):
+# Aux functions
+
+# Extracts the user's data from the session token sent in the header
+# Returns a dict with the user's information, or None if the token
+# is not present or is invalid
+def get_logged_user():
     token = request.headers.get("Token", default=None)
-    if not token:
+    logged_user_data = None
+
+    if token:
+        try:
+            logged_user_data = check_token(token)
+        except TokenError as exc:
+            logger.debug("The user sent an invalid token: " + str(exc))
+
+    return logged_user_data
+
+# Checks whether the user is logged in and has the proper role
+# Raises a 401 HTTP error if the previous conditions are not met
+# Note that user_data may be null if the user has not sent a token
+# or has sent an invalid one
+def check_session(logged_user_data, allowed_roles):
+    if logged_user_data is None:
         raise HTTPError(401, "Unauthorized")
 
-    try:
-        user_data = check_token(token)
-        u_data = settings.USER_AUTH_DATA['table']
-        primary = get_primary_key(u_data)
-        res = user_data[primary]
-
-        # Check if the user's role is allowed to access this endpoint
-        role_col_name = settings.USER_AUTH_DATA.get("role", None)
-        
-        if role_col_name: # Only check the role if we know the role column
-            # Find the role of the user from the user data
-            user_role = next((v for k, v in user_data.items() if k.lower() == role_col_name.lower()), None)
-
-            logger.debug(f"Allowed roles are {allowed_roles} and the user role is {user_role}")
-
-            if user_role not in allowed_roles and "*" not in allowed_roles:
-                raise HTTPError(401, "Unauthorized")
-
-        return res
-    except TokenError as exc:
-        raise HTTPError(401, str(exc))
-
+    # Check if the user's role is allowed to access this endpoint
+    role_col_name = settings.USER_AUTH_DATA.get("role", None)
     
+    if role_col_name: # Only check the role if we know the role column
+        # Find the role of the user from the user data
+        user_role = next((v for k, v in logged_user_data.items() if k.lower() == role_col_name.lower()), None)
 
-###############################################################################
-# Aux stuff for the handler function
+        logger.debug(f"Allowed roles are {allowed_roles} and the user role is {user_role}")
+
+        if user_role not in allowed_roles and "*" not in allowed_roles:
+            raise HTTPError(401, "Unauthorized")
+    
+# Return the user's ID if the user is logged in and has a PK, None otherwise
+def get_current_user_id(logged_user_data):
+    userID = None
+
+    if logged_user_data is not None:
+        users_table = settings.USER_AUTH_DATA['table']
+        pk = get_primary_key(users_table)
+        userID = logged_user_data[pk] if pk else None  # Returns None if the table has no primary key
+
+    return userID
 
 # Implements filtering, ordering and paging using query strings
 def filter_query_results(data, args):
     # Grab all parameters from the query string
-    sort_param = args.get("_sort", None)
-    sort_reverse = "_order" in args and args["_order"] == "desc"
+    sort_param = args.get("_sort")
+    sort_reverse = args.get("_order") == "desc"
 
     try:
         limit = int(args.get("_limit", None))
@@ -185,7 +196,7 @@ def filter_query_results(data, args):
         page = None
 
     # Filter, sort and paginate results
-    filter_criteria = [pair for pair in args.items() if not pair[0][0] == "_"]
+    filter_criteria = [pair for pair in args.items() if not pair[0].startswith("_")]
     filter_func = lambda elem: all(k not in elem or str(elem[k]).lower() == v.lower() for k, v in filter_criteria)
     res = list(filter(filter_func, data))
 
@@ -200,9 +211,6 @@ def filter_query_results(data, args):
     offset = limit * page if limit and page else 0
     top = offset + limit if limit else len(res)
     return res[offset:top]
-
-###############################################################################
-# Aux stuff for checking and parsing
 
 # Checks whether the SQL operation and the HTTP verb match
 def check_method(sql, verb, endpoint):

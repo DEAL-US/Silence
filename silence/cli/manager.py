@@ -68,5 +68,8 @@ def run_from_command_line():
         for handler in logger.handlers:
             handler.setLevel(logging.DEBUG)
 
+    # Warn the user about any unknown settings before executing the command
+    settings.warn_unknown_settings()
+
     command = args.command.lower()
     HANDLERS[command](args)
