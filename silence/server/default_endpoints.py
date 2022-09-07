@@ -27,14 +27,14 @@ def login():
     if not username or not password:
         raise HTTPError(400, f"Both '{IDENTIFIER_FIELD}' and '{PASSWORD_FIELD}' are required")
 
-    logger.debug(f"Login request from user {username} with password {password}")
+    logger.debug("Login request from user %s with password %s", username, password)
 
     # Look if there is an user with such username
     q = get_login_query(USERS_TABLE, IDENTIFIER_FIELD, username)
     users = dal.api_safe_query(q)
 
     if not users:
-        logger.debug(f"The identifier {username} was not found")
+        logger.debug("The identifier %s was not found", username)
         raise HTTPError(400, "User not found")
 
     # The identifier field should be unique (/register also takes care of that)
@@ -48,7 +48,7 @@ def login():
     password_ok = (settings.ALLOW_CLEAR_PASSWORDS and user[PASSWORD_FIELD] == password) \
                     or check_password_hash(user[PASSWORD_FIELD], password)
     if not password_ok:
-        logger.debug(f"Incorrect password")
+        logger.debug("Incorrect password")
         raise HTTPError(400, "The password is not correct")
 
     # If a column has been specified for the "is active" field, and the check
@@ -86,7 +86,7 @@ def register():
     other_users = dal.api_safe_query(login_q)
 
     if other_users:
-        logger.debug(f"The identifier {username} already exists")
+        logger.debug("The identifier %s already exists", username)
         raise HTTPError(400, f"There already exists another user with that {IDENTIFIER_FIELD}")
 
     # Create the user object, replacing the password with the hashed one

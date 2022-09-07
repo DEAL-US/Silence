@@ -42,10 +42,10 @@ def run_from_command_line():
     group.add_argument("--blank", action="store_true", help="Alias to --template blank")
     parser_new.add_argument("--debug", action="store_true", help="Enables the debug mode")
 
-    parser_createdb = subparsers.add_parser("createdb", help="Runs the provided SQL scripts in the adequate order in the database")
-    parser_run = subparsers.add_parser("run", help="Starts the web server")
-    parser_createapi = subparsers.add_parser("createapi" , help="Reads the database and generates CRUD operations which aren't defined by the user already. ")
-    parser_createtests = subparsers.add_parser("createtests" , help="Reads the database and generates the main test cases for the entities.")
+    subparsers.add_parser("createdb", help="Runs the provided SQL scripts in the adequate order in the database")
+    subparsers.add_parser("run", help="Starts the web server")
+    subparsers.add_parser("createapi" , help="Reads the database and generates CRUD operations which aren't defined by the user already. ")
+    subparsers.add_parser("createtests" , help="Reads the database and generates the main test cases for the entities.")
 
     # Show the help dialog if the command is issued without any arguments
     if len(sys.argv) == 1:

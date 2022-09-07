@@ -37,7 +37,7 @@ def load_user_endpoints():
         endpoint_paths_json = endpoint_paths_json_user
 
     for jsonfile in endpoint_paths_json:
-        with open(jsonfile, "r") as ep:
+        with open(jsonfile, "r", encoding="utf8") as ep:
             endpoints = list(json.load(ep).values())
 
             for endpoint in endpoints:

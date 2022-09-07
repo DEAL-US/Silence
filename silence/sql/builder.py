@@ -1,4 +1,4 @@
-from pypika import Table, Field
+from pypika import Table
 from pypika import MySQLQuery as Query
 
 def get_login_query(table_name, id_name, id_value):

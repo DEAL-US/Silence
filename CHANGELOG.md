@@ -1,5 +1,5 @@
 # 2.1.8-dev
-...
+- Code refactoring and general performance improvements
 
 # 2.1.8
 - Silence now issues a warning when a configuration setting in `settings.py` is unknown.

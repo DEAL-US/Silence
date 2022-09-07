@@ -18,7 +18,7 @@ RE_SECRET_KEY = re.compile(r"""SECRET_KEY\s*=\s*['"]([a-zA-Z0-9-\_=\/+]+)['"]"""
 def download_from_github(project_name, repo_url):
     # Check that the current directory does not contain a folder with the same name
     if isdir(project_name):
-        logger.error(f"A folder named '{project_name}' already exists in the current directory.")
+        logger.error("A folder named '%s' already exists in the current directory.", project_name)
         sys.exit(1)
 
     # Remove the trailing .git or slash if they exist

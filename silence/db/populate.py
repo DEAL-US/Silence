@@ -28,15 +28,18 @@ def create_database():
             stmt = ""
             delimiter = ";"
             for line in f:
-                if not line or line.strip() == "": continue  # Skip blank lines
+                if not line or line.strip() == "": 
+                    continue  # Skip blank lines
                 
                 # Emulate the DELIMITER sentence
                 if "DELIMITER" in line.upper():
                     delimiter = line.split(" ")[1].strip()
                 else:
                     if delimiter in line.upper():
-                        if delimiter != ";": stmt += line.replace(delimiter, ";")
-                        else: stmt += line
+                        if delimiter != ";": 
+                            stmt += line.replace(delimiter, ";")
+                        else: 
+                            stmt += line
 
                         print(stmt)
                         cursor.execute(stmt)
