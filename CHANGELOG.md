@@ -1,4 +1,4 @@
-# 2.1.8-dev
+# 2.1.9
 - Code refactoring and general performance improvements
 
 # 2.1.8
