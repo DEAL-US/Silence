@@ -17,13 +17,13 @@ def create_tests():
     curr_dir = getcwd()
     test_dir = curr_dir + "/tests/auto"
 
-    logger.debug(f"Selected test directory -->  {test_dir}")
+    logger.debug("Selected test directory: %s", test_dir)
     try:
         rmtree(test_dir)
     except FileNotFoundError:
         logger.debug("Folder is not there, creating it.")
 
-    logger.debug(f"Re-creating directory -->  {test_dir}")
+    logger.debug("Re-creating directory %s", test_dir)
     Path(test_dir).mkdir(parents=True, exist_ok=True)
 
     # Test files creation
@@ -34,14 +34,14 @@ def create_tests():
         name = table[0].lower()
         pk = get_primary_key(name)
         if pk is None:
-                logger.warning(f"The table '{name}' does not have a primary key. No tests will be created for it.")
+                logger.warning("The table '%s' does not have a primary key. No tests will be created for it.", name)
                 continue
         try:
-            table[1].remove(pk) # the auth table will already have its primary key removed.
+            table[1].remove(pk) # The auth table will already have its primary key removed.
         except:
             pass
         
-        logger.info(f"Generating tests for {name}")
+        logger.info("Generating tests for %s", name)
         table_name = next(t for t in tables if t.lower() == name)
         table_attributes = get_table_cols(table_name)
 
@@ -181,8 +181,8 @@ Content-Type: application/json
 DELETE {{{{BASE}}}}/{name}/{{{{{name[:3]}Id}}}}
 
 """
-        # WRITE TEST TO FILE.
-        with open(test_dir+f"/{name}.http", "w") as test:
+        # Write test to file
+        with open(test_dir + f"/{name}.http", "w", encoding="utf8") as test:
             test.write(TEST)
 
 def add_table_args(table_attributes):

@@ -11,8 +11,6 @@ Silence is a framework that allows for a rapid deployment of a RESTful API and a
 
 Silence has been built by the [**DEAL research group**](https://deal.us.es/) as an educational and teaching tool for its use in several courses of the Degree in Computer Science at the University of Seville.
 
-**Disclaimer:** We have designed and built Silence with educational-only use in mind. Silence makes no specific efforts to ensure efficiency, security, or fitness to purposes other than educational ones. We have not built Silence for its use in a production environment of any kind.
-
 # tl;dr
 ![Setting up a project](img/setup.svg)
 

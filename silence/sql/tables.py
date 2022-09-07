@@ -1,4 +1,3 @@
-from requests import get
 from silence.db.dal import query
 
 from silence.logging.default_logger import logger
@@ -17,7 +16,7 @@ def get_tables():
         table_name = next(x for x in table_data.values() if x != "BASE TABLE")
         tables[table_name] = get_table_cols(table_name)
 
-    logger.debug(f"Tables in database: {tables}")
+    logger.debug("Tables in database: %s", str(tables))
     return tables
 
 def get_views():
@@ -28,7 +27,7 @@ def get_views():
         view_name = next(x for x in view_data.values() if x != "VIEW")
         views[view_name] = get_table_cols(view_name)
 
-    logger.debug(f"Views in database: {views}")
+    logger.debug("Views in database: %s", str(views))
     return views
 
 def get_primary_key(table_name):

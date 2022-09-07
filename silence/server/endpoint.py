@@ -1,20 +1,19 @@
-from functools import wraps
+import sys
+import re
+
 from flask import jsonify, request
 
-from silence.db import dal
-from silence import sql as SQL
-from silence.sql import get_sql_op
-from silence.settings import settings
-from silence.utils.min_type import Min
-from silence.auth.tokens import check_token
-from silence.logging.default_logger import logger
-from silence.sql.converter import silence_to_mysql
-from silence.sql.tables import get_primary_key
-from silence.server import manager as server_manager
-from silence.exceptions import HTTPError, TokenError
-
-import re
-import sys
+from silence.db                         import dal
+from silence                            import sql as SQL
+from silence.sql                        import get_sql_op
+from silence.settings                   import settings
+from silence.utils.min_type             import Min
+from silence.auth.tokens                import check_token
+from silence.sql.tables                 import get_primary_key
+from silence.logging.default_logger     import logger
+from silence.sql.converter              import silence_to_mysql
+from silence.server                     import manager as server_manager
+from silence.exceptions                 import HTTPError, TokenError
 
 OP_VERBS = {
     SQL.SELECT: 'get',
@@ -30,15 +29,14 @@ RE_QUERY_PARAM = re.compile(r"^.*\$\w+/?$")
 ###############################################################################
 
 def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"], description=None, request_body_params = []):
-    logger.debug(f"Setting up endpoint {method} {route}")
+    logger.debug("Setting up endpoint %s %s", method, route)
     
     # Check if the query is requesting the logged user's ID
     # If it is and the endpoint does not required authentication,
     # warn that it may be NULL
     logged_user = "$loggedId" in sql
     if logged_user and not auth_required:
-        logger.warning(f"The endpoint {method.upper()} {route} uses $loggedId but does not require authentication.\n"
-                        "Keep in mind that the logged user's ID may be NULL.")
+        logger.warning("The endpoint %s %s uses $loggedId but does not require authentication.\n Keep in mind that the logged user's ID may be NULL.", method.upper(), route)
 
     # Construct the API route taking the prefix into account
     route_prefix = settings.API_PREFIX
@@ -144,7 +142,7 @@ def get_logged_user():
         try:
             logged_user_data = check_token(token)
         except TokenError as exc:
-            logger.debug("The user sent an invalid token: " + str(exc))
+            logger.debug("The user sent an invalid token: %s", str(exc))
 
     return logged_user_data
 
@@ -163,7 +161,7 @@ def check_session(logged_user_data, allowed_roles):
         # Find the role of the user from the user data
         user_role = next((v for k, v in logged_user_data.items() if k.lower() == role_col_name.lower()), None)
 
-        logger.debug(f"Allowed roles are {allowed_roles} and the user role is {user_role}")
+        logger.debug("Allowed roles are %s and the user role is %s", str(allowed_roles), user_role)
 
         if user_role not in allowed_roles and "*" not in allowed_roles:
             raise HTTPError(401, "Unauthorized")
@@ -202,7 +200,7 @@ def filter_query_results(data, args):
 
     def order_key_func(elem):
         v = elem[sort_param]
-        return v if v is not None else Min  # Avoids comparisons against None
+        return v if v is not None else Min  # Avoids errors when comparing against None
 
     try:
         res.sort(key=order_key_func, reverse=sort_reverse)

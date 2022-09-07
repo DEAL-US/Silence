@@ -1,16 +1,16 @@
-from silence.settings import settings
-from silence.logging.default_logger import logger
-
-import requests
 import traceback
 import sys
+import requests
+
+from silence.settings import settings
+from silence.logging.default_logger import logger
 
 def handle(args):
     query_url = f"https://api.github.com/orgs/{settings.GITHUB_TEMPLATES_OWNER}/repos"
 
     try:
-        repo_data = requests.get(query_url).json()
-    except Exception as exc:
+        repo_data = requests.get(query_url, timeout=10).json()
+    except Exception:
         logger.debug(traceback.format_exc())
         logger.error("An error has occurred when querying GitHub's API to obtain the list of templates.")
         if not settings.DEBUG_ENABLED:

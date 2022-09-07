@@ -12,7 +12,7 @@ from silence.logging.default_logger import logger
 
 # Query method to retrieve information
 def query(q, params=None):
-    logger.debug(f'Executing SQL query "{q}" with params {params}')
+    logger.debug('Executing SQL query "%s" with params %s', q, params)
 
     # Fetch the connection and get a cursor
     conn = get_conn()
@@ -25,7 +25,7 @@ def query(q, params=None):
             cursor.execute(q)
 
         res = cursor.fetchall()
-        logger.debug(f"Query result: {res}")
+        logger.debug("Query result: %s", res)
         return res
     except Exception as exc:
         # If anything happens, wrap the exceptions in a DatabaseError
@@ -38,7 +38,7 @@ def query(q, params=None):
 
 # Update method to modify information
 def update(q, params=None):
-    logger.debug(f'Executing SQL operation "{q}" with params {params}')
+    logger.debug(f'Executing SQL operation "%s" with params %s', q, params)
     conn = get_conn()
     cursor = conn.cursor(DictCursor)
 
@@ -54,7 +54,7 @@ def update(q, params=None):
 
         # Return the ID of the row that was modified or inserted
         lastid = cursor.lastrowid
-        logger.debug(f"Last modified row ID: {lastid}")
+        logger.debug("Last modified row ID: %s", lastid)
         res = {"lastId": lastid}
         return res
     except Exception as exc:

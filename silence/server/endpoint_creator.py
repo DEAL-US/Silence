@@ -33,7 +33,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
     except FileNotFoundError:
         logger.debug("Endpoint folder not found.")
     
-    logger.debug(f"Creating directory --> {auto_dir}")
+    logger.debug("Creating directory %s", auto_dir)
     makedirs(auto_dir)
 
     # Create the endpoints (JSON and JS) for the tables and views
@@ -49,7 +49,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
         # user are added as JSON config files for the server
         endpoints_to_js = {}
         endpoints_to_json = {}
-        logger.info(f"Generating endpoints and JS API files for {table_name}")
+        logger.info("Generating endpoints and JS API files for %s", table_name)
 
         if is_table:
             pk = get_primary_key(table_name)
@@ -94,7 +94,7 @@ def create_entity_endpoints(existing_routes_method_pairs):
         # Save the *new* endpoints as JSON config to a file
         if endpoints_to_json:
             json_str = json.dumps(endpoints_to_json, indent=4)
-            with open(auto_dir + f"/{table_name}.json", "w") as f:
+            with open(auto_dir + f"/{table_name}.json", "w", encoding="utf8") as f:
                 f.write(json_str)
 
     # Finally, generate the .js API module for the allowed auth operations
@@ -182,8 +182,7 @@ const {table_name}API_auto = {{
 
 export {{ {table_name}API_auto }};"""
 
-    api_path + f"{table_name}.js"
-    open(f"{api_path}/_{table_name}.js", "w").write(file_content)
+    open(f"{api_path}/_{table_name}.js", "w", encoding="utf8").write(file_content)
 
 
 def generate_api_text(name, pk_name, endpoint_data):
@@ -200,8 +199,11 @@ def generate_api_text(name, pk_name, endpoint_data):
     formdata = ", formData" if needs_formdata else ""
 
     args = []
-    if needs_formdata: args.append("formData")
-    if method in ("put", "delete") or is_getById: args.append(pk_name)
+    if needs_formdata: 
+        args.append("formData")
+
+    if method in ("put", "delete") or is_getById: 
+        args.append(pk_name)
     
     return f"""/** {description} */
     {name}: async function({', '.join(args)}) {{
@@ -227,7 +229,7 @@ def get_user_endpoints():
 
     # Form (route, method) pairs for every endpoint found and return them
     for jsonfile in user_endpoints:
-        with open(jsonfile, "r") as ep:
+        with open(jsonfile, "r", encoding="utf8") as ep:
             endpoints = list(json.load(ep).values())
             endpoint_pair = [(endpoint['route'], endpoint['method']) for endpoint in endpoints]
             endpoint_route_method_pairs += endpoint_pair

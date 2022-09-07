@@ -42,7 +42,7 @@ class APISummary:
             # Replace $param with <param>
             route = re.sub(r"\$(\w+)", r"<\1>", route)
 
-            logger.info(f"    · {base}{route} ({methods})")
+            logger.info("    · %s%s (%s)", base, route, methods)
 
         if unique_endpoints:
             # Add an empty line
