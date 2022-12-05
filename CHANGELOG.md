@@ -1,5 +1,6 @@
 # 2.1.9-dev
-- ...
+- Privacy improvements for logging and debug
+- No information is provided anymore on whether a user exists on login
 
 # 2.1.9
 - Code refactoring and general performance improvements

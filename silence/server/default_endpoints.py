@@ -27,7 +27,7 @@ def login():
     if not username or not password:
         raise HTTPError(400, f"Both '{IDENTIFIER_FIELD}' and '{PASSWORD_FIELD}' are required")
 
-    logger.debug("Login request from user %s with password %s", username, password)
+    logger.debug("Login request from user %s", username)
 
     # Look if there is an user with such username
     q = get_login_query(USERS_TABLE, IDENTIFIER_FIELD, username)
@@ -35,7 +35,7 @@ def login():
 
     if not users:
         logger.debug("The identifier %s was not found", username)
-        raise HTTPError(400, "User not found")
+        raise HTTPError(400, "The user or the password are not correct")
 
     # The identifier field should be unique (/register also takes care of that)
     # so we can just extract the first one
@@ -49,7 +49,7 @@ def login():
                     or check_password_hash(user[PASSWORD_FIELD], password)
     if not password_ok:
         logger.debug("Incorrect password")
-        raise HTTPError(400, "The password is not correct")
+        raise HTTPError(400, "The user or the password are not correct")
 
     # If a column has been specified for the "is active" field, and the check
     # is enabled in the settings, check that the user has not been deactivated
@@ -79,7 +79,10 @@ def register():
     if not username or not password:
         raise HTTPError(400, f"Both '{IDENTIFIER_FIELD}' and '{PASSWORD_FIELD}' are required")
 
-    logger.debug(f"Register request with data {form}")
+    # Do not log the submitted password
+    form_debug = form.copy()
+    del form_debug[PASSWORD_FIELD]
+    logger.debug(f"Register request with data {form_debug}")
 
     # Ensure that the identifier is unique
     login_q = get_login_query(USERS_TABLE, IDENTIFIER_FIELD, username)
