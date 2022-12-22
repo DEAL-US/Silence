@@ -1,7 +1,8 @@
 # 2.1.9-dev
 - Privacy improvements for logging and debug
-- No information is provided anymore on whether a user exists on login
-- Fixed automated testing for Python 3.6
+- No information is provided anymore on whether a user exists when trying to log in
+- Fixed automated testing for Python 3.6 (actions/setup-python#544)
+- Refactored README and moved most of the info to the newly created [wiki page](https://github.com/DEAL-US/Silence/wiki).
 
 # 2.1.9
 - Code refactoring and general performance improvements

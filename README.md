@@ -8,11 +8,14 @@
 
 Silence is a framework that allows for a rapid deployment of a RESTful API and a Web application around a relational database. Silence revolves around the concept of projects, which contain everything needed to deploy the previously mentioned elements and can be moved and/or shared between computers or systems with ease.
 
-Silence has been built by the [**DEAL research group**](https://deal.us.es/) as an educational and teaching tool for its use in several courses of the Degree in Computer Science at the University of Seville.
-
 Check out [**Silence's wiki page**](https://github.com/DEAL-US/Silence/wiki) to see how to get started and for detailed documentation.
 
+Silence has been built by the [**DEAL research group**](https://deal.us.es/) as an educational and teaching tool for its use in several courses of the Degree in Computer Science at the University of Seville.
+
 ![SVG animation showing the process of creating a new project, configuring it, creating the database and API endpoints, and running it](img/setup.svg)
+
+# Documentation and changelog
+Please see [**Silence's wiki**]() and [**CHANGELOG.md**](CHANGELOG.md)
 
 # Citing Silence
 If you find Silence useful for your ongoing research work, please consider citing it as:
@@ -33,7 +36,4 @@ If you find Silence useful for your ongoing research work, please consider citin
 # Contributions
 All contributions are welcome provided that they follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-We keep a [TO-DO](TO-DO.md) with the changes that we'd like to implement in the future. Feel free to open an issue or send us an email if you need clarifications with any of its items.
-
-# Changelog
-See [CHANGELOG.md](CHANGELOG.md)
+We keep a [TO-DO](TO-DO.md) with ideas to implement in the future. Feel free to open an issue or send us an email if you need clarifications with any of its items.
