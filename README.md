@@ -15,7 +15,7 @@ Silence has been built by the [**DEAL research group**](https://deal.us.es/) as 
 ![SVG animation showing the process of creating a new project, configuring it, creating the database and API endpoints, and running it](img/setup.svg)
 
 # Documentation and changelog
-Please see [**Silence's wiki**]() and [**CHANGELOG.md**](CHANGELOG.md)
+Please see [**Silence's wiki**](https://github.com/DEAL-US/Silence/wiki) and [**CHANGELOG.md**](CHANGELOG.md)
 
 # Citing Silence
 If you find Silence useful for your ongoing research work, please consider citing it as:
