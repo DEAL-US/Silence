@@ -1,4 +1,4 @@
-# 2.1.9-dev
+# 2.1.10
 - Privacy improvements for logging and debug
 - No information is provided anymore on whether a user exists when trying to log in
 - Fixed automated testing for Python 3.6 (actions/setup-python#544)
