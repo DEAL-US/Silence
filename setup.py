@@ -33,7 +33,7 @@ setup(
         "colorama~=0.4.4",
         "cryptography~=36.0.2",
         "Flask-Cors==3.0.10",
-        "Flask==2.0.3",
+        "Flask==2.3.2",
         "itsdangerous~=2.0.1",
         "PyMySQL~=1.0.2",
         "pypika==0.48.9",
