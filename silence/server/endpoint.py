@@ -11,6 +11,7 @@ from silence.utils.min_type             import Min
 from silence.auth.tokens                import check_token
 from silence.sql.tables                 import get_primary_key
 from silence.logging.default_logger     import logger
+from silence.logging                    import utils as log_utils
 from silence.sql.converter              import silence_to_mysql
 from silence.server                     import manager as server_manager
 from silence.exceptions                 import HTTPError, TokenError
@@ -111,11 +112,16 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
             #Construct a dict for all params expected in the request body, setting them to None if they have not been provided
             form = request.json if request.is_json else request.form
             body_params = {param: form.get(param, None) for param in request_body_params}
-
+            
+            
             # We have checked that sql_params is a subset of url_params U body_params,
             # construct a joint param object and use it to fill the SQL placeholders
             for param in url_params:
                 body_params[param] = request_url_params_dict[param]
+
+            # print(f"\n\n body paramters:\n {body_params} \n\n request url params dict:\n {request_url_params_dict} \n\n")
+
+            logger.info(log_utils.format_custom_record('api', 'yellow', f'PARAMS {body_params}'))
 
             param_tuple = tuple(body_params[param] for param in sql_params)
 

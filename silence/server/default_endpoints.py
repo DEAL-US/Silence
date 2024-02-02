@@ -8,6 +8,7 @@ from silence.sql.tables import get_table_cols
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
+from silence.logging import utils as log_utils
 
 
 ###############################################################################
@@ -61,6 +62,9 @@ def login():
     # If we've reached here the login is successful, generate a session token
     # and return it with the logged user's info
     logger.debug("Login OK")
+
+    logger.info(log_utils.format_custom_record('api', 'yellow', f'PARAMS {form}'))
+
     token = create_token(user)
     del user[PASSWORD_FIELD]
     res = {"sessionToken": token, "user": user}
@@ -120,6 +124,9 @@ def register():
     # If we've reached here the register is successful, generate a session token
     # and return it with the logged user's info
     logger.debug("Register OK")
+    
+    logger.info(log_utils.format_custom_record('api', 'yellow', f'PARAMS {form}'))
+
     token = create_token(user)
     del user[PASSWORD_FIELD]
     res = {"sessionToken": token, "user": user}
