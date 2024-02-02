@@ -1,4 +1,5 @@
 from silence.settings import settings
+from silence.logging.default_logger import logger
 
 import colorama
 from colorama import Fore, Style
@@ -6,6 +7,7 @@ from colorama import Fore, Style
 from datetime import datetime
 import logging
 import re
+
 
 
 ###############################################################################
@@ -31,12 +33,12 @@ COLORS = {
 }
 RESET = Style.RESET_ALL if settings.COLORED_OUTPUT else ""
 
-def get_flask_record_std(record):
+def format_flask_record(record):
     msg = record.msg
 
     if msg.startswith(" * Running on"):
         record.msg = msg[3:]
-        return True
+        return "running_msg"
 
     # If the log line is a Flask log line, parse it and
     # style it appropriately
@@ -80,3 +82,27 @@ def get_flask_record_std(record):
         record.args = ()
 
         return record
+
+
+def format_custom_record(kind: str, color: str, msg: str):
+    
+    if kind.lower() == 'api':
+        api_web = "[API]"
+        api_color = COLORS["MAGENTA"]
+
+    elif kind.lower() == 'web':
+        api_web = "[WEB]"
+        api_color = COLORS["CYAN"]
+
+    try:
+        code_color = COLORS[color.upper()]
+    except:
+        logger.warn('Silence chose a non-existing color for cli message, defaulted to white.')
+        code_color = COLORS['WHITE']
+    
+    
+    date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+    formatted_msg = f"{date} | {api_color}{api_web}{RESET} {code_color}{msg}{RESET}"
+
+    return formatted_msg

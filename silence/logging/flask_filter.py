@@ -9,7 +9,11 @@ import logging
 class FlaskFilter(logging.Filter):
 
     def filter(self, record):
-        record = utils.get_flask_record_std(record)
+        record = utils.format_flask_record(record)
+
+        if record == "running_msg":
+            return True
+        
         
         # Pass it on to Silence's logger, which implements
         # blocking to prevent multiple lines from overlapping,
