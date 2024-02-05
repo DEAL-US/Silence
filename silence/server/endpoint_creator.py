@@ -68,6 +68,8 @@ def create_entity_endpoints(existing_routes_method_pairs):
             ("DELETE", "delete", route_one),
         ]
 
+        print(crud_endpoints)
+
         for method, name, route in crud_endpoints:
             # If this is a view or a table without a PK, create only "getAll"
             if name != "getAll" and (not is_table or pk is None): 
@@ -214,7 +216,7 @@ def generate_api_text(name, pk_name, endpoint_data):
 def get_user_endpoints():
     '''
     Searches in the endpoints directory of the silence project for every .json file which we assume is an endpoint file.
-    gets the route and method as pairs for every empoint found and returns them
+    gets the route and method as pairs for every endpoint found and returns them
     '''
     logger.debug("Looking for user endpoints")
     endpoints_dir = getcwd() + "/endpoints"
