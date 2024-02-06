@@ -68,7 +68,12 @@ def create_entity_endpoints(existing_routes_method_pairs):
             ("DELETE", "delete", route_one),
         ]
 
-        print(crud_endpoints)
+        # example:
+        # [('GET', 'getAll', '/departments'), 
+        #  ('GET', 'getById', '/departments/$departmentId'), 
+        #  ('POST', 'create', '/departments'), 
+        #  ('PUT', 'update', '/departments/$departmentId'), 
+        #  ('DELETE', 'delete', '/departments/$departmentId')]
 
         for method, name, route in crud_endpoints:
             # If this is a view or a table without a PK, create only "getAll"
