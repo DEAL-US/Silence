@@ -84,16 +84,19 @@ def create_entity_endpoints(existing_routes_method_pairs):
             if (route, method) not in existing_routes_method_pairs:
                 endpoints_to_json[name] = endpoints_to_js[name]
 
+
+        # this logic is flawed, since the view could be missing the primary key in question.
+
         # If this is a view, we generate additional JS functions based on the
         # primary keys from other tables it contains, for easier querying
-        if not is_table:
-            for pk in get_primary_key_views(table_name):
-                endpoint_name = "getBy" + pk[0].upper() + pk[1:]  # Is there a better way to do this?
-                endpoints_to_js[endpoint_name] = {
-                    "route": f"{route_all}?{pk}=${pk}",
-                    "method": "GET",
-                    "description": f"Gets an array entries from '{table_name}' by their {pk}.\n{' '*8}Note that this always returns an array."
-                }
+        # if not is_table:
+        #     for pk in get_primary_key_views(table_name):
+        #         endpoint_name = "getBy" + pk[0].upper() + pk[1:]  # Is there a better way to do this?
+        #         endpoints_to_js[endpoint_name] = {
+        #             "route": f"{route_all}?{pk}=${pk}",
+        #             "method": "GET",
+        #             "description": f"Gets an array entries from '{table_name}' by their {pk}.\n{' '*8}Note that this always returns an array."
+        #         }
 
         # Create *all* the .js files for the API.
         generate_API_file_for_endpoints(endpoints_to_js, table_name, pk)
