@@ -82,3 +82,6 @@ CHECK_FOR_UPDATES = True
 
 # Enables the createapi command
 ENABLE_ENDPOINT_AUTO_GENERATION = True
+
+# Displaying the POST/UPDATE/DELETE request body parameters in the CLI console.
+DISPLAY_BODY_PARAMS_CLI = True

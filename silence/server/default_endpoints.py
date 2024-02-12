@@ -63,7 +63,8 @@ def login():
     # and return it with the logged user's info
     logger.debug("Login OK")
 
-    logger.info(log_utils.format_custom_record('api', 'yellow', f'PARAMS {form}'))
+    if(settings.DISPLAY_BODY_PARAMS_CLI):
+        logger.info(log_utils.format_custom_record('api', 'yellow', f'PARAMS {form}'))
 
     token = create_token(user)
     del user[PASSWORD_FIELD]
@@ -125,7 +126,8 @@ def register():
     # and return it with the logged user's info
     logger.debug("Register OK")
     
-    logger.info(log_utils.format_custom_record('api', 'yellow', f'PARAMS {form}'))
+    if(settings.DISPLAY_BODY_PARAMS_CLI):
+        logger.info(log_utils.format_custom_record('api', 'yellow', f'PARAMS {form}'))
 
     token = create_token(user)
     del user[PASSWORD_FIELD]

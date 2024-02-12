@@ -111,6 +111,13 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
         else:  # POST/PUT/DELETE operations
             #Construct a dict for all params expected in the request body, setting them to None if they have not been provided
             form = request.json if request.is_json else request.form
+
+            # TODO: maybe instead of getting putting a none put the default value.
+            # SELECT DISTINCT DEFAULT(name) FROM departments
+            # take into account that the default value if none is specified is NULL.
+
+            # request_body_params[param] if param in request_body_params else find_default(tabla, columna)
+
             body_params = {param: form.get(param, None) for param in request_body_params}
             
             
@@ -119,11 +126,14 @@ def setup_endpoint(route, method, sql, auth_required=False, allowed_roles=["*"],
             for param in url_params:
                 body_params[param] = request_url_params_dict[param]
 
-            # print(f"\n\n body paramters:\n {body_params} \n\n request url params dict:\n {request_url_params_dict} \n\n")
+            if(settings.DISPLAY_BODY_PARAMS_CLI):
+                logger.info(log_utils.format_custom_record('api', 'yellow', f'PARAMS {body_params}'))
 
-            logger.info(log_utils.format_custom_record('api', 'yellow', f'PARAMS {body_params}'))
-
+            # TODO: if the tuple recieves a none, but the database has an explicit default,
+            # replace that none with the specific default value.
             param_tuple = tuple(body_params[param] for param in sql_params)
+
+            # print(f"\n\n body paramters:\n {body_params} \n\n request url params dict:\n {request_url_params_dict} \n\n form:\n {form} \n\n param tuple: \n {param_tuple}\n\n query string: \n {query_string}")
 
             # Run the execute query
             res = dal.api_safe_update(query_string, param_tuple)
