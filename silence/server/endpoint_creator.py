@@ -151,7 +151,8 @@ def make_endpoint_data(name, route, method, table_name, cols, pk):
         "method": method,
         "sql": sql,
         "request_body_params": cols,
-        "auth_required": method != "GET",
+        # "auth_required": method != "GET",
+        "auth_required": True, # for CI testing
         "allowed_roles": ["*"],
     }
 
