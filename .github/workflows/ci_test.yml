@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     runs-on: ubuntu-20.04
 
     services:
@@ -24,7 +24,7 @@ jobs:
           MYSQL_PASSWORD: 123456
           MYSQL_DATABASE: testing
           MYSQL_ROOT_PASSWORD: 123456
-        options: --health-cmd="mariadb-admin ping" --health-interval=5s --health-timeout=2s --health-retries=10
+        options: --health-cmd="mariadb-admin" --health-interval=5s --health-timeout=2s --health-retries=10
 
     steps:
       - uses: actions/checkout@v2
