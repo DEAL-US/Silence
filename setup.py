@@ -22,6 +22,8 @@ setup(
     url="http://github.com/DEAL-US/Silence",
     author="Agustín Borrego",
     author_email="borrego@us.es",
+    maintainer="Miguel Bermudo",
+    maintainer_email="mbermudo@us.es",
     license="MIT",
     packages=find_packages(),
     entry_points={
@@ -40,6 +42,6 @@ setup(
         "requests~=2.27.1",
         "Werkzeug~=2.0.3",
     ],
-    python_requires="~=3.6",
+    python_requires="~=3.8",
     zip_safe=False
 )
