@@ -34,7 +34,14 @@ USER_AUTH_DATA = {
     "table": "users",
     "identifier": "username",
     "password": "password",
+    "role": "role",
 }
+
+# Allow clear text passwords to be used for login for convenience
+ALLOW_CLEAR_PASSWORDS = False
+
+# Default role to assign the user when registering via /register
+DEFAULT_ROLE_REGISTER = None
 
 # Enables or disables the /login, /register and summary (/base) endpoints separately
 ENABLE_LOGIN = True
@@ -59,9 +66,22 @@ HTTP_CACHE_TIME = 0
 # Maximum validity time of a session token in seconds
 MAX_TOKEN_AGE = 86400
 
+# Can disable the activity check, even if an active status column has been provided
+CHECK_USER_IS_ACTIVE = True
+
+# Default value for the "active" column for users, if the activity check is enabled
+# and no default has been provided
+DEFAULT_ACTIVE_STATUS = True
+
 # Default settings for creating a new project
 DEFAULT_TEMPLATE_NAME = "employees"
 GITHUB_TEMPLATES_OWNER = "IISSI-US"
 
 # Enables or disables checking for new Silence updates when running 'silence run'
 CHECK_FOR_UPDATES = True
+
+# Enables the createapi command
+ENABLE_ENDPOINT_AUTO_GENERATION = True
+
+# Displaying the POST/UPDATE/DELETE request body parameters in the CLI console.
+DISPLAY_BODY_PARAMS_CLI = True

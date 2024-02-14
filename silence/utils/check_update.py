@@ -5,12 +5,13 @@ from silence.logging.default_logger import logger
 from silence import __version__
 
 def check_for_new_version():
-    if not settings.CHECK_FOR_UPDATES: return False
+    if not settings.CHECK_FOR_UPDATES: 
+        return False
 
     logger.debug("Checking for new updates...")
 
     try:
-        data = requests.get("https://pypi.org/pypi/Silence/json").json()
+        data = requests.get("https://pypi.org/pypi/Silence/json", timeout=3).json()
         latest_version = data["info"]["version"]
     except Exception as exc:
         logger.debug("Exception occurred when checking for updates (muted):")

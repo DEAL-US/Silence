@@ -13,12 +13,15 @@ from silence.utils.silence_json_encoder import SilenceJSONSerializer
 auth = Serializer(settings.SECRET_KEY, serializer=SilenceJSONSerializer)
 
 def create_token(data):
+    '''Creates and returns a new token containing the given user data'''
     token = auth.dumps(data)
-    logger.debug(f"Created new token {token[:6]}[...]{token[-6:]}")
+    logger.debug("Created new token %s[...]%s", token[:6], token[-6:])
     return token
 
 def check_token(token):
-    logger.debug(f"Checking received token {token[:6]}[...]{token[-6:]}")
+    '''Checks whether the provided token is valid. Returns the user's data
+    contained inside the token if it is, otherwise raises a TokenError.'''
+    logger.debug("Checking received token %s[...]%s", token[:6], token[-6:])
     try:
         user_data = auth.loads(token, max_age=settings.MAX_TOKEN_AGE)
         logger.debug("The token is correct")

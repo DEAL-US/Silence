@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 import click
@@ -13,7 +13,6 @@ from silence.server.api_summary import APISummary
 
 from os.path import join
 from os import getcwd
-import traceback
 import mimetypes
 import logging
 
@@ -22,7 +21,7 @@ import logging
 # configuring it and deploying the endpoints and web app.
 ###############################################################################
 
-static_folder = join(getcwd(), "docs") if settings.RUN_WEB else None
+static_folder = join(getcwd(), "web") if settings.RUN_WEB else None
 APP = Flask(__name__, static_folder=static_folder)
 cors = CORS(APP, resources={f"{settings.API_PREFIX}*": {"origins": "*"}})
 API_SUMMARY = APISummary()
@@ -70,12 +69,26 @@ def setup():
             return res, code
         
         # We're facing an uncontrolled server exception
-        logger.exception(exc)
+        # Only show the full stack trace in debug mode
+        # Otherwise, just show the exception message
+        if settings.DEBUG_ENABLED:
+            logger.exception(exc)
+        else:
+            error_msg = str(exc)
+            error_msg += "\n(Enable debug mode to see full stack trace)"
+            logger.error(error_msg)
 
         exc_type = type(exc).__name__
         msg = str(exc)
         err = HTTPError(500, msg, exc_type)
         return handle_HTTPError(err)
+
+    # Check if clear text passwords can be used for login, and show a warning
+    # if that is the case
+    if settings.ALLOW_CLEAR_PASSWORDS:
+        logger.warning("This project allows clear text passwords in the DB to be used for login\n" +
+                       "(ALLOW_CLEAR_PASSWORDS = True)\n" +
+                       "This is NOT RECOMMENDED except for testing purposes.")
 
     # Load the user-provided API endpoints and the default ones
     if settings.RUN_API:

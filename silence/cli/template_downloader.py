@@ -18,7 +18,7 @@ RE_SECRET_KEY = re.compile(r"""SECRET_KEY\s*=\s*['"]([a-zA-Z0-9-\_=\/+]+)['"]"""
 def download_from_github(project_name, repo_url):
     # Check that the current directory does not contain a folder with the same name
     if isdir(project_name):
-        logger.error(f"A folder named '{project_name}' already exists in the current directory.")
+        logger.error("A folder named '%s' already exists in the current directory.", project_name)
         sys.exit(1)
 
     # Remove the trailing .git or slash if they exist
@@ -86,7 +86,7 @@ def download_from_github(project_name, repo_url):
 
     except FileNotFoundError:
         logger.warning("The downloaded project does not have a settings.py file " +
-         "at its root, it may not be a valid Silence project.")
+        "at its root, it may not be a valid Silence project.")
 
 def git_clone(host, username, repo_name, clone_dir):
     # Get the default branch (we've checked previously that the host is one of
@@ -101,8 +101,7 @@ def git_clone(host, username, repo_name, clone_dir):
         logger.error("Repo not found")
         sys.exit(1)
 
-    branch = api_response.json()["default_branch"]
-
+    branch = api_response.json().get("default_branch", "master")
     git_url = f"https://{host}/{username}/{repo_name}"
     repo_file = f"{branch}.zip"
     repo_zip = git_url + f"/archive/{repo_file}"

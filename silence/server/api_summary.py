@@ -34,7 +34,7 @@ class APISummary:
         port = settings.HTTP_PORT
         base = f"http://{host}:{port}"
 
-        logger.info("Endpoints loaded:")
+        logger.info("\nEndpoints loaded:")
 
         for route, method_list in unique_endpoints:
             # Force the GET-POST-PUT-DELETE order
@@ -42,5 +42,9 @@ class APISummary:
             # Replace $param with <param>
             route = re.sub(r"\$(\w+)", r"<\1>", route)
 
-            logger.info(f"\t· {base}{route} ({methods})")
+            logger.info("    · %s%s (%s)", base, route, methods)
+
+        if unique_endpoints:
+            # Add an empty line
+            logger.info("")
     

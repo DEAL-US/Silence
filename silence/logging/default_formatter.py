@@ -1,5 +1,4 @@
 import logging
-import traceback
 import colorama
 
 from colorama import Fore, Style
@@ -38,5 +37,3 @@ class DefaultFormatter(logging.Formatter):
             res += Style.RESET_ALL
 
         return res
-
-    

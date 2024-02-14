@@ -5,7 +5,7 @@ import logging
 from silence import __version__
 from silence.settings import settings
 from silence.logging.default_logger import logger
-from silence.cli.commands import run, createdb, new, list_templates
+from silence.cli.commands import run, createdb, new, list_templates, createapi, createtests
 
 ###############################################################################
 # Command line interface manager
@@ -16,7 +16,9 @@ HANDLERS = {
     "run": run.handle,
     "createdb": createdb.handle,
     "new": new.handle,
-    "list-templates": list_templates.handle
+    "list-templates": list_templates.handle,
+    "createapi": createapi.handle,
+    "createtests": createtests.handle
 }
 
 def run_from_command_line():
@@ -40,8 +42,10 @@ def run_from_command_line():
     group.add_argument("--blank", action="store_true", help="Alias to --template blank")
     parser_new.add_argument("--debug", action="store_true", help="Enables the debug mode")
 
-    parser_createdb = subparsers.add_parser("createdb", help="Runs the provided SQL scripts in the adequate order in the database")
-    parser_run = subparsers.add_parser("run", help="Starts the web server")
+    subparsers.add_parser("createdb", help="Runs the provided SQL scripts in the adequate order in the database")
+    subparsers.add_parser("run", help="Starts the web server")
+    subparsers.add_parser("createapi" , help="Reads the database and generates CRUD operations which aren't defined by the user already. ")
+    subparsers.add_parser("createtests" , help="Reads the database and generates the main test cases for the entities.")
 
     # Show the help dialog if the command is issued without any arguments
     if len(sys.argv) == 1:
@@ -63,6 +67,9 @@ def run_from_command_line():
         logger.setLevel(logging.DEBUG)
         for handler in logger.handlers:
             handler.setLevel(logging.DEBUG)
+
+    # Warn the user about any unknown settings before executing the command
+    settings.warn_unknown_settings()
 
     command = args.command.lower()
     HANDLERS[command](args)
