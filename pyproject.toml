@@ -7,13 +7,13 @@ maintainers = [{ name = "Miguel Bermudo", email = "mbermudo@us.es" }]
 license = "MIT"
 dependencies = [
     "colorama == 0.4.6",
-    "Flask-Cors==6.0.2",
-    "Flask==3.1.2",
-    "itsdangerous==2.2.0",
-    "PyMySQL~=1.1.2",
-    "pypika @ git+https://github.com/kayak/pypika",
-    "requests~=2.32.5",
-    "Werkzeug~=3.1.5",
+    "Flask-Cors == 6.0.2",
+    "Flask == 3.1.2",
+    "itsdangerous == 2.2.0",
+    "PyMySQL ~= 1.1.2",
+    "pypika == 0.50.0",
+    "requests ~= 2.32.5",
+    "Werkzeug ~= 3.1.5",
 ]
 requires-python = ">=3.9"
 
