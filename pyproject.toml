@@ -1,0 +1,58 @@
+[project]
+name = "Silence"
+dynamic = ["version"]
+description = "An educational API+Web framework."
+authors = [{ name = "Agustín Borrego", email = "borrego@us.es" }]
+maintainers = [{ name = "Miguel Bermudo", email = "mbermudo@us.es" }]
+license = "MIT"
+dependencies = [
+    "colorama == 0.4.6",
+    "Flask-Cors==6.0.2",
+    "Flask==3.1.2",
+    "itsdangerous==2.2.0",
+    "PyMySQL~=1.1.2",
+    "pypika @ git+https://github.com/kayak/pypika",
+    "requests~=2.32.5",
+    "Werkzeug~=3.1.5",
+]
+requires-python = ">=3.9"
+
+[project.urls]
+Repository = "http://github.com/DEAL-US/Silence"
+
+[build-system]
+requires = ["hatchling>=1.18.0"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+silence = "silence.cli.manager:run_from_command_line"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/silence"]
+
+[tool.hatch.version]
+path = "src/silence/__version__.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["/.github"]
+
+[tool.hatch.envs.default]
+dependencies = ["black"]
+
+[tool.hatch.envs.default.scripts]
+lint = "ruff check ."
+format = "black ."
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = ["black>=23.0.0", "ruff>=0.1.0"]
+
+[tool.hatch.envs.lint.scripts]
+check = "ruff check ."
+format = ["black .", "ruff check --fix ."]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.ruff.lint.isort]
+lines-after-imports = 1

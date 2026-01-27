@@ -2,10 +2,17 @@ import argparse
 import sys
 import logging
 
-from silence import __version__
+from silence.__version__ import __version__
 from silence.settings import settings
 from silence.logging.default_logger import logger
-from silence.cli.commands import run, createdb, new, list_templates, createapi, createtests
+from silence.cli.commands import (
+    run,
+    createdb,
+    new,
+    list_templates,
+    createapi,
+    createtests,
+)
 
 ###############################################################################
 # Command line interface manager
@@ -18,34 +25,57 @@ HANDLERS = {
     "new": new.handle,
     "list-templates": list_templates.handle,
     "createapi": createapi.handle,
-    "createtests": createtests.handle
+    "createtests": createtests.handle,
 }
+
 
 def run_from_command_line():
     parser = argparse.ArgumentParser(
         description="Silence: An educational framework for deploying RESTful APIs and Web applications."
     )
     subparsers = parser.add_subparsers(help="Description:", dest="command")
-    
+
     # Force the user to select one of the available commands,
     # and allow them to provide additional options after it.
-    parser.add_argument("-v", "--version", action="version", version=f"Silence v{__version__}")
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"Silence v{__version__}",
+    )
 
-    parser_list = subparsers.add_parser("list-templates", help="Lists the available project templates")
-    parser_list.add_argument("--debug", action="store_true", help="Enables the debug mode")
-    
+    parser_list = subparsers.add_parser(
+        "list-templates", help="Lists the available project templates"
+    )
+    parser_list.add_argument(
+        "--debug", action="store_true", help="Enables the debug mode"
+    )
+
     parser_new = subparsers.add_parser("new", help="Creates a new project")
     parser_new.add_argument("name", help="The new project's name")
     group = parser_new.add_mutually_exclusive_group()
-    group.add_argument("--template", help="Template name to use when creating the new project")
+    group.add_argument(
+        "--template", help="Template name to use when creating the new project"
+    )
     group.add_argument("--url", help="URL to a Git repo containing a project to clone")
     group.add_argument("--blank", action="store_true", help="Alias to --template blank")
-    parser_new.add_argument("--debug", action="store_true", help="Enables the debug mode")
+    parser_new.add_argument(
+        "--debug", action="store_true", help="Enables the debug mode"
+    )
 
-    subparsers.add_parser("createdb", help="Runs the provided SQL scripts in the adequate order in the database")
+    subparsers.add_parser(
+        "createdb",
+        help="Runs the provided SQL scripts in the adequate order in the database",
+    )
     subparsers.add_parser("run", help="Starts the web server")
-    subparsers.add_parser("createapi" , help="Reads the database and generates CRUD operations which aren't defined by the user already. ")
-    subparsers.add_parser("createtests" , help="Reads the database and generates the main test cases for the entities.")
+    subparsers.add_parser(
+        "createapi",
+        help="Reads the database and generates CRUD operations which aren't defined by the user already. ",
+    )
+    subparsers.add_parser(
+        "createtests",
+        help="Reads the database and generates the main test cases for the entities.",
+    )
 
     # Show the help dialog if the command is issued without any arguments
     if len(sys.argv) == 1:

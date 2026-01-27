@@ -2,10 +2,11 @@ import requests
 
 from silence.settings import settings
 from silence.logging.default_logger import logger
-from silence import __version__
+from silence.__version__ import __version__
+
 
 def check_for_new_version():
-    if not settings.CHECK_FOR_UPDATES: 
+    if not settings.CHECK_FOR_UPDATES:
         return False
 
     logger.debug("Checking for new updates...")
