@@ -23,17 +23,22 @@ import logging
 
 static_folder = join(getcwd(), "web") if settings.RUN_WEB else None
 APP = Flask(__name__, static_folder=static_folder)
-cors = CORS(APP, resources={f"{settings.API_PREFIX}*": {"origins": "*"}})
+cors = CORS(
+    APP, resources={f"{settings.API_PREFIX}*": {"origins": "*"}}
+)  # TODO: is this unused
 API_SUMMARY = APISummary()
+
 
 def setup():
     # Configures the web server
-    APP.secret_key = settings.SECRET_KEY 
+    APP.secret_key = settings.SECRET_KEY
     APP.config["SESSION_TYPE"] = "filesystem"
-    APP.config["SEND_FILE_MAX_AGE_DEFAULT"] = settings.HTTP_CACHE_TIME 
+    APP.config["SEND_FILE_MAX_AGE_DEFAULT"] = settings.HTTP_CACHE_TIME
 
     # Mute Flask's startup messages
-    def noop(*args, **kwargs): pass
+    def noop(*args, **kwargs):
+        pass
+
     click.echo = noop
     click.secho = noop
 
@@ -67,7 +72,7 @@ def setup():
             code = exc.code
             res = jsonify({"message": exc.description, "code": code})
             return res, code
-        
+
         # We're facing an uncontrolled server exception
         # Only show the full stack trace in debug mode
         # Otherwise, just show the exception message
@@ -86,9 +91,11 @@ def setup():
     # Check if clear text passwords can be used for login, and show a warning
     # if that is the case
     if settings.ALLOW_CLEAR_PASSWORDS:
-        logger.warning("This project allows clear text passwords in the DB to be used for login\n" +
-                       "(ALLOW_CLEAR_PASSWORDS = True)\n" +
-                       "This is NOT RECOMMENDED except for testing purposes.")
+        logger.warning(
+            "This project allows clear text passwords in the DB to be used for login\n"
+            + "(ALLOW_CLEAR_PASSWORDS = True)\n"
+            + "This is NOT RECOMMENDED except for testing purposes."
+        )
 
     # Load the user-provided API endpoints and the default ones
     if settings.RUN_API:
@@ -101,6 +108,7 @@ def setup():
     # Load the web static files
     if settings.RUN_WEB:
         logger.debug("Setting up web server")
+
         @APP.route("/")
         def root():
             return APP.send_static_file("index.html")
@@ -108,6 +116,7 @@ def setup():
         @APP.route("/<path:path>")
         def other_path(path):
             return APP.send_static_file(path)
+
 
 def run():
     APP.run(

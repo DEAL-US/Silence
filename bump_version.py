@@ -8,7 +8,7 @@ if len(sys.argv) < 2:
 version = sys.argv[1]
 
 # Write the version to __init__.py and to the top of the changelog
-open("silence/__init__.py", "w").write(f'__version__ = "{version}"\n')
+open("silence/__version__.py", "w").write(f'__version__ = "{version}"\n')
 
 changelog_lines = open("CHANGELOG.md", "r").readlines()
 changelog_lines[0] = f"# {version}\n"
