@@ -24,4 +24,4 @@ jobs:
       env:
         USERNAME: ${{ secrets.PYPI_USERNAME }}
         PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: uv build -u $USERNAME -p $PASSWORD
+      run: uv publish -u $USERNAME -p $PASSWORD
