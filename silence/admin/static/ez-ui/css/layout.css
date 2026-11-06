@@ -1,0 +1,53 @@
+/* Maquetación: clases para distribuir el contenido en la página. */
+
+/* Contenedor centrado: deja margen lateral y limita el ancho en pantallas grandes.
+   min() elige el menor de los dos valores. */
+.ez-container {
+  width: min(100% - 2rem, 70rem);
+  margin-inline: auto;
+}
+
+/* Dos columnas que pasan a una cuando no caben. Por defecto, la primera ocupa el
+   doble que la segunda (2fr y 1fr reparten el espacio libre en tres partes);
+   --ez-split-columns permite otro reparto en un elemento concreto (1fr 1fr). */
+.ez-split {
+  display: grid;
+  grid-template-columns: var(--ez-split-columns, 2fr 1fr);
+  gap: var(--ez-space-6);
+}
+
+/* Una columna de Grid no encoge por debajo del ancho de su contenido (una tabla
+   ancha la ensancharía y desbordaría la página): min-width: 0 se lo permite, y lo
+   que no cabe se desplaza dentro de su .ez-scroll. */
+.ez-split > * {
+  min-width: 0;
+}
+
+@media (max-width: 48rem) {
+  .ez-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Contenido más ancho que la pantalla, como una tabla con muchas columnas en un
+   móvil: se desplaza a los lados dentro de su marco, sin mover la página. */
+.ez-scroll {
+  overflow-x: auto;
+}
+
+/* En una pantalla estrecha, las celdas no parten su texto: la tabla conserva su ancho
+   y se desplaza, en lugar de estrecharse con cada nombre en varias líneas. */
+@media (max-width: 48rem) {
+  .ez-scroll th,
+  .ez-scroll td {
+    white-space: nowrap;
+  }
+}
+
+/* Grid crea tantas columnas como quepan. Cada columna mide al menos 17rem,
+   salvo en pantallas más estrechas, y comparte el espacio restante con las demás. */
+.ez-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: var(--ez-space-6);
+}

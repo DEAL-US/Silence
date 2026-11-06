@@ -1,0 +1,146 @@
+/* Estilos generales de los elementos HTML, incluidas las tablas. */
+
+/* El ancho y el alto incluyen el relleno y el borde, también en los pseudoelementos. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--ez-font);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+/* El atributo hidden oculta el elemento aunque una clase le dé otro display. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--ez-bg);
+  color: var(--ez-text);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: var(--ez-primary);
+}
+
+a:hover {
+  text-decoration-thickness: .12em;
+}
+
+/* El código, con la fuente monoespaciada. */
+code,
+pre,
+kbd {
+  font-family: var(--ez-font-mono);
+  font-size: .9em;
+  /* Sin ligaduras: «--» se ve como dos guiones y no como una raya. */
+  font-variant-ligatures: none;
+}
+
+/* El texto seleccionado con el color del tema. */
+::selection {
+  background: var(--ez-selection);
+}
+
+/* Destaca el elemento que recibe el foco al navegar con el teclado. */
+:focus-visible {
+  outline: 3px solid var(--ez-focus);
+  outline-offset: 3px;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+}
+
+/* clamp(mínimo, valor adaptable, máximo) ajusta el texto al ancho de la ventana. */
+h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+h2 {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+}
+
+/* margin-block aplica margen al inicio y al final del eje de lectura vertical. */
+p {
+  margin-block: .5rem 1rem;
+}
+
+/* Los controles de formulario heredan la tipografía del documento. */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--ez-border);
+  margin-block: var(--ez-space-6);
+}
+
+/* Tablas: ocupan todo el ancho, sin separación entre celdas (border-collapse) y
+   con una línea entre filas. th es la cabecera de una columna (o de una fila). */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: var(--ez-space-2) var(--ez-space-3);
+  border-bottom: 1px solid var(--ez-border);
+  text-align: left;
+}
+
+/* Título de la tabla, encima y alineado a la izquierda. */
+caption {
+  padding-bottom: var(--ez-space-2);
+  font-weight: 650;
+  text-align: left;
+}
+
+thead th {
+  color: var(--ez-muted);
+  font-size: .85em;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+/* Filas alternas con otro fondo para seguirlas con la vista: nth-child(even)
+   selecciona las filas pares. */
+tbody tr:nth-child(even) {
+  background: var(--ez-surface-muted);
+}
+
+/* Los números, alineados a la derecha y con cifras del mismo ancho, para que las
+   unidades queden unas debajo de otras. */
+td.ez-number,
+th.ez-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
