@@ -3,10 +3,9 @@
 
 name: Upload Python Package
 
+# Manual only while Silence 3 is a proof of concept (no PyPI, no releases)
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
 
 jobs:
   deploy:

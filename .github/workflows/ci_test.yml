@@ -9,12 +9,12 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-    runs-on: ubuntu-20.04
+        python-version: ["3.12", "3.13"]
+    runs-on: ubuntu-24.04
 
     services:
       mariadb:
-        image: mariadb:latest
+        image: mariadb:13.0
         ports:
           - 3306:3306
         env:
@@ -25,9 +25,9 @@ jobs:
         options: --health-cmd="mariadb-admin ping" --health-interval=8s --health-timeout=4s --health-retries=10
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
