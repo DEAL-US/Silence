@@ -11,17 +11,21 @@
 >
 > ```
 > pip install -e .            # from this repo, in a virtual environment
-> silence new myproject       # template: ez-ui (default), blank (--template) or a repo (--url)
+> silence new myproject       # frontend template ez-ui (default; --template, --url) + admin panel (--no-admin)
 > cd myproject
 > silence run                 # opens the admin panel at http://127.0.0.1:8080/admin/
+> silence createapi           # or from the panel: endpoints/auto_<table>.json
+> silence createtests [--http]
 > silence test                # runs tests/*.json, each one in a rolled back transaction
+> silence hash <password>     # argon2 hash
+> silence admin update        # installs or updates the admin panel (admin/)
 > ```
 >
-> In the panel: connect to an existing database, link the users table (argon2 or plain text
-> passwords), generate the endpoints (`endpoints/auto_<table>.json`), customize them
-> (`endpoints/<table>.json`, with `owner` to let only the owner of a row change it), and
-> generate, compose and run the tests. The plan and the decisions are in
-> [docs/plan.md](docs/plan.md) (in Spanish); the CI runs `python tests/run_ci.py`.
+> Silence is the backend: the student's API (`/api`) and an admin API (`/_silence/v1`,
+> [docs/admin-api.md](docs/admin-api.md)). The admin panel (repo `silence-admin-panel`) and
+> the frontend templates (`silence-template-v3-*`) are separate repos that `silence new`
+> composes. The plan and the decisions are in [docs/plan.md](docs/plan.md) (in Spanish);
+> the CI runs `python tests/run_ci.py`.
 > The rest of this README describes Silence 2.
 
 

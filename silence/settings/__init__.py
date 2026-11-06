@@ -19,6 +19,8 @@ PROJECT_FILE = "silence.json"
 
 # Default contents of silence.json
 DEFAULT_PROJECT = {
+    # Version of the format of silence.json
+    "version": 3,
     "server": {
         "address": "127.0.0.1",  # Listen only on localhost by default
         "port": 8080,
@@ -46,6 +48,12 @@ DEFAULT_PROJECT = {
         "default_role": "",
         "token_max_age": 86400,
     },
+    # The JS modules that call the endpoints, generated with them (each template
+    # says where it wants them, or disables them)
+    "js_api": {
+        "enabled": True,
+        "dir": "web/js/api/_auto",
+    },
     "debug": False,
     "secret_key": "",
 }
@@ -61,6 +69,7 @@ FIXED_SETTINGS = {
     "GITHUB_TEMPLATES_OWNER": "IISSI-US",
     "TEMPLATE_PREFIX": "silence-template-v3-",
     "DEFAULT_TEMPLATE_NAME": "ez-ui",
+    "ADMIN_PANEL_REPO": "silence-admin-panel",
 }
 
 
@@ -116,7 +125,8 @@ class Settings:
         self.DEBUG_ENABLED = bool(p["debug"])
         self.SECRET_KEY = p["secret_key"]
         self.LISTEN_ADDRESS = server["address"]
-        self.HTTP_PORT = int(server["port"])
+        # silence run --port wins over silence.json, also after reloading it
+        self.HTTP_PORT = getattr(self, "port_override", None) or int(server["port"])
         self.API_PREFIX = "/" + server["api_prefix"].strip("/")
         self.OPEN_BROWSER = bool(server["open_browser"])
         self.DB_CONN = {
@@ -140,6 +150,8 @@ class Settings:
         self.ENABLE_REGISTER = bool(auth["register"]) and self.AUTH_LINKED
         self.DEFAULT_ROLE_REGISTER = auth["default_role"] or None
         self.MAX_TOKEN_AGE = int(auth["token_max_age"])
+        self.JS_API_ENABLED = bool(p["js_api"]["enabled"])
+        self.JS_API_DIR = p["js_api"]["dir"]
 
     def update(self, section, values):
         '''Changes some values of a section (or a top-level key) and saves silence.json'''

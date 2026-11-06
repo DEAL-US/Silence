@@ -43,7 +43,8 @@ def is_api_path(path):
 
 
 def is_admin_path(path):
-    return path == "/admin" or path.startswith("/admin/")
+    '''The admin panel (/admin) and the admin API (/_silence): neither logged nor counted'''
+    return path in ("/admin", "/_silence") or path.startswith(("/admin/", "/_silence/"))
 
 
 ###############################################################################
@@ -126,6 +127,32 @@ def register_web_routes():
 
 
 ###############################################################################
+# Admin panel: the project's admin/ folder, if it has one (Silence does not
+# know what it contains: it is an app that uses the admin API)
+###############################################################################
+
+def admin_dir():
+    return os.path.join(settings.PROJECT_DIR, "admin")
+
+
+def serve_admin(path="index.html"):
+    folder = admin_dir()
+    if not os.path.isdir(folder):
+        return ("<!doctype html><title>Silence</title><p>This project has no admin panel "
+                "(<code>admin/</code> folder). Add it with <code>silence admin update</code>.</p>"), 404
+    if path.endswith("/") or os.path.isdir(os.path.join(folder, path)):
+        path = os.path.join(path, "index.html")
+    return send_from_directory(folder, path, max_age=0)
+
+
+def register_admin_routes():
+    from silence.manage.api import manage
+    APP.register_blueprint(manage)
+    APP.add_url_rule("/admin/", "admin_root", serve_admin)
+    APP.add_url_rule("/admin/<path:path>", "admin", serve_admin)
+
+
+###############################################################################
 # Errors, logs and statistics
 ###############################################################################
 
@@ -197,8 +224,7 @@ def setup():
     REGISTRY.load()
 
     if not _routes_registered:
-        from silence.admin.routes import admin
-        APP.register_blueprint(admin)
+        register_admin_routes()
         register_api_routes()
         register_web_routes()
         _routes_registered = True

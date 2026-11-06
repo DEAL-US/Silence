@@ -10,6 +10,7 @@ import test_banned
 import test_loggedId
 import test_departments
 import test_employees
+import test_admin_api
 
 # Order is important!
 tests = [
@@ -21,6 +22,7 @@ tests = [
     test_loggedId,
     test_departments,
     test_employees,
+    test_admin_api,
 ]
 
 failed_tests = []

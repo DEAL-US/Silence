@@ -33,6 +33,3 @@ version = { attr = "silence.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["silence*"]
-
-[tool.setuptools.package-data]
-silence = ["templates/**/*", "admin/static/**/*"]
