@@ -6,6 +6,25 @@
 
 <hr>
 
+> **Silence 3 (in development, proof of concept).** No configuration files to edit: everything is
+> set up in the admin panel.
+>
+> ```
+> pip install -e .            # from this repo, in a virtual environment
+> silence new myproject       # template: ez-ui (default), blank (--template) or a repo (--url)
+> cd myproject
+> silence run                 # opens the admin panel at http://127.0.0.1:8080/admin/
+> silence test                # runs tests/*.json, each one in a rolled back transaction
+> ```
+>
+> In the panel: connect to an existing database, link the users table (argon2 or plain text
+> passwords), generate the endpoints (`endpoints/auto_<table>.json`), customize them
+> (`endpoints/<table>.json`, with `owner` to let only the owner of a row change it), and
+> generate, compose and run the tests. The plan and the decisions are in
+> [docs/plan.md](docs/plan.md) (in Spanish); the CI runs `python tests/run_ci.py`.
+> The rest of this README describes Silence 2.
+
+
 Silence is a framework that allows for a rapid deployment of a RESTful API and a Web application around a relational database. Silence revolves around the concept of projects, which contain everything needed to deploy the previously mentioned elements and can be moved and/or shared between computers or systems with ease.
 
 Check out [**Silence's wiki page**](https://github.com/DEAL-US/Silence/wiki) to see how to get started and for detailed documentation.
