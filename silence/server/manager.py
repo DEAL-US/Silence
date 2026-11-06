@@ -1,118 +1,221 @@
-from flask import Flask, jsonify
-from flask_cors import CORS
-from werkzeug.exceptions import HTTPException
-import click
+import mimetypes
+import logging
+import os
+import time
+from datetime import datetime
 
-from silence.server.endpoint_loader import load_user_endpoints, load_default_endpoints
+from flask import Flask, jsonify, request, g, send_from_directory
+from flask_cors import CORS
+from werkzeug.exceptions import HTTPException, NotFound
+
 from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
-from silence.logging.flask_filter import FlaskFilter
+from silence.logging.utils import COLORS, RESET
 from silence.utils.silence_json_encoder import SilenceJSONProvider
-from silence.server.api_summary import APISummary
-
-from os.path import join
-from os import getcwd
-import mimetypes
-import logging
+from silence.server import stats
+from silence.server.endpoints import REGISTRY, run as run_endpoint
+from silence.server import auth_endpoints
 
 ###############################################################################
-# The server manager is responsible for setting up the Flask webserver,
-# configuring it and deploying the endpoints and web app.
+# The server manager sets up the Flask web server: the API (a single
+# dispatcher over the endpoint registry, so that the changes made in the
+# admin panel take effect without restarting), the web app and the panel.
 ###############################################################################
 
-static_folder = join(getcwd(), "web") if settings.RUN_WEB else None
-APP = Flask(__name__, static_folder=static_folder)
-cors = CORS(APP, resources={f"{settings.API_PREFIX}*": {"origins": "*"}})
-API_SUMMARY = APISummary()
+APP = Flask(__name__, static_folder=None)
+CORS(APP, resources={r"/api/*": {"origins": "*"}})
+APP.json = SilenceJSONProvider(APP)
+
+# Manually set up the MIME type for .js files (wrong in some Windows registries)
+mimetypes.add_type("application/javascript", ".js", strict=True)
+
+API_METHODS = ["GET", "POST", "PUT", "DELETE"]
+
+
+def web_dir():
+    return os.path.join(settings.PROJECT_DIR, "web")
+
+
+def is_api_path(path):
+    prefix = settings.API_PREFIX
+    return path == prefix or path.startswith(prefix + "/")
+
+
+def is_admin_path(path):
+    return path == "/admin" or path.startswith("/admin/")
+
+
+###############################################################################
+# API
+###############################################################################
+
+def api_summary():
+    '''GET <prefix>: the list of loaded endpoints'''
+    eps = [{"route": settings.API_PREFIX + e.route, "method": e.method, "description": e.description}
+           for e in REGISTRY.endpoints]
+    if settings.ENABLE_LOGIN:
+        eps.append({"route": settings.API_PREFIX + "/login", "method": "POST", "description": "Logs in"})
+    if settings.ENABLE_REGISTER:
+        eps.append({"route": settings.API_PREFIX + "/register", "method": "POST", "description": "Registers a user"})
+    return eps
+
+
+def dispatch(path):
+    method = request.method.upper()
+    sub = "/" + path.strip("/") if path else ""
+
+    if sub == "" and method == "GET":
+        g.stats_group, g.stats_key = "silence", "GET " + settings.API_PREFIX
+        return jsonify(api_summary()), 200
+    if sub == "/login" and method == "POST" and settings.ENABLE_LOGIN:
+        g.stats_group, g.stats_key = "silence", "POST /login"
+        res, status = auth_endpoints.login()
+        return jsonify(res), status
+    if sub == "/register" and method == "POST" and settings.ENABLE_REGISTER:
+        g.stats_group, g.stats_key = "silence", "POST /register"
+        res, status = auth_endpoints.register()
+        return jsonify(res), status
+
+    ep, url_params = REGISTRY.match(method, sub)
+    if ep is None:
+        g.stats_group, g.stats_key = "api", f"{method} (no endpoint)"
+        if REGISTRY.route_exists(sub):
+            raise HTTPError(405, f"{method} is not allowed on {settings.API_PREFIX}{sub}")
+        raise HTTPError(404, f"There is no endpoint {method} {settings.API_PREFIX}{sub}")
+
+    g.stats_group, g.stats_key = "api", f"{ep.method} {ep.route}"
+    res, status = run_endpoint(ep, url_params)
+    return jsonify(res), status
+
+
+def register_api_routes():
+    prefix = settings.API_PREFIX
+    APP.add_url_rule(prefix, "api_root", lambda: dispatch(""), methods=API_METHODS)
+    APP.add_url_rule(prefix + "/<path:path>", "api", dispatch, methods=API_METHODS)
+
+
+###############################################################################
+# Web app (web/ folder)
+###############################################################################
+
+def serve_web(path="index.html"):
+    g.stats_group, g.stats_key = "web", "/" + path
+    folder = web_dir()
+    full = os.path.join(folder, path)
+    if os.path.isdir(full):
+        path = os.path.join(path, "index.html")
+    try:
+        response = send_from_directory(folder, path, max_age=settings.HTTP_CACHE_TIME)
+    except NotFound:
+        if path == "favicon.ico" and os.path.isfile(os.path.join(folder, "images", "favicon.ico")):
+            return send_from_directory(os.path.join(folder, "images"), "favicon.ico")
+        if path == "index.html" and not os.path.isfile(full):
+            return ("<!doctype html><title>Silence</title><p>This project has no "
+                    "<code>web/index.html</code> yet. Open the <a href='/admin/'>admin panel</a>.</p>"), 200
+        if "text/html" in request.headers.get("Accept", ""):
+            return (f"<!doctype html><title>Not found</title><h1>Not found</h1>"
+                    f"<p>There is no file <code>web/{path}</code> in this project.</p>"), 404
+        raise
+    return response
+
+
+def register_web_routes():
+    APP.add_url_rule("/", "web_root", serve_web)
+    APP.add_url_rule("/<path:path>", "web", serve_web)
+
+
+###############################################################################
+# Errors, logs and statistics
+###############################################################################
+
+@APP.errorhandler(HTTPError)
+def handle_http_error(error):
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
+
+
+@APP.errorhandler(Exception)
+def handle_generic_error(exc):
+    if isinstance(exc, HTTPError):
+        return handle_http_error(exc)
+    if isinstance(exc, HTTPException):
+        return jsonify({"message": exc.description, "code": exc.code}), exc.code
+
+    if settings.DEBUG_ENABLED:
+        logger.exception(exc)
+    else:
+        logger.error("%s: %s (enable debug mode to see the full stack trace)", type(exc).__name__, exc)
+    return handle_http_error(HTTPError(500, str(exc), type(exc).__name__))
+
+
+@APP.before_request
+def start_timer():
+    g.start = time.perf_counter()
+
+
+@APP.after_request
+def log_and_count(response):
+    path = request.path
+    if is_admin_path(path) or request.headers.get("X-Silence-Test"):
+        return response  # The admin panel and the tests are neither logged nor counted
+
+    elapsed = (time.perf_counter() - g.get("start", time.perf_counter())) * 1000
+    group = g.get("stats_group") or ("api" if is_api_path(path) else "web")
+    key = g.get("stats_key") or path
+    stats.record(group, key, response.status_code, elapsed)
+
+    code = response.status_code
+    code_color = COLORS["GREEN"] if code < 400 else COLORS["YELLOW"] if code < 500 else COLORS["RED"]
+    kind, kind_color = ("[WEB]", COLORS["CYAN"]) if group == "web" else ("[API]", COLORS["MAGENTA"])
+    date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    line = f"{date} | {kind_color}{kind}{RESET} {request.method} {request.full_path.rstrip('?')} - {code_color}{code}{RESET}"
+    if code >= 400 and response.is_json:
+        msg = (response.get_json(silent=True) or {}).get("message")
+        if msg:
+            line += f" {msg}"
+    logger.info(line)
+    return response
+
+
+###############################################################################
+# Setup and run
+###############################################################################
+
+_routes_registered = False
 
 def setup():
-    # Configures the web server
-    APP.secret_key = settings.SECRET_KEY 
-    APP.config["SESSION_TYPE"] = "filesystem"
-    APP.config["SEND_FILE_MAX_AGE_DEFAULT"] = settings.HTTP_CACHE_TIME 
+    '''Loads the endpoints and registers the routes (once)'''
+    global _routes_registered
+    APP.secret_key = settings.SECRET_KEY
+    APP.config["SEND_FILE_MAX_AGE_DEFAULT"] = settings.HTTP_CACHE_TIME
 
-    # Mute Flask's startup messages
-    def noop(*args, **kwargs): pass
-    click.echo = noop
-    click.secho = noop
+    # Werkzeug's own request log is replaced by ours (log_and_count)
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
-    # Add our Flask filter to customize Flask logging messages
-    logging.getLogger("werkzeug").addFilter(FlaskFilter())
+    REGISTRY.load()
 
-    # Override the default JSON encoder so that it works with the Decimal type
-    APP.json = SilenceJSONProvider(APP)
+    if not _routes_registered:
+        from silence.admin.routes import admin
+        APP.register_blueprint(admin)
+        register_api_routes()
+        register_web_routes()
+        _routes_registered = True
+    return APP
 
-    # Manually set up the MIME type for .js files
-    # This patches a known issue on Windows, where the MIME type for JS files
-    # is sometimes incorrectly set to text/plain in the registry
-    mimetypes.add_type("application/javascript", ".js", strict=True)
 
-    # Set up the error handle for our custom exception type
-    @APP.errorhandler(HTTPError)
-    def handle_HTTPError(error):
-        response = jsonify(error.to_dict())
-        response.status_code = error.status_code
-        return response
+def print_endpoints():
+    base = f"http://{settings.LISTEN_ADDRESS}:{settings.HTTP_PORT}"
+    if not REGISTRY.endpoints:
+        logger.info("No endpoints loaded: generate them in the admin panel.")
+        return
+    logger.info("\nEndpoints loaded:")
+    for ep in sorted(REGISTRY.endpoints, key=lambda e: (e.route, API_METHODS.index(e.method))):
+        logger.info("    · %-6s %s%s%s", ep.method, base, settings.API_PREFIX, ep.route.replace("$", ":"))
+    logger.info("")
 
-    # Set up the generic Exception handler for server errors
-    @APP.errorhandler(Exception)
-    def handle_generic_error(exc):
-        # Pass through our own HTTP error exception
-        if isinstance(exc, HTTPError):
-            return exc
-
-        # Create a similar JSON response for Werkzeug's exceptions
-        if isinstance(exc, HTTPException):
-            code = exc.code
-            res = jsonify({"message": exc.description, "code": code})
-            return res, code
-        
-        # We're facing an uncontrolled server exception
-        # Only show the full stack trace in debug mode
-        # Otherwise, just show the exception message
-        if settings.DEBUG_ENABLED:
-            logger.exception(exc)
-        else:
-            error_msg = str(exc)
-            error_msg += "\n(Enable debug mode to see full stack trace)"
-            logger.error(error_msg)
-
-        exc_type = type(exc).__name__
-        msg = str(exc)
-        err = HTTPError(500, msg, exc_type)
-        return handle_HTTPError(err)
-
-    # Check if clear text passwords can be used for login, and show a warning
-    # if that is the case
-    if settings.ALLOW_CLEAR_PASSWORDS:
-        logger.warning("This project allows clear text passwords in the DB to be used for login\n" +
-                       "(ALLOW_CLEAR_PASSWORDS = True)\n" +
-                       "This is NOT RECOMMENDED except for testing purposes.")
-
-    # Load the user-provided API endpoints and the default ones
-    if settings.RUN_API:
-        load_default_endpoints()
-        load_user_endpoints()
-
-        if settings.SHOW_ENDPOINT_LIST:
-            API_SUMMARY.print_endpoints()
-
-    # Load the web static files
-    if settings.RUN_WEB:
-        logger.debug("Setting up web server")
-        @APP.route("/")
-        def root():
-            return APP.send_static_file("index.html")
-
-        @APP.route("/<path:path>")
-        def other_path(path):
-            return APP.send_static_file(path)
 
 def run():
-    APP.run(
-        host=settings.LISTEN_ADDRESS,
-        port=settings.HTTP_PORT,
-        debug=settings.DEBUG_ENABLED,
-        threaded=True,
-    )
+    APP.run(host=settings.LISTEN_ADDRESS, port=settings.HTTP_PORT,
+            debug=False, threaded=True, use_reloader=False)

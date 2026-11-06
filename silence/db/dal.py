@@ -1,8 +1,7 @@
 from pymysql.cursors import DictCursor
 
-from silence.db.connector import get_conn
+from silence.db.connector import get_conn, TEST_CONNECTION
 from silence.exceptions import DatabaseError
-from silence.decorators import db_call
 from silence.logging.default_logger import logger
 
 ###############################################################################
@@ -10,70 +9,40 @@ from silence.logging.default_logger import logger
 # for querying and updating the database.
 ###############################################################################
 
-# Query method to retrieve information
+def _run(q, params, fetch):
+    test_conn = TEST_CONNECTION.get()
+    conn = test_conn or get_conn()
+    cursor = conn.cursor(DictCursor)
+    try:
+        cursor.execute(q, params or None)
+        if fetch:
+            res = cursor.fetchall()
+            res = list(res) if res else []
+        else:
+            res = {"lastId": cursor.lastrowid, "affectedRows": cursor.rowcount}
+            # A CALL may return a result set
+            if cursor.description:
+                res["rows"] = list(cursor.fetchall())
+        if test_conn is None:
+            conn.commit()
+        return res
+    except Exception as exc:
+        if test_conn is None:
+            conn.rollback()
+        raise DatabaseError(exc) from exc
+    finally:
+        cursor.close()
+        if test_conn is None:
+            conn.close()
+
+
 def query(q, params=None):
+    '''Runs a query and returns its rows as a list of dicts'''
     logger.debug('Executing SQL query "%s" with params %s', q, params)
-
-    # Fetch the connection and get a cursor
-    conn = get_conn()
-    cursor = conn.cursor(DictCursor)
-    try:
-        # Execute the query, with or without parameters and return the result
-        if params:
-            cursor.execute(q, params)
-        else:
-            cursor.execute(q)
-
-        res = cursor.fetchall()
-        logger.debug("Query result: %s", res)
-        return res
-    except Exception as exc:
-        # If anything happens, wrap the exceptions in a DatabaseError
-        raise DatabaseError(exc) from exc
-    finally:
-        # Close the cursor and the connection
-        cursor.close()
-        conn.close()
+    return _run(q, params, fetch=True)
 
 
-# Update method to modify information
 def update(q, params=None):
-    logger.debug(f'Executing SQL operation "%s" with params %s', q, params)
-    conn = get_conn()
-    cursor = conn.cursor(DictCursor)
-
-    # Fetch the connection and get a cursor
-    try:
-        # Execute the query, with or without parameters and return the result
-        if params:
-            cursor.execute(q, params)
-        else:
-            cursor.execute(q)
-
-        conn.commit()
-
-        # Return the ID of the row that was modified or inserted
-        lastid = cursor.lastrowid
-        logger.debug("Last modified row ID: %s", lastid)
-        res = {"lastId": lastid}
-        return res
-    except Exception as exc:
-        # If anything happens, wrap the exceptions in a DatabaseError
-        raise DatabaseError(exc) from exc
-    finally:
-        # Close the cursor and the connection
-        cursor.close()
-        conn.close()
-
-###############################################################################
-# Safe wrappers for the API, which return an HTTPError instead of a
-# DatabaseError
-###############################################################################
-
-@db_call
-def api_safe_query(*args, **kwargs):
-    return query(*args, **kwargs)
-
-@db_call
-def api_safe_update(*args, **kwargs):
-    return update(*args, **kwargs)
+    '''Runs an operation and returns {"lastId": ..., "affectedRows": ...}'''
+    logger.debug('Executing SQL operation "%s" with params %s', q, params)
+    return _run(q, params, fetch=False)

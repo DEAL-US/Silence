@@ -1,36 +1,29 @@
-import traceback
-import sys
 import requests
 
 from silence.settings import settings
 from silence.logging.default_logger import logger
+from silence.cli.commands.new import BUNDLED
+import os
+
 
 def handle(args):
-    query_url = f"https://api.github.com/orgs/{settings.GITHUB_TEMPLATES_OWNER}/repos"
-
+    prefix = settings.TEMPLATE_PREFIX
+    templates = {}
     try:
-        repo_data = requests.get(query_url, timeout=10).json()
-    except Exception:
-        logger.debug(traceback.format_exc())
-        logger.error("An error has occurred when querying GitHub's API to obtain the list of templates.")
-        if not settings.DEBUG_ENABLED:
-            logger.error("Add --debug to see the full stack trace.")
-        sys.exit(1)
+        url = f"https://api.github.com/orgs/{settings.GITHUB_TEMPLATES_OWNER}/repos?per_page=100"
+        for repo in requests.get(url, timeout=10).json():
+            name = repo["name"].lower()
+            if name.startswith(prefix):
+                templates[name[len(prefix):]] = repo.get("description") or ""
+    except Exception as exc:
+        logger.debug("Cannot query GitHub: %s", exc)
 
-    templates = []
-    for repo in repo_data:
-        name = repo["name"].lower()
-        if name.startswith("silence-template-v2-"):
-            template_name = name.replace("silence-template-v2-", "")
-            desc = repo["description"]
-            templates.append({"name": template_name, "desc": desc})
-
-    templates.sort(key=lambda x: x["name"])
+    if os.path.isdir(BUNDLED):
+        for name in os.listdir(BUNDLED):
+            templates.setdefault(name, "(bundled with Silence)")
 
     print("Available templates:")
-    for tmpl in templates:
-        name = tmpl["name"]
-        default = " (default)" if name == settings.DEFAULT_TEMPLATE_NAME.lower() else ""
-        desc = f': {tmpl["desc"]}' if tmpl["desc"] else ""
-
+    for name in sorted(templates):
+        default = " (default)" if name == settings.DEFAULT_TEMPLATE_NAME else ""
+        desc = f": {templates[name]}" if templates[name] else ""
         print(f"    · {name}{default}{desc}")

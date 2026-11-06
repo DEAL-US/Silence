@@ -7,14 +7,17 @@ from silence.logging.default_logger import logger
 from silence.utils.silence_json_encoder import SilenceJSONSerializer
 
 ###############################################################################
-# Token management: creation and checking
+# Token management: creation and checking.
+# A token is the user's row (without the password) signed with the project's
+# secret key: Silence keeps no session tables in the database.
 ###############################################################################
 
-auth = Serializer(settings.SECRET_KEY, serializer=SilenceJSONSerializer)
+def _serializer():
+    return Serializer(settings.SECRET_KEY, serializer=SilenceJSONSerializer)
 
 def create_token(data):
     '''Creates and returns a new token containing the given user data'''
-    token = auth.dumps(data)
+    token = _serializer().dumps(data)
     logger.debug("Created new token %s[...]%s", token[:6], token[-6:])
     return token
 
@@ -23,14 +26,8 @@ def check_token(token):
     contained inside the token if it is, otherwise raises a TokenError.'''
     logger.debug("Checking received token %s[...]%s", token[:6], token[-6:])
     try:
-        user_data = auth.loads(token, max_age=settings.MAX_TOKEN_AGE)
-        logger.debug("The token is correct")
-        return user_data
+        return _serializer().loads(token, max_age=settings.MAX_TOKEN_AGE)
     except SignatureExpired:
-        logger.debug("The token has expired")
         raise TokenError("The session token has expired")
     except BadSignature:
-        logger.debug("The token is not valid")
         raise TokenError("The session token is not valid")
-
-    

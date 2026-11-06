@@ -1,75 +1,60 @@
 import argparse
-import sys
 import logging
+import sys
 
 from silence import __version__
 from silence.settings import settings
 from silence.logging.default_logger import logger
-from silence.cli.commands import run, createdb, new, list_templates, createapi, createtests
+from silence.cli.commands import run, new, list_templates, test
 
 ###############################################################################
-# Command line interface manager
-# It provides the entry point for the 'silence' command.
+# Command line interface: the entry point of the 'silence' command.
 ###############################################################################
 
 HANDLERS = {
-    "run": run.handle,
-    "createdb": createdb.handle,
     "new": new.handle,
+    "run": run.handle,
+    "test": test.handle,
     "list-templates": list_templates.handle,
-    "createapi": createapi.handle,
-    "createtests": createtests.handle
 }
 
 def run_from_command_line():
     parser = argparse.ArgumentParser(
-        description="Silence: An educational framework for deploying RESTful APIs and Web applications."
+        description="Silence: an educational framework for RESTful APIs and web applications."
     )
-    subparsers = parser.add_subparsers(help="Description:", dest="command")
-    
-    # Force the user to select one of the available commands,
-    # and allow them to provide additional options after it.
     parser.add_argument("-v", "--version", action="version", version=f"Silence v{__version__}")
+    subparsers = parser.add_subparsers(dest="command")
 
-    parser_list = subparsers.add_parser("list-templates", help="Lists the available project templates")
-    parser_list.add_argument("--debug", action="store_true", help="Enables the debug mode")
-    
-    parser_new = subparsers.add_parser("new", help="Creates a new project")
-    parser_new.add_argument("name", help="The new project's name")
-    group = parser_new.add_mutually_exclusive_group()
-    group.add_argument("--template", help="Template name to use when creating the new project")
-    group.add_argument("--url", help="URL to a Git repo containing a project to clone")
-    group.add_argument("--blank", action="store_true", help="Alias to --template blank")
-    parser_new.add_argument("--debug", action="store_true", help="Enables the debug mode")
+    p_new = subparsers.add_parser("new", help="Creates a new project")
+    p_new.add_argument("name", help="The new project's name (and folder)")
+    group = p_new.add_mutually_exclusive_group()
+    group.add_argument("--template", help="Template: ez-ui (default), bootstrap or blank")
+    group.add_argument("--url", help="URL of a GitHub repo with a project to use as template")
+    group.add_argument("--blank", action="store_const", const="blank", dest="template",
+                       help="Alias of --template blank")
 
-    subparsers.add_parser("createdb", help="Runs the provided SQL scripts in the adequate order in the database")
-    subparsers.add_parser("run", help="Starts the web server")
-    subparsers.add_parser("createapi" , help="Reads the database and generates CRUD operations which aren't defined by the user already. ")
-    subparsers.add_parser("createtests" , help="Reads the database and generates the main test cases for the entities.")
+    p_run = subparsers.add_parser("run", help="Starts the API, the web app and the admin panel")
+    p_run.add_argument("--port", type=int, help="HTTP port (by default, the project's)")
+    p_run.add_argument("--no-browser", action="store_true", help="Do not open the admin panel")
 
-    # Show the help dialog if the command is issued without any arguments
+    p_test = subparsers.add_parser("test", help="Runs the project's tests (tests/*.json)")
+    p_test.add_argument("names", nargs="*", help="Run only these tests")
+
+    subparsers.add_parser("list-templates", help="Lists the available project templates")
+
+    for p in subparsers.choices.values():
+        p.add_argument("--debug", action="store_true", help="Enables the debug mode")
+
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
 
-    # Show silence new's help dialog if it was called without any arguments
-    if sys.argv[1].lower() == "new" and len(sys.argv) == 2:
-        parser_new.print_help()
-        sys.exit(1)
-
     args = parser.parse_args()
 
-    # If --debug is set, configure the logging level and the global settings
-    # This is useful for commands that have no access to a custom settings.py
-    # file, such as "new" and "list-templates"
-    if "debug" in args and args.debug:
+    if getattr(args, "debug", False):
         settings.DEBUG_ENABLED = True
         logger.setLevel(logging.DEBUG)
         for handler in logger.handlers:
             handler.setLevel(logging.DEBUG)
 
-    # Warn the user about any unknown settings before executing the command
-    settings.warn_unknown_settings()
-
-    command = args.command.lower()
-    HANDLERS[command](args)
+    HANDLERS[args.command](args)
