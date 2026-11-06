@@ -1,0 +1,431 @@
+{
+    "employees_getAll_ok": {
+        "description": "GET /employees: returns the current rows",
+        "endpoint": "GET /employees",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/employees"
+                },
+                "expect": {
+                    "status": 200,
+                    "count": 5
+                }
+            }
+        ]
+    },
+    "employees_getById_ok": {
+        "description": "GET /employees/$employeeId: returns the current rows",
+        "endpoint": "GET /employees/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/employees/1"
+                },
+                "expect": {
+                    "status": 200,
+                    "row": {
+                        "bossId": null,
+                        "departmentId": 1,
+                        "email": "perianez@company.com",
+                        "employeeId": 1,
+                        "firstName": "Pedro",
+                        "isActive": 1,
+                        "lastName": "Periáñez",
+                        "position": "Manager",
+                        "salary": 2300.0
+                    },
+                    "count": 1
+                }
+            }
+        ]
+    },
+    "employees_getById_not_found": {
+        "description": "GET /employees/$employeeId: a row that does not exist is a 404",
+        "endpoint": "GET /employees/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/employees/999999999"
+                },
+                "expect": {
+                    "status": 404
+                }
+            }
+        ]
+    },
+    "employees_create_ok": {
+        "description": "POST /employees: creates a row",
+        "endpoint": "POST /employees",
+        "steps": [
+            {
+                "request": {
+                    "method": "POST",
+                    "path": "/employees",
+                    "as": 1,
+                    "body": {
+                        "email": "t1.perianez@company.com",
+                        "password": "Test-1234",
+                        "departmentId": 1,
+                        "bossId": null,
+                        "firstName": "Pedro",
+                        "lastName": "Periáñez",
+                        "salary": 2300.0,
+                        "position": "Manager",
+                        "isActive": 1
+                    }
+                },
+                "expect": {
+                    "status": 201
+                }
+            }
+        ]
+    },
+    "employees_create_missing_param": {
+        "description": "POST /employees: without 'email' is a 400",
+        "endpoint": "POST /employees",
+        "steps": [
+            {
+                "request": {
+                    "method": "POST",
+                    "path": "/employees",
+                    "as": 1,
+                    "body": {
+                        "password": "Test-1234",
+                        "departmentId": 1,
+                        "bossId": null,
+                        "firstName": "Pedro",
+                        "lastName": "Periáñez",
+                        "salary": 2300.0,
+                        "position": "Manager",
+                        "isActive": 1
+                    }
+                },
+                "expect": {
+                    "status": 400,
+                    "message": "email"
+                }
+            }
+        ]
+    },
+    "employees_create_no_session": {
+        "description": "POST /employees: without a session is a 401",
+        "endpoint": "POST /employees",
+        "steps": [
+            {
+                "request": {
+                    "method": "POST",
+                    "path": "/employees",
+                    "body": {
+                        "email": "t1.perianez@company.com",
+                        "password": "Test-1234",
+                        "departmentId": 1,
+                        "bossId": null,
+                        "firstName": "Pedro",
+                        "lastName": "Periáñez",
+                        "salary": 2300.0,
+                        "position": "Manager",
+                        "isActive": 1
+                    }
+                },
+                "expect": {
+                    "status": 401
+                }
+            }
+        ]
+    },
+    "employees_update_ok": {
+        "description": "PUT /employees/$employeeId: updates a row (with its current values)",
+        "endpoint": "PUT /employees/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/1",
+                    "as": 1,
+                    "body": {
+                        "email": "perianez@company.com",
+                        "password": "Test-1234",
+                        "departmentId": 1,
+                        "bossId": null,
+                        "firstName": "Pedro",
+                        "lastName": "Periáñez",
+                        "salary": 2300.0,
+                        "position": "Manager",
+                        "isActive": 1
+                    }
+                },
+                "expect": {
+                    "status": 200
+                }
+            }
+        ]
+    },
+    "employees_update_not_found": {
+        "description": "PUT /employees/$employeeId: a row that does not exist is a 404",
+        "endpoint": "PUT /employees/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/999999999",
+                    "as": 1,
+                    "body": {
+                        "email": "perianez@company.com",
+                        "password": "Test-1234",
+                        "departmentId": 1,
+                        "bossId": null,
+                        "firstName": "Pedro",
+                        "lastName": "Periáñez",
+                        "salary": 2300.0,
+                        "position": "Manager",
+                        "isActive": 1
+                    }
+                },
+                "expect": {
+                    "status": 404
+                }
+            }
+        ]
+    },
+    "employees_update_no_session": {
+        "description": "PUT /employees/$employeeId: without a session is a 401",
+        "endpoint": "PUT /employees/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/1",
+                    "body": {
+                        "email": "t1.perianez@company.com",
+                        "password": "Test-1234",
+                        "departmentId": 1,
+                        "bossId": null,
+                        "firstName": "Pedro",
+                        "lastName": "Periáñez",
+                        "salary": 2300.0,
+                        "position": "Manager",
+                        "isActive": 1
+                    }
+                },
+                "expect": {
+                    "status": 401
+                }
+            }
+        ]
+    },
+    "employees_delete_ok": {
+        "description": "DELETE /employees/$employeeId: deletes a row that no other row references",
+        "endpoint": "DELETE /employees/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "DELETE",
+                    "path": "/employees/4",
+                    "as": 1
+                },
+                "expect": {
+                    "status": 200
+                }
+            }
+        ]
+    },
+    "employees_delete_not_found": {
+        "description": "DELETE /employees/$employeeId: a row that does not exist is a 404",
+        "endpoint": "DELETE /employees/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "DELETE",
+                    "path": "/employees/999999999",
+                    "as": 1
+                },
+                "expect": {
+                    "status": 404
+                }
+            }
+        ]
+    },
+    "employees_delete_no_session": {
+        "description": "DELETE /employees/$employeeId: without a session is a 401",
+        "endpoint": "DELETE /employees/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "DELETE",
+                    "path": "/employees/4"
+                },
+                "expect": {
+                    "status": 401
+                }
+            }
+        ]
+    },
+    "employees_updateSalary_ok": {
+        "description": "PUT /employees/$employeeId/salary: updates a row (with its current values)",
+        "endpoint": "PUT /employees/$employeeId/salary",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/2/salary",
+                    "as": 1,
+                    "body": {
+                        "salary": 2500.0
+                    }
+                },
+                "expect": {
+                    "status": 200
+                }
+            }
+        ]
+    },
+    "employees_updateSalary_not_found": {
+        "description": "PUT /employees/$employeeId/salary: a row that does not exist is a 404",
+        "endpoint": "PUT /employees/$employeeId/salary",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/999999999/salary",
+                    "as": 1,
+                    "body": {
+                        "salary": 2500.0
+                    }
+                },
+                "expect": {
+                    "status": 404
+                }
+            }
+        ]
+    },
+    "employees_updateSalary_no_session": {
+        "description": "PUT /employees/$employeeId/salary: without a session is a 401",
+        "endpoint": "PUT /employees/$employeeId/salary",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/2/salary",
+                    "body": {
+                        "salary": 2500.0
+                    }
+                },
+                "expect": {
+                    "status": 401
+                }
+            }
+        ]
+    },
+    "employees_updateSalary_not_owner": {
+        "description": "PUT /employees/$employeeId/salary: by a user who is not the owner is a 403",
+        "endpoint": "PUT /employees/$employeeId/salary",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/2/salary",
+                    "as": 2,
+                    "body": {
+                        "salary": 2500.0
+                    }
+                },
+                "expect": {
+                    "status": 403
+                }
+            }
+        ]
+    },
+    "employees_flow": {
+        "description": "Creates a row of employees, reads it, updates it, deletes it and checks that it is gone",
+        "endpoint": "POST /employees (flow)",
+        "steps": [
+            {
+                "request": {
+                    "method": "POST",
+                    "path": "/employees",
+                    "as": 1,
+                    "body": {
+                        "email": "t7.perianez@company.com",
+                        "password": "Test-1234",
+                        "departmentId": 1,
+                        "bossId": null,
+                        "firstName": "Pedro",
+                        "lastName": "Periáñez",
+                        "salary": 2300.0,
+                        "position": "Manager",
+                        "isActive": 1
+                    }
+                },
+                "expect": {
+                    "status": 201
+                },
+                "save": {
+                    "id": "lastId"
+                }
+            },
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/employees/${id}"
+                },
+                "expect": {
+                    "status": 200,
+                    "row": {
+                        "email": "t7.perianez@company.com",
+                        "departmentId": 1,
+                        "bossId": null,
+                        "firstName": "Pedro",
+                        "lastName": "Periáñez",
+                        "salary": 2300.0,
+                        "position": "Manager",
+                        "isActive": 1
+                    }
+                }
+            },
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/${id}",
+                    "as": 1,
+                    "body": {
+                        "email": "t7.perianez@company.com",
+                        "password": "Test-1234",
+                        "departmentId": 1,
+                        "bossId": null,
+                        "firstName": "Pedro",
+                        "lastName": "Periáñez",
+                        "salary": 2300.0,
+                        "position": "Manager",
+                        "isActive": 1
+                    }
+                },
+                "expect": {
+                    "status": 200
+                }
+            },
+            {
+                "request": {
+                    "method": "DELETE",
+                    "path": "/employees/${id}",
+                    "as": 1
+                },
+                "expect": {
+                    "status": 200
+                }
+            },
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/employees/${id}"
+                },
+                "expect": {
+                    "status": 404
+                }
+            }
+        ]
+    }
+}

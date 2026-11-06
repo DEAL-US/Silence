@@ -183,7 +183,11 @@ def free_combinations(ep, rel, body, ctx):
                 refs = dal.query(f"SELECT DISTINCT {fk['refColumn']} AS v FROM {fk['refTable']} LIMIT 30")
                 candidates.append([r["v"] for r in refs])
             else:
-                candidates.append([body[params[c]]])
+                value = body[params[c]]
+                variants = [value]
+                if value is not None:
+                    variants.append(json_value(unique_value(rel.column(c), value, 1)))
+                candidates.append(variants)
         found = None
         def search(i, chosen):
             nonlocal found
@@ -236,6 +240,8 @@ def tests_for_endpoint(ep, ctx):
             if ep.method == "DELETE" and ctx.referenced(rel.name, r):
                 continue
             owner_id = r.get(ep.owner) if ep.owner else None
+            if ep.owner and owner_id is None:
+                continue  # A row without owner cannot be changed by anybody
             u = ctx.allowed_user(ep.allowed_roles, owner_id) if needs_user else None
             if needs_user and u is None:
                 continue
@@ -309,7 +315,10 @@ def tests_for_endpoint(ep, ctx):
 
 def flow_test(table, eps, ctx):
     '''A composed test for a table with the full CRUD: POST, GET, PUT, DELETE, GET'''
-    by_method = {e.method + ("1" if e.url_params else "N"): e for e in eps}
+    route_all = "/" + table.lower()
+    crud = [e for e in eps if e.route == route_all
+            or (len(e.url_params) == 1 and e.route == f"{route_all}/${e.url_params[0]}")]
+    by_method = {e.method + ("1" if e.url_params else "N"): e for e in crud}
     needed = ("POSTN", "GET1", "PUT1", "DELETE1")
     if not all(k in by_method for k in needed):
         return None

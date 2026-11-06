@@ -1,0 +1,104 @@
+{
+    "loggedid_endpoints_loggedId_ok": {
+        "description": "GET /employees/logged: returns the current rows",
+        "endpoint": "GET /employees/logged",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/employees/logged",
+                    "as": 1
+                },
+                "expect": {
+                    "status": 200,
+                    "row": {
+                        "bossId": null,
+                        "departmentId": 1,
+                        "email": "perianez@company.com",
+                        "employeeId": 1,
+                        "firstName": "Pedro",
+                        "isActive": 1,
+                        "lastName": "Periáñez",
+                        "position": "Manager",
+                        "salary": 2300.0
+                    },
+                    "count": 1
+                }
+            }
+        ]
+    },
+    "loggedid_endpoints_loggedId_no_session": {
+        "description": "GET /employees/logged: without a session is a 401",
+        "endpoint": "GET /employees/logged",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/employees/logged"
+                },
+                "expect": {
+                    "status": 401
+                }
+            }
+        ]
+    },
+    "loggedid_endpoints_loggedId_with_restr_ok": {
+        "description": "GET /employees/logged_restricted: returns the current rows",
+        "endpoint": "GET /employees/logged_restricted",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/employees/logged_restricted",
+                    "as": 2
+                },
+                "expect": {
+                    "status": 200,
+                    "row": {
+                        "bossId": 1,
+                        "departmentId": 1,
+                        "email": "jimenez@company.com",
+                        "employeeId": 2,
+                        "firstName": "José",
+                        "isActive": 1,
+                        "lastName": "Jiménez",
+                        "position": "CEO",
+                        "salary": 2500.0
+                    },
+                    "count": 1
+                }
+            }
+        ]
+    },
+    "loggedid_endpoints_loggedId_with_restr_no_session": {
+        "description": "GET /employees/logged_restricted: without a session is a 401",
+        "endpoint": "GET /employees/logged_restricted",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/employees/logged_restricted"
+                },
+                "expect": {
+                    "status": 401
+                }
+            }
+        ]
+    },
+    "loggedid_endpoints_loggedId_with_restr_wrong_role": {
+        "description": "GET /employees/logged_restricted: with the role 'Manager' is a 403",
+        "endpoint": "GET /employees/logged_restricted",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/employees/logged_restricted",
+                    "as": 1
+                },
+                "expect": {
+                    "status": 403
+                }
+            }
+        ]
+    }
+}

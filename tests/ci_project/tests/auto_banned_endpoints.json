@@ -1,0 +1,66 @@
+{
+    "banned_endpoints_ban_user_ok": {
+        "description": "PUT /employees/ban/$employeeId: updates a row (with its current values)",
+        "endpoint": "PUT /employees/ban/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/ban/1",
+                    "body": {}
+                },
+                "expect": {
+                    "status": 200
+                }
+            }
+        ]
+    },
+    "banned_endpoints_ban_user_not_found": {
+        "description": "PUT /employees/ban/$employeeId: a row that does not exist is a 404",
+        "endpoint": "PUT /employees/ban/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/ban/999999999",
+                    "body": {}
+                },
+                "expect": {
+                    "status": 404
+                }
+            }
+        ]
+    },
+    "banned_endpoints_unban_user_ok": {
+        "description": "PUT /employees/unban/$employeeId: updates a row (with its current values)",
+        "endpoint": "PUT /employees/unban/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/unban/1",
+                    "body": {}
+                },
+                "expect": {
+                    "status": 200
+                }
+            }
+        ]
+    },
+    "banned_endpoints_unban_user_not_found": {
+        "description": "PUT /employees/unban/$employeeId: a row that does not exist is a 404",
+        "endpoint": "PUT /employees/unban/$employeeId",
+        "steps": [
+            {
+                "request": {
+                    "method": "PUT",
+                    "path": "/employees/unban/999999999",
+                    "body": {}
+                },
+                "expect": {
+                    "status": 404
+                }
+            }
+        ]
+    }
+}

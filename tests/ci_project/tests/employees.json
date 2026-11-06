@@ -1,0 +1,47 @@
+{
+    "employees_salary_by_boss": {
+        "description": "Only the boss of an employee changes their salary (owner = bossId), within the CHECK",
+        "steps": [
+            {
+                "request": {"method": "PUT", "path": "/employees/4/salary", "as": 2, "body": {"salary": 1500}},
+                "expect": {"status": 200}
+            },
+            {
+                "request": {"method": "GET", "path": "/employees/4"},
+                "expect": {"status": 200, "row": {"salary": 1500}}
+            },
+            {
+                "request": {"method": "PUT", "path": "/employees/4/salary", "as": 1, "body": {"salary": 9000}},
+                "expect": {"status": 403}
+            },
+            {
+                "request": {"method": "PUT", "path": "/employees/4/salary", "as": 2, "body": {"salary": -5}},
+                "expect": {"status": 400, "message": "validSalary"}
+            },
+            {
+                "request": {"method": "PUT", "path": "/employees/999/salary", "as": 2, "body": {"salary": 1500}},
+                "expect": {"status": 404}
+            }
+        ]
+    },
+    "employees_register_and_login": {
+        "description": "A user registers, logs in with the new password and reads their own data",
+        "steps": [
+            {
+                "request": {"method": "POST", "path": "/register", "body": {
+                    "email": "flow@company.com", "password": "flow", "firstName": "Flow", "lastName": "Test",
+                    "salary": 1000, "departmentId": 1}},
+                "expect": {"status": 200},
+                "save": {"token": "sessionToken", "id": "user.employeeId"}
+            },
+            {
+                "request": {"method": "POST", "path": "/login", "body": {"email": "flow@company.com", "password": "flow"}},
+                "expect": {"status": 200}
+            },
+            {
+                "request": {"method": "GET", "path": "/employees/${id}"},
+                "expect": {"status": 200, "row": {"email": "flow@company.com", "isActive": 1}}
+            }
+        ]
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "server": {
+        "address": "127.0.0.1",
+        "port": 8080,
+        "api_prefix": "/api",
+        "open_browser": false
+    },
+    "database": {
+        "host": "127.0.0.1",
+        "port": 3306,
+        "user": "iissi_user",
+        "password": "iissi$user",
+        "name": "silence_ci_db"
+    },
+    "auth": {
+        "table": "employees",
+        "identifier": "email",
+        "password": "password",
+        "role": "position",
+        "active": "isActive",
+        "password_mode": "argon2",
+        "login": true,
+        "register": true,
+        "default_role": "",
+        "token_max_age": 86400
+    },
+    "debug": false,
+    "secret_key": "ci-project-secret-key-not-for-production"
+}

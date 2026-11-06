@@ -1,0 +1,18 @@
+{
+    "topemployees_getAll_ok": {
+        "description": "GET /topemployees: returns the current rows",
+        "endpoint": "GET /topemployees",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/topemployees"
+                },
+                "expect": {
+                    "status": 200,
+                    "count": 3
+                }
+            }
+        ]
+    }
+}

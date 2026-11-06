@@ -1,0 +1,74 @@
+{
+    "getAll": {
+        "description": "Gets all entries from 'employees'",
+        "route": "/employees",
+        "method": "GET",
+        "sql": "SELECT * FROM employees",
+        "auth_required": false,
+        "allowed_roles": [
+            "*"
+        ]
+    },
+    "getById": {
+        "description": "Gets an entry from 'employees' by its primary key",
+        "route": "/employees/$employeeId",
+        "method": "GET",
+        "sql": "SELECT * FROM employees WHERE employeeId = $employeeId",
+        "auth_required": false,
+        "allowed_roles": [
+            "*"
+        ]
+    },
+    "create": {
+        "description": "Creates a new entry in 'employees'",
+        "route": "/employees",
+        "method": "POST",
+        "sql": "INSERT INTO employees(email, password, departmentId, bossId, firstName, lastName, salary, position, isActive) VALUES ($email, $password, $departmentId, $bossId, $firstName, $lastName, $salary, $position, $isActive)",
+        "auth_required": true,
+        "allowed_roles": [
+            "*"
+        ],
+        "request_body_params": [
+            "email",
+            "password",
+            "departmentId",
+            "bossId",
+            "firstName",
+            "lastName",
+            "salary",
+            "position",
+            "isActive"
+        ]
+    },
+    "update": {
+        "description": "Updates an existing entry in 'employees' by its primary key",
+        "route": "/employees/$employeeId",
+        "method": "PUT",
+        "sql": "UPDATE employees SET email = $email, password = $password, departmentId = $departmentId, bossId = $bossId, firstName = $firstName, lastName = $lastName, salary = $salary, position = $position, isActive = $isActive WHERE employeeId = $employeeId",
+        "auth_required": true,
+        "allowed_roles": [
+            "*"
+        ],
+        "request_body_params": [
+            "email",
+            "password",
+            "departmentId",
+            "bossId",
+            "firstName",
+            "lastName",
+            "salary",
+            "position",
+            "isActive"
+        ]
+    },
+    "delete": {
+        "description": "Deletes an existing entry in 'employees' by its primary key",
+        "route": "/employees/$employeeId",
+        "method": "DELETE",
+        "sql": "DELETE FROM employees WHERE employeeId = $employeeId",
+        "auth_required": true,
+        "allowed_roles": [
+            "*"
+        ]
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "getAll": {
+        "description": "Gets all entries from 'topemployees'",
+        "route": "/topemployees",
+        "method": "GET",
+        "sql": "SELECT * FROM topemployees",
+        "auth_required": false,
+        "allowed_roles": [
+            "*"
+        ]
+    }
+}

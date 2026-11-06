@@ -1,0 +1,12 @@
+{
+    "updateSalary": {
+        "description": "Updates the salary of an employee (only their boss)",
+        "route": "/employees/$employeeId/salary",
+        "method": "PUT",
+        "sql": "UPDATE employees SET salary = $salary WHERE employeeId = $employeeId",
+        "auth_required": true,
+        "allowed_roles": ["*"],
+        "request_body_params": ["salary"],
+        "owner": "bossId"
+    }
+}

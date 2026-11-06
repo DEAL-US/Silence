@@ -1,0 +1,14 @@
+{
+    "ban_user": {
+        "route": "/employees/ban/$employeeId",
+        "method": "PUT",
+        "sql": "UPDATE employees SET isActive = 0 WHERE employeeId = $employeeId",
+        "auth_required": false
+    },
+    "unban_user": {
+        "route": "/employees/unban/$employeeId",
+        "method": "PUT",
+        "sql": "UPDATE employees SET isActive = 1 WHERE employeeId = $employeeId",
+        "auth_required": false
+    }
+}

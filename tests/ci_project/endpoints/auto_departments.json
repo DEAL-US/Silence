@@ -1,0 +1,60 @@
+{
+    "getAll": {
+        "description": "Gets all entries from 'departments'",
+        "route": "/departments",
+        "method": "GET",
+        "sql": "SELECT * FROM departments",
+        "auth_required": false,
+        "allowed_roles": [
+            "*"
+        ]
+    },
+    "getById": {
+        "description": "Gets an entry from 'departments' by its primary key",
+        "route": "/departments/$departmentId",
+        "method": "GET",
+        "sql": "SELECT * FROM departments WHERE departmentId = $departmentId",
+        "auth_required": false,
+        "allowed_roles": [
+            "*"
+        ]
+    },
+    "create": {
+        "description": "Creates a new entry in 'departments'",
+        "route": "/departments",
+        "method": "POST",
+        "sql": "INSERT INTO departments(name, city) VALUES ($name, $city)",
+        "auth_required": true,
+        "allowed_roles": [
+            "*"
+        ],
+        "request_body_params": [
+            "name",
+            "city"
+        ]
+    },
+    "update": {
+        "description": "Updates an existing entry in 'departments' by its primary key",
+        "route": "/departments/$departmentId",
+        "method": "PUT",
+        "sql": "UPDATE departments SET name = $name, city = $city WHERE departmentId = $departmentId",
+        "auth_required": true,
+        "allowed_roles": [
+            "*"
+        ],
+        "request_body_params": [
+            "name",
+            "city"
+        ]
+    },
+    "delete": {
+        "description": "Deletes an existing entry in 'departments' by its primary key",
+        "route": "/departments/$departmentId",
+        "method": "DELETE",
+        "sql": "DELETE FROM departments WHERE departmentId = $departmentId",
+        "auth_required": true,
+        "allowed_roles": [
+            "*"
+        ]
+    }
+}

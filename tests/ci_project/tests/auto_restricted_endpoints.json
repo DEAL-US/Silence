@@ -1,0 +1,146 @@
+{
+    "restricted_endpoints_freeAccess_ok": {
+        "description": "GET /departments/freeAccess: returns the current rows",
+        "endpoint": "GET /departments/freeAccess",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/departments/freeAccess"
+                },
+                "expect": {
+                    "status": 200,
+                    "count": 3
+                }
+            }
+        ]
+    },
+    "restricted_endpoints_onlyLogged_ok": {
+        "description": "GET /departments/onlyLogged: returns the current rows",
+        "endpoint": "GET /departments/onlyLogged",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/departments/onlyLogged",
+                    "as": 1
+                },
+                "expect": {
+                    "status": 200,
+                    "count": 3
+                }
+            }
+        ]
+    },
+    "restricted_endpoints_onlyLogged_no_session": {
+        "description": "GET /departments/onlyLogged: without a session is a 401",
+        "endpoint": "GET /departments/onlyLogged",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/departments/onlyLogged"
+                },
+                "expect": {
+                    "status": 401
+                }
+            }
+        ]
+    },
+    "restricted_endpoints_onlyManagerOrCEO_ok": {
+        "description": "GET /departments/onlyManagerOrCEO: returns the current rows",
+        "endpoint": "GET /departments/onlyManagerOrCEO",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/departments/onlyManagerOrCEO",
+                    "as": 1
+                },
+                "expect": {
+                    "status": 200,
+                    "count": 3
+                }
+            }
+        ]
+    },
+    "restricted_endpoints_onlyManagerOrCEO_no_session": {
+        "description": "GET /departments/onlyManagerOrCEO: without a session is a 401",
+        "endpoint": "GET /departments/onlyManagerOrCEO",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/departments/onlyManagerOrCEO"
+                },
+                "expect": {
+                    "status": 401
+                }
+            }
+        ]
+    },
+    "restricted_endpoints_onlyManagerOrCEO_wrong_role": {
+        "description": "GET /departments/onlyManagerOrCEO: with the role 'Programmer' is a 403",
+        "endpoint": "GET /departments/onlyManagerOrCEO",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/departments/onlyManagerOrCEO",
+                    "as": 4
+                },
+                "expect": {
+                    "status": 403
+                }
+            }
+        ]
+    },
+    "restricted_endpoints_onlyCEO_ok": {
+        "description": "GET /departments/onlyCEO: returns the current rows",
+        "endpoint": "GET /departments/onlyCEO",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/departments/onlyCEO",
+                    "as": 2
+                },
+                "expect": {
+                    "status": 200,
+                    "count": 3
+                }
+            }
+        ]
+    },
+    "restricted_endpoints_onlyCEO_no_session": {
+        "description": "GET /departments/onlyCEO: without a session is a 401",
+        "endpoint": "GET /departments/onlyCEO",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/departments/onlyCEO"
+                },
+                "expect": {
+                    "status": 401
+                }
+            }
+        ]
+    },
+    "restricted_endpoints_onlyCEO_wrong_role": {
+        "description": "GET /departments/onlyCEO: with the role 'Manager' is a 403",
+        "endpoint": "GET /departments/onlyCEO",
+        "steps": [
+            {
+                "request": {
+                    "method": "GET",
+                    "path": "/departments/onlyCEO",
+                    "as": 1
+                },
+                "expect": {
+                    "status": 403
+                }
+            }
+        ]
+    }
+}
