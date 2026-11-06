@@ -93,7 +93,10 @@ class Endpoint:
             available = set(self.url_params)
         else:
             available = set(self.url_params) | set(self.body_params)
-        missing = [p for p in self.sql_params if p not in available and p != "loggedId"]
+        if self.owner and isinstance(self.shape, sqlshape.Insert):
+            # In a POST with owner, the owner's column comes from the session
+            available |= {sqlshape.only_param(v) for c, v in self.shape.pairs if c.lower() == self.owner.lower()}
+        missing =[p for p in self.sql_params if p not in available and p != "loggedId"]
         if missing:
             where = "URL" if self.op in ("SELECT", "DELETE") else "URL or request_body_params"
             raise EndpointError(f"'{self.name}' in {self.file}: the SQL uses "

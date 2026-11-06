@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mi aplicación</title>
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+  <script src="ez-ui/js/theme-init.js"></script>
+  <link rel="stylesheet" href="ez-ui/css/ez-ui.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="js/vendor/axios.min.js"></script>
+  <script type="module" src="js/index.js"></script>
+</head>
+<body>
+  <nav class="ez-navbar">
+    <div class="ez-container ez-navbar__inner">
+      <a class="ez-navbar__brand" href="index.html">Mi aplicación</a>
+      <button class="ez-button ez-button--secondary ez-navbar__toggle" type="button" aria-expanded="false">Menú</button>
+      <ul class="ez-navbar__links">
+        <li><a href="index.html" aria-current="page">Inicio</a></li>
+        <li id="nav-login"><a href="login.html">Iniciar sesión</a></li>
+        <li id="nav-user" hidden><span id="user-name"></span> · <a href="#" id="logout">Cerrar sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="ez-container">
+    <h1>Mi aplicación</h1>
+    <p>Proyecto creado con <code>silence new</code>. Las páginas están en <code>web/</code>; la API, en
+      <a href="/api">/api</a>, y el panel de administración, en <a href="/admin/">/admin</a>.</p>
+    <p>Genera los endpoints en el panel: Silence crea también los módulos de JavaScript para llamarlos en
+      <code>web/js/api/_auto/</code> (por ejemplo, <code>import { photosAPI_auto } from "./api/_auto/photos.js";</code>).</p>
+    <div id="content"></div>
+  </main>
+</body>
+</html>
