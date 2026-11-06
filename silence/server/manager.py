@@ -8,7 +8,7 @@ from silence.settings import settings
 from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
 from silence.logging.flask_filter import FlaskFilter
-from silence.utils.silence_json_encoder import SilenceJSONEncoder
+from silence.utils.silence_json_encoder import SilenceJSONProvider
 from silence.server.api_summary import APISummary
 
 from os.path import join
@@ -41,7 +41,7 @@ def setup():
     logging.getLogger("werkzeug").addFilter(FlaskFilter())
 
     # Override the default JSON encoder so that it works with the Decimal type
-    APP.json_encoder = SilenceJSONEncoder
+    APP.json = SilenceJSONProvider(APP)
 
     # Manually set up the MIME type for .js files
     # This patches a known issue on Windows, where the MIME type for JS files

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Silence"
+dynamic = ["version"]
+description = "An educational API+Web framework."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Agustín Borrego", email = "borrego@us.es" }]
+maintainers = [{ name = "Miguel Bermudo", email = "mbermudo@us.es" }]
+requires-python = ">=3.12"
+dependencies = [
+    "colorama>=0.4.6",
+    "Flask>=3.1,<4",
+    "Flask-Cors>=5.0",
+    "itsdangerous>=2.2",
+    "PyMySQL>=1.1",
+    "pypika>=0.48.9",
+    "requests>=2.32",
+    "Werkzeug>=3.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/DEAL-US/Silence"
+
+[project.scripts]
+silence = "silence.cli.manager:run_from_command_line"
+
+[tool.setuptools.dynamic]
+version = { attr = "silence.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["silence*"]

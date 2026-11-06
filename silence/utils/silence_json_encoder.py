@@ -1,6 +1,8 @@
 # Thanks to https://stackoverflow.com/a/3885198/5604339 :)
 import decimal
-from flask import json
+import json
+
+from flask.json.provider import DefaultJSONProvider
 
 from silence.settings import settings
 
@@ -23,6 +25,13 @@ class SilenceJSONEncoder(json.JSONEncoder):
             return super().default(o)
         except TypeError:
             return str(o)
+
+class SilenceJSONProvider(DefaultJSONProvider):
+    '''Flask 3 JSON provider that serializes like SilenceJSONEncoder'''
+    def dumps(self, obj, **kwargs):
+        kwargs.setdefault("sort_keys", self.sort_keys)
+        kwargs.setdefault("ensure_ascii", self.ensure_ascii)
+        return json.dumps(obj, cls=SilenceJSONEncoder, **kwargs)
 
 class SilenceJSONSerializer:
     def dumps(o):
