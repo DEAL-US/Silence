@@ -221,7 +221,7 @@ def setup():
     # Werkzeug's own request log is replaced by ours (log_and_count)
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
-    REGISTRY.load()
+    REGISTRY.load().log_errors()
 
     if not _routes_registered:
         register_admin_routes()

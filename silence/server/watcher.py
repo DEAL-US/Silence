@@ -59,7 +59,7 @@ def reload(changed):
         schema.invalidate()
     if any(os.path.basename(os.path.dirname(p)) in ("endpoints",) for p in changed) or \
             any(os.path.basename(p) == PROJECT_FILE for p in changed):
-        REGISTRY.load()
+        REGISTRY.load().log_errors()
     bump()
     logger.info("Reloaded %s", ", ".join(rel))
 

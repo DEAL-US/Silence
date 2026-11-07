@@ -372,6 +372,8 @@ def generate(tables=None):
     '''Writes tests/auto_<table>.json for the endpoints of the given tables (all by default)'''
     REGISTRY.load()
     ctx = Context()
+    from silence.server.generator import check_tables
+    check_tables(ctx.schema, tables)
     customs = {t.name for t in load_tests().tests if t.source == "custom"}
     by_table = {}
     for ep in REGISTRY.endpoints:

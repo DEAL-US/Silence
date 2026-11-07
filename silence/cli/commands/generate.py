@@ -25,7 +25,11 @@ def require_project():
 def createapi(args):
     require_project()
     from silence.server import generator
-    res = generator.generate(args.tables or None)
+    try:
+        res = generator.generate(args.tables or None)
+    except ValueError as exc:
+        logger.error(str(exc))
+        sys.exit(1)
     for t in res["tables"]:
         kind = "view" if t["view"] else "table"
         custom = f" (custom, not generated: {', '.join(t['custom'])})" if t["custom"] else ""
@@ -34,8 +38,7 @@ def createapi(args):
         logger.info("    · removed %s (its table no longer exists)", f)
     logger.info("Endpoints written in endpoints/auto_<table>.json.")
     from silence.server.endpoints import REGISTRY
-    for err in REGISTRY.errors:
-        logger.error("Endpoint error: %s", err)
+    REGISTRY.log_errors()
 
 
 def createtests(args):
@@ -43,7 +46,11 @@ def createtests(args):
     from silence.server import manager
     from silence.testing import generator, http_export
     manager.setup()
-    res = generator.generate(args.tables or None)
+    try:
+        res = generator.generate(args.tables or None)
+    except ValueError as exc:
+        logger.error(str(exc))
+        sys.exit(1)
     for t in res["tables"]:
         logger.info("    · %s: %d tests", t["table"], t["tests"])
     logger.info("Tests written in tests/auto_<table>.json; run them with 'silence test'.")

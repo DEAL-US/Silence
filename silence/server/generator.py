@@ -91,10 +91,22 @@ def custom_keys():
     return keys
 
 
+def check_tables(schema, tables):
+    '''ValueError if some name is not a table or view of the database (with a suggestion)'''
+    import difflib
+    names = list(schema.relations)
+    for t in tables or []:
+        if schema.get(t) is None:
+            close = difflib.get_close_matches(t, names, n=1)
+            hint = f" Did you mean '{close[0]}'?" if close else f" The tables and views are: {', '.join(names)}."
+            raise ValueError(f"There is no table or view '{t}' in {settings.DB_CONN['database']}.{hint}")
+
+
 def generate(tables=None):
     '''Writes endpoints/auto_<table>.json for the given tables and views (all
     by default) and their JS API. Returns a summary per table'''
     schema = get_schema(refresh=True)
+    check_tables(schema, tables)
     customs = custom_keys()
     folder = endpoints_dir()
     os.makedirs(folder, exist_ok=True)
