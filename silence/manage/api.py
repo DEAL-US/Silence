@@ -16,6 +16,7 @@ from silence.server.endpoints import REGISTRY, endpoints_dir, AUTO_PREFIX, route
 from silence.server.session import get_field
 from silence.project.files import read_json, write_json, etag_of, etags, safe_name
 from silence.testing import model as test_model
+from silence.manage import schemas
 
 ###############################################################################
 # Admin API (/_silence/v1): the operations to administer Silence itself.
@@ -72,9 +73,11 @@ def name_or_400(name):
 
 @manage.route("/")
 def root():
-    '''Version of Silence and of this API, and the project'''
+    '''Versions of Silence and of this API, the project, and how to call the student's API'''
     return jsonify({"silence": __version__, "api": API_VERSION,
-                    "project": os.path.basename(settings.PROJECT_DIR), "projectDir": settings.PROJECT_DIR})
+                    "project": os.path.basename(settings.PROJECT_DIR), "projectDir": settings.PROJECT_DIR,
+                    # What a client (the admin panel) needs to call the student's API
+                    "studentApi": {"prefix": settings.API_PREFIX, "sessionHeader": "Token"}})
 
 
 @manage.route("/status")
@@ -478,7 +481,10 @@ def run_tests():
         names = suite.select((v.get("names") or []) + (v.get("tables") or []))
     except ValueError as exc:
         raise HTTPError(400, str(exc))
-    return jsonify({"results": runner.run_tests(suite, names), "errors": suite.errors})
+    results = runner.run_tests(suite, names)
+    for r in results:
+        r["file"] = r["file"].removesuffix(".json")  # As in the rest of this API
+    return jsonify({"results": results, "errors": suite.errors})
 
 
 @manage.route("/tests/try", methods=["POST"])
@@ -541,17 +547,29 @@ def openapi():
         params = [{"name": p, "in": "path", "required": True, "schema": {"type": "string"}}
                   for p in re.findall(r"\{(\w+)\}", path)]
         for method in sorted(rule.methods - {"HEAD", "OPTIONS"}):
-            op = {"summary": summary, "operationId": rule.endpoint.split(".")[-1],
-                  "responses": {"200": {"description": "OK"}}}
+            op_id = rule.endpoint.split(".")[-1]
+            response, request_body = schemas.OPERATIONS.get(op_id, (None, None))
+            json_of = lambda schema: {"content": {"application/json": {"schema": schema}}}
+            ok = {"description": "OK", **json_of(schemas.ref(response))} if response else {"description": "OK"}
+            status = "201" if op_id in ("put_endpoint", "put_test") else "200"
+            op = {"summary": summary, "operationId": op_id,
+                  "responses": {"200": ok, **({"201": ok} if status == "201" else {}),
+                                "default": {"description": "Error", **json_of(schemas.ref("Error"))}}}
             if params:
                 op["parameters"] = params
-            if method in ("POST", "PUT", "PATCH"):
-                op["requestBody"] = {"content": {"application/json": {"schema": {"type": "object"}}}}
+            if request_body is not None:
+                op["requestBody"] = json_of(request_body)
+            if method in ("PUT", "PATCH", "DELETE") and op_id not in ("set_password", "set_all_passwords"):
+                op.setdefault("parameters", []).append(
+                    {"name": "If-Match", "in": "header", "required": False, "schema": {"type": "string"},
+                     "description": "Version (etag) of the file that was read; 412 if it has changed"})
             paths.setdefault(path, {})[method.lower()] = op
     return jsonify({
         "openapi": "3.1.0",
         "info": {"title": "Silence admin API", "version": f"{API_VERSION}.0",
-                 "description": "Operations to administer a Silence project. Only reachable from this computer."},
+                 "description": "Operations to administer a Silence project (docs/admin-api.md). "
+                                "Only reachable from this computer."},
         "servers": [{"url": PREFIX}],
         "paths": dict(sorted(paths.items())),
+        "components": {"schemas": schemas.COMPONENTS},
     })

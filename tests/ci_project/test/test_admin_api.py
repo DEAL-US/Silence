@@ -90,10 +90,59 @@ def try_openapi():
     assert spec["openapi"].startswith("3.") and "/endpoints/{file}/{name}" in spec["paths"]
 
 
+def try_response_schemas():
+    """Every response follows its schema of the OpenAPI specification (the contract)"""
+    from jsonschema import Draft202012Validator
+    spec = requests.get(ADMIN + "/openapi.json").json()
+
+    def check(op_id, response, status=None):
+        if status is not None:
+            assert response.status_code == status, (op_id, response.status_code, response.text[:200])
+        op = next(o for ops in spec["paths"].values() for o in ops.values() if o["operationId"] == op_id)
+        code = str(response.status_code)
+        ref = (op["responses"].get(code) or op["responses"]["default"])["content"]["application/json"]["schema"]
+        schema = {**ref, "components": spec["components"]}
+        errors = list(Draft202012Validator(schema).iter_errors(response.json()))
+        assert not errors, (op_id, [e.message for e in errors[:3]])
+
+    db = requests.get(ADMIN + "/config").json()["config"]["database"]
+    conn = {"host": db["host"], "port": db["port"], "user": db["user"], "password": db["password"]}
+    check("root", requests.get(ADMIN + "/"), 200)
+    check("status", requests.get(ADMIN + "/status"), 200)
+    check("get_config", requests.get(ADMIN + "/config"), 200)
+    check("patch_config", requests.patch(ADMIN + "/config/debug", json={"debug": False}), 200)
+    check("patch_config", requests.patch(ADMIN + "/config/auth", json={"password_mode": "x"}), 400)
+    check("database_test", requests.post(ADMIN + "/database/test", json={**conn, "name": db["name"]}), 200)
+    check("database_list", requests.post(ADMIN + "/database/list", json=conn), 200)
+    check("get_schema", requests.get(ADMIN + "/schema"), 200)
+    users = requests.get(ADMIN + "/users")
+    check("list_users", users, 200)
+    uid = users.json()["users"][0]["id"]
+    check("user_session", requests.post(f"{ADMIN}/users/{uid}/session"), 200)
+    check("hash_value", requests.post(ADMIN + "/hash", json={"password": "x"}), 200)
+    check("list_endpoints", requests.get(ADMIN + "/endpoints"), 200)
+    check("get_endpoint", requests.get(ADMIN + "/endpoints/employees/updateSalary"), 200)
+    check("get_endpoint", requests.get(ADMIN + "/endpoints/employees/nothing"), 404)
+    data = {"route": "/departments/names", "method": "GET", "sql": "SELECT name FROM departments"}
+    check("put_endpoint", requests.put(ADMIN + "/endpoints/schema_check/names", json=data), 201)
+    check("put_endpoint", requests.put(ADMIN + "/endpoints/schema_check/names", json=data), 200)
+    check("put_endpoint", requests.put(ADMIN + "/endpoints/schema_check/names", json=data,
+                                       headers={"If-Match": "old"}), 412)
+    check("delete_endpoint", requests.delete(ADMIN + "/endpoints/schema_check/names"), 200)
+    tests = requests.get(ADMIN + "/tests")
+    check("list_tests", tests, 200)
+    check("get_test", requests.get(ADMIN + "/tests/employees/employees_salary_by_boss"), 200)
+    check("run_tests", requests.post(ADMIN + "/tests/run", json={"names": ["employees_salary_by_boss"]}), 200)
+    check("run_tests", requests.post(ADMIN + "/tests/run", json={"names": ["no_such_test"]}), 400)
+    check("try_steps", requests.post(ADMIN + "/tests/try", json={"steps": [{"GET /departments": None}]}), 200)
+    check("get_stats", requests.get(ADMIN + "/stats"), 200)
+
+
 def run():
     print("Testing the admin API...")
     for name, test in [("root and status", try_root_and_status), ("config", try_config_without_secret),
                        ("schema and users", try_schema_and_users), ("endpoint files", try_endpoint_files),
-                       ("tests", try_tests), ("openapi", try_openapi)]:
+                       ("tests", try_tests), ("openapi", try_openapi),
+                       ("response schemas", try_response_schemas)]:
         logger.warning("testing the admin API: %s", name)
         test()
