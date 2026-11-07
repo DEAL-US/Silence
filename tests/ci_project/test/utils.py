@@ -1,6 +1,9 @@
+import os
+
 import requests
 
-BASE_URL = "http://127.0.0.1:8080/api"
+# run_ci.py starts Silence on a free port and passes its URL
+BASE_URL = os.environ.get("SILENCE_CI_BASE_URL", "http://127.0.0.1:8080/api")
 
 def get_token():
     # We assume that the testing user exists, as created by the register test

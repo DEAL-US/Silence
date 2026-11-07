@@ -13,6 +13,7 @@ Exit code 0 only if everything passes.
 import json
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -51,8 +52,17 @@ def load_database(db):
     conn.close()
 
 
-def wait_for(url, seconds=20):
+def free_port():
+    '''A free port, so as not to test another Silence that is running (e.g., on 8080)'''
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def wait_for(url, process, seconds=20):
     for _ in range(seconds * 4):
+        if process.poll() is not None:
+            return False  # Our Silence has stopped (e.g., the port is in use)
         try:
             urllib.request.urlopen(url, timeout=1)
             return True
@@ -74,12 +84,14 @@ def main():
         json.dump(data, f, indent=4)
 
     load_database(db)
-    server = subprocess.Popen([SILENCE, "run", "--no-browser"], cwd=project)
+    port = free_port()
+    server = subprocess.Popen([SILENCE, "run", "--no-browser", "--port", str(port)], cwd=project)
     try:
-        if not wait_for("http://127.0.0.1:8080/api"):
+        if not wait_for(f"http://127.0.0.1:{port}/api", server):
             print("Silence did not start")
             return 1
-        api = subprocess.run([sys.executable, "run_tests.py"], cwd=os.path.join(project, "test")).returncode
+        env = {**os.environ, "SILENCE_CI_BASE_URL": f"http://127.0.0.1:{port}/api"}
+        api = subprocess.run([sys.executable, "run_tests.py"], cwd=os.path.join(project, "test"), env=env).returncode
     finally:
         server.terminate()
         server.wait()

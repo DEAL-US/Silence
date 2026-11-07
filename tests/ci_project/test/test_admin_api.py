@@ -14,7 +14,7 @@ def try_root_and_status():
     s = requests.get(ADMIN + "/status").json()
     assert s["database"]["error"] is None
     assert s["auth"]["linked"] is True
-    assert s["errors"] == {"endpoints": [], "tests": []}
+    assert s["errors"] == {"config": [], "endpoints": [], "tests": []}
     assert isinstance(s["revision"], int)
 
 
