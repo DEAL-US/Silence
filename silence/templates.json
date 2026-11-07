@@ -5,7 +5,7 @@
             "repo": "IISSI-US/silence-template-v3-ez-ui",
             "version": "v1.0.0",
             "default": true,
-            "description": "Frontend with ez-ui: login, session and messages"
+            "description": "Frontend with ez-ui: a first page (index.html) ready to grow"
         },
         "blank": {
             "repo": "IISSI-US/silence-template-v3-blank",
