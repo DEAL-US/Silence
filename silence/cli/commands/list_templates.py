@@ -1,32 +1,17 @@
-import os
+from silence.cli import template_downloader as tpl
 
-import requests
-
-from silence.settings import settings
-from silence.logging.default_logger import logger
-
+###############################################################################
+# silence list-templates: the templates and the admin panel of this version of
+# Silence (its index, templates.json), with their versions.
+###############################################################################
 
 def handle(args):
-    prefix = settings.TEMPLATE_PREFIX
-    templates = {}
-    headers = {"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}"} if os.environ.get("GITHUB_TOKEN") else {}
-    try:
-        url = f"https://api.github.com/orgs/{settings.GITHUB_TEMPLATES_OWNER}/repos?per_page=100&type=all"
-        for repo in requests.get(url, headers=headers, timeout=10).json():
-            name = repo["name"].lower()
-            if name.startswith(prefix):
-                templates[name[len(prefix):]] = repo.get("description") or ""
-    except Exception as exc:
-        logger.error("Cannot query GitHub: %s", exc)
-
-    base = os.environ.get("SILENCE_SOURCES")
-    if base and os.path.isdir(os.path.expanduser(base)):
-        for name in os.listdir(os.path.expanduser(base)):
-            if name.startswith(prefix):
-                templates.setdefault(name[len(prefix):], "(local copy)")
-
-    print("Available templates:")
-    for name in sorted(templates):
-        default = " (default)" if name == settings.DEFAULT_TEMPLATE_NAME else ""
-        desc = f": {templates[name]}" if templates[name] else ""
-        print(f"    · {name}{default}{desc}")
+    data = tpl.index()
+    print("Templates of the frontend (silence new --template <name>):")
+    for name, t in data["templates"].items():
+        default = " (default)" if t.get("default") else ""
+        local = " [local copy]" if tpl.local_source(tpl.parse_repo(t["repo"])[1]) else ""
+        print(f"    · {name}{default} {t['version']}: {t.get('description', '')}{local}")
+    admin = data["admin"]
+    local = " [local copy]" if tpl.local_source(tpl.parse_repo(admin["repo"])[1]) else ""
+    print(f"Admin panel: {admin['repo']} {admin['version']}{local}")

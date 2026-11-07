@@ -41,7 +41,7 @@ COMPONENTS = {
                         default_role=STR, token_max_age=INT),
 
     "Config": obj(["config", "etag"], etag=STR, config=obj(
-        ["version", "server", "database", "auth", "js_api", "debug"],
+        ["version", "server", "database", "auth", "js_api", "admin", "debug"],
         version=INT,
         server=obj(["address", "port", "api_prefix", "open_browser", "log_bodies", "decimals_as_strings",
                     "check_updates"], address=STR, port=INT, api_prefix=STR, open_browser=BOOL,
@@ -50,6 +50,8 @@ COMPONENTS = {
                      name=STR),
         auth=ref("AuthSettings"),
         js_api=obj(["enabled", "dir"], enabled=BOOL, dir=STR),
+        admin={"oneOf": [{"type": "null"}, obj(["repo", "version"], repo=STR, version=STR)],
+               "description": "The admin panel of the project (repo and version), or null"},
         debug=BOOL)),
 
     "ConfigSaved": obj(["restartNeeded", "etag"], restartNeeded=BOOL, etag=STR),

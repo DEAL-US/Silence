@@ -21,11 +21,14 @@ def run_from_command_line():
     p = subparsers.add_parser("new", help="Creates a new project")
     p.add_argument("name", help="The new project's name (and folder)")
     group = p.add_mutually_exclusive_group()
-    group.add_argument("--template", help="Template of the frontend: ez-ui (default), bootstrap or blank")
+    group.add_argument("--template", help="Template of the frontend (silence list-templates): ez-ui by default")
     group.add_argument("--url", help="URL of a GitHub repo with a project to use as template")
     group.add_argument("--blank", action="store_const", const="blank", dest="template",
                        help="Alias of --template blank")
-    p.add_argument("--no-admin", action="store_true", help="Without the admin panel")
+    admin_group = p.add_mutually_exclusive_group()
+    admin_group.add_argument("--no-admin", action="store_true", help="Without the admin panel")
+    admin_group.add_argument("--admin", help="Another admin panel: owner/repo or its GitHub URL")
+    p.add_argument("--admin-version", help="Version (git tag) of the admin panel, or latest")
     p.set_defaults(handler=new.handle)
 
     p = subparsers.add_parser("run", help="Starts the API, the web app and the admin panel")
@@ -52,6 +55,10 @@ def run_from_command_line():
 
     p = subparsers.add_parser("admin", help="Admin panel of the project")
     p.add_argument("action", choices=["update"], help="update: installs or updates admin/")
+    version_group = p.add_mutually_exclusive_group()
+    version_group.add_argument("--version", help="Version (git tag) to install")
+    version_group.add_argument("--latest", action="store_true", help="The latest version (default branch)")
+    p.add_argument("--repo", help="Another admin panel: owner/repo or its GitHub URL")
     p.set_defaults(handler=admin.handle)
 
     p = subparsers.add_parser("list-templates", help="Lists the available project templates")

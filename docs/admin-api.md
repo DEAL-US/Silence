@@ -96,6 +96,7 @@ ficheros, como texto.
                      "active": "", "password_mode": "argon2", "login": true, "register": true,
                      "default_role": "", "token_max_age": 86400},
             "js_api": {"enabled": true, "dir": "web/js/api/_auto"},
+            "admin": {"repo": "IISSI-US/silence-admin-panel", "version": "v1.0.0"},
             "debug": false},
  "etag": "f9a1870f02a230d0"}
 ```
@@ -297,4 +298,8 @@ entradas van de más a menos peticiones.
 - `silence new` copia el panel en `admin/`; el servidor sirve esa carpeta en `/admin/` si
   existe, sin saber qué contiene.
 - `admin/panel.json`: `{"version": "1.0.0", "api": 1}`. Al arrancar, Silence avisa si el panel
-  necesita otra versión de este contrato; `silence admin update` descarga la última del repo.
+  necesita otra versión de este contrato.
+- `silence.json` anota qué panel tiene el proyecto (`"admin": {"repo", "version"}`, o `null`);
+  `silence admin update` instala ese (o el del índice de Silence, `templates.json`) y
+  `--version`, `--latest` o `--repo` lo cambian. La configuración lo muestra en `GET /config`,
+  pero no se cambia con esta API: es cosa de la CLI, que es la que instala el panel.

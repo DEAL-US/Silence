@@ -11,14 +11,15 @@
 >
 > ```
 > pip install -e .            # from this repo, in a virtual environment
-> silence new myproject       # frontend template ez-ui (default; --template, --url) + admin panel (--no-admin)
+> silence new myproject       # frontend template ez-ui (default; --template, --url) + admin panel (--admin, --no-admin)
 > cd myproject
 > silence run                 # opens the admin panel at http://127.0.0.1:8080/admin/
 > silence createapi           # or from the panel: endpoints/auto_<table>.json
 > silence createtests [--http]
 > silence test                # runs tests/*.json, each one in a rolled back transaction
 > silence hash <password>     # argon2 hash
-> silence admin update        # installs or updates the admin panel (admin/)
+> silence admin update        # installs the admin panel of silence.json (--version, --latest, --repo)
+> silence list-templates      # templates and admin panel of this Silence (silence/templates.json)
 > ```
 >
 > Silence is the backend: the student's API (`/api`) and an admin API (`/_silence/v1`,

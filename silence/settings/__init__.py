@@ -60,6 +60,9 @@ DEFAULT_PROJECT = {
         "enabled": True,
         "dir": "web/js/api/_auto",
     },
+    # The admin panel of the project (admin/): {"repo": "owner/repo", "version": "v1.0.0"};
+    # null if it has none or it is not known. silence admin update installs this one
+    "admin": None,
     "debug": False,
     "secret_key": "",
 }
@@ -70,10 +73,6 @@ FIXED_SETTINGS = {
     "HTTP_CACHE_TIME": 0,
     "CHECK_USER_IS_ACTIVE": True,
     "DEFAULT_ACTIVE_STATUS": True,
-    "GITHUB_TEMPLATES_OWNER": "IISSI-US",
-    "TEMPLATE_PREFIX": "silence-template-v3-",
-    "DEFAULT_TEMPLATE_NAME": "ez-ui",
-    "ADMIN_PANEL_REPO": "silence-admin-panel",
 }
 
 
@@ -145,6 +144,11 @@ def validate(p):
     check("js_api", "enabled", is_bool, "true or false")
     check("js_api", "dir", lambda v: is_str(v) and ".." not in v.split("/") and not v.startswith("/"),
           "a folder inside the project (e.g., \"web/js/api/_auto\")")
+    admin = p.get("admin")
+    if admin is not None and not (isinstance(admin, dict) and isinstance(admin.get("repo"), str)
+                                  and "/" in admin["repo"] and isinstance(admin.get("version"), str)):
+        errors.append('admin must be null or {"repo": "owner/repo", "version": "v1.0.0" or "latest"}, not '
+                      + json.dumps(admin, ensure_ascii=False))
     check(None, "debug", is_bool, "true or false")
     check(None, "secret_key", lambda v: is_str(v) and v != "", "a text")
     return errors

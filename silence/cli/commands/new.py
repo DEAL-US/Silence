@@ -3,17 +3,19 @@ import os
 import shutil
 import sys
 
-from silence.settings import settings, new_project_data, merge, PROJECT_FILE
+from silence.settings import new_project_data, merge, PROJECT_FILE
 from silence.logging.default_logger import logger
-from silence.cli.template_downloader import fetch, fetch_url, DownloadError
+from silence.cli import template_downloader as tpl
+from silence.cli.template_downloader import DownloadError
 
 ###############################################################################
-# silence new <name> [--template ez-ui|bootstrap|blank | --url <repo>] [--no-admin]
-# Creates the project by composing two parts:
-#   - the template of the student's frontend (web/...), from the repo
-#     silence-template-v3-<template> of IISSI-US (or any repo with --url);
-#   - the admin panel (admin/), from the repo silence-admin-panel, unless
-#     --no-admin is given.
+# silence new <name> [--template ez-ui|blank | --url <repo>]
+#                    [--admin <repo>] [--admin-version <v>|latest] [--no-admin]
+# Creates the project by composing two parts, at the versions of the index of
+# this Silence (templates.json):
+#   - the template of the student's frontend (web/...), or any repo with --url;
+#   - the admin panel (admin/), the default one or the repo given with --admin,
+#     unless --no-admin is given. silence.json records which one ("admin").
 # Then writes its silence.json, with a new secret key. Nothing else is asked:
 # the rest is configured in the admin panel (or editing the files).
 ###############################################################################
@@ -39,13 +41,13 @@ def copy_template(src, dest):
             shutil.copy2(s, d)
 
 
-def install_admin_panel(dest):
-    '''Copies the admin/ folder of silence-admin-panel into the project (replacing it)'''
-    src = fetch(settings.ADMIN_PANEL_REPO)
+def install_admin_panel(dest, repo, version):
+    '''Copies the admin/ folder of the panel's repo at that version into the project (replacing it)'''
+    src = tpl.fetch(repo, version)
     try:
         panel = os.path.join(src, "admin")
         if not os.path.isdir(panel):
-            raise DownloadError(f"{settings.ADMIN_PANEL_REPO} has no admin/ folder")
+            raise DownloadError(f"{repo} has no admin/ folder: it is not an admin panel")
         target = os.path.join(dest, "admin")
         if os.path.isdir(target):
             shutil.rmtree(target)
@@ -64,8 +66,8 @@ def panel_version(project_dir):
         return None
 
 
-def write_project_file(dest):
-    '''silence.json: the template's values (if any) with a new secret key'''
+def write_project_file(dest, admin):
+    '''silence.json: the template's values (if any) with a new secret key and the admin panel'''
     path = os.path.join(dest, PROJECT_FILE)
     data = new_project_data()
     if os.path.isfile(path):
@@ -73,6 +75,7 @@ def write_project_file(dest):
             data = merge(data, json.load(f))
         data["secret_key"] = new_project_data()["secret_key"]
         data["version"] = new_project_data()["version"]
+    data["admin"] = admin
     with open(path, "w", encoding="utf8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
         f.write("\n")
@@ -84,9 +87,20 @@ def handle(args):
         logger.error("A folder named '%s' already exists here.", name)
         sys.exit(1)
 
-    template = (args.template or settings.DEFAULT_TEMPLATE_NAME).lower()
+    # The frontend
+    templates = tpl.index()["templates"]
+    template = (args.template or tpl.default_template()).lower()
+    if args.url:
+        repo, version, source = args.url, tpl.LATEST, args.url
+    elif template in templates:
+        repo, version = templates[template]["repo"], templates[template]["version"]
+        source = f"the template '{template}' {version}"
+    else:
+        logger.error("Unknown template '%s'. Available: %s (or any repo with --url).",
+                     template, ", ".join(templates))
+        sys.exit(1)
     try:
-        src = fetch_url(args.url) if args.url else fetch(settings.TEMPLATE_PREFIX + template)
+        src = tpl.fetch(repo, version)
     except DownloadError as exc:
         logger.error("Cannot get the template: %s", exc)
         sys.exit(1)
@@ -95,15 +109,22 @@ def handle(args):
     finally:
         shutil.rmtree(src, ignore_errors=True)
 
-    panel = None
+    # The admin panel
+    admin, panel = None, None
     if not args.no_admin:
+        admin = tpl.default_admin()
+        if args.admin:
+            admin = {"repo": args.admin, "version": args.admin_version or tpl.LATEST}
+        elif args.admin_version:
+            admin["version"] = args.admin_version
         try:
-            panel = install_admin_panel(name)
+            panel = install_admin_panel(name, admin["repo"], admin["version"])
         except DownloadError as exc:
             logger.warning("The project has been created without the admin panel: %s. "
                            "Add it later with 'silence admin update'.", exc)
+            admin = None
 
-    write_project_file(name)
+    write_project_file(name, admin)
     for folder in ("endpoints", "tests", "web"):
         os.makedirs(os.path.join(name, folder), exist_ok=True)
     gitignore = os.path.join(name, ".gitignore")
@@ -111,11 +132,7 @@ def handle(args):
         with open(gitignore, "w", encoding="utf8") as f:
             f.write(GITIGNORE)
 
-    source = args.url or f"the template '{template}'"
-    with_panel = f" and the admin panel v{panel.get('version', '?')}" if panel else ""
+    with_panel = f" and the admin panel {admin['repo']} {admin['version']}" if admin else ""
     logger.info("The Silence project '%s' has been created from %s%s.", name, source, with_panel)
     logger.info("Now run:\n\n    cd %s\n    silence run\n", name)
-    if panel:
-        logger.info("and configure the database in the admin panel.")
-    else:
-        logger.info("and configure the database in %s.", PROJECT_FILE)
+    logger.info("and configure the database in %s.", "the admin panel" if panel else PROJECT_FILE)
