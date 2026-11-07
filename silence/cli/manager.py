@@ -43,7 +43,7 @@ def run_from_command_line():
     p.set_defaults(handler=generate.createtests)
 
     p = subparsers.add_parser("test", help="Runs the project's tests (tests/*.json)")
-    p.add_argument("names", nargs="*", help="Run only these tests")
+    p.add_argument("names", nargs="*", help="Run only these tests, or the tests of these tables")
     p.set_defaults(handler=test.handle)
 
     p = subparsers.add_parser("hash", help="Prints the argon2 hash of a password")

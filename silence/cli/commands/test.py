@@ -23,7 +23,14 @@ def handle(args):
     for err in suite.errors:
         logger.error("Test error: %s", err)
 
-    names = args.names or None
+    if not suite.tests:
+        logger.info("There are no tests: generate them with 'silence createtests' (or in the admin panel).")
+        sys.exit(1 if suite.errors else 0)
+    try:
+        names = suite.select(args.names)
+    except ValueError as exc:
+        logger.error(str(exc))
+        sys.exit(1)
     results = runner.run_tests(suite, names)
     passed = sum(1 for r in results if r["passed"])
 

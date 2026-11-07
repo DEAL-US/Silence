@@ -474,11 +474,11 @@ def run_tests():
     require_db()
     v = body()
     suite = test_model.load_tests()
-    names = set(v.get("names") or [])
-    tables = set(v.get("tables") or [])
-    if tables:
-        names |= {t.name for t in suite.tests if t.table in tables}
-    return jsonify({"results": runner.run_tests(suite, names or None), "errors": suite.errors})
+    try:
+        names = suite.select((v.get("names") or []) + (v.get("tables") or []))
+    except ValueError as exc:
+        raise HTTPError(400, str(exc))
+    return jsonify({"results": runner.run_tests(suite, names), "errors": suite.errors})
 
 
 @manage.route("/tests/try", methods=["POST"])
