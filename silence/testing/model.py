@@ -138,28 +138,6 @@ class Suite:
     def get(self, name):
         return next((t for t in self.tests if t.name == name), None)
 
-    def select(self, items):
-        '''The names of the tests given by test names or table names (all if none).
-        ValueError, with a suggestion, if one is neither'''
-        import difflib
-        if not items:
-            return [t.name for t in self.tests]
-        names = []
-        tables = {t.table for t in self.tests}
-        for item in items:
-            if self.get(item):
-                selected = [item]
-            elif item in tables:
-                selected = [t.name for t in self.tests if t.table == item]
-            else:
-                close = difflib.get_close_matches(item, [t.name for t in self.tests] + sorted(tables), n=1)
-                hint = f" Did you mean '{close[0]}'?" if close else ""
-                if item in ("run", "all", "test", "tests"):
-                    hint = " To run all the tests: silence test (to start Silence: silence run)."
-                raise ValueError(f"There is no test or table '{item}'.{hint}")
-            names += [n for n in selected if n not in names]
-        return names
-
 
 def load_tests():
     tests, errors = [], []

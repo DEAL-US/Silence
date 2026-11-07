@@ -5,7 +5,7 @@ import sys
 from silence import __version__
 from silence.settings import settings
 from silence.logging.default_logger import logger
-from silence.cli.commands import run, new, list_templates, test, generate, admin
+from silence.cli.commands import run, new, list_templates, generate, admin
 
 ###############################################################################
 # Command line interface: the entry point of the 'silence' command.
@@ -44,10 +44,6 @@ def run_from_command_line():
     p.add_argument("tables", nargs="*", help="Only the endpoints of these tables")
     p.add_argument("--http", action="store_true", help="Also export them to .http files (VS Code's REST Client)")
     p.set_defaults(handler=generate.createtests)
-
-    p = subparsers.add_parser("test", help="Runs the project's tests (tests/*.json)")
-    p.add_argument("names", nargs="*", help="Run only these tests, or the tests of these tables")
-    p.set_defaults(handler=test.handle)
 
     p = subparsers.add_parser("hash", help="Prints the argon2 hash of a password")
     p.add_argument("password")

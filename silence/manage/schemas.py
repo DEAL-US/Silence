@@ -55,12 +55,12 @@ COMPONENTS = {
         debug=BOOL)),
 
     "ConfigSaved": obj(["restartNeeded", "etag"], restartNeeded=BOOL, etag=STR),
-    "ConnectionTest": obj(["ok", "error"], ok=BOOL, error=STR_OR_NULL),
-    "DatabaseList": obj(["ok"], ok=BOOL, databases=LIST_STR, error=STR),
+    "ConnectionTest": obj(["ok", "error", "databases"], ok=BOOL, error=STR_OR_NULL, databases={
+        **LIST_STR, "description": "The databases that the user sees (empty if it cannot connect)"}),
 
     "Schema": obj(["database", "relations"], database=STR, relations={"type": "array", "items": obj(
-        ["name", "view", "pk", "fks", "uniques", "columns"],
-        name=STR, view=BOOL, pk=LIST_STR,
+        ["name", "view", "pk", "fks", "uniques", "columns", "rows"],
+        name=STR, view=BOOL, pk=LIST_STR, rows={"type": ["integer", "null"], "description": "null if it cannot be counted"},
         fks={"type": "array", "items": obj(["column", "refTable", "refColumn"], column=STR, refTable=STR,
                                            refColumn=STR)},
         uniques={"type": "array", "items": LIST_STR},
@@ -104,13 +104,6 @@ COMPONENTS = {
                  errors=LIST_STR),
     "TestsGenerated": obj(["tables"], tables={"type": "array", "items": obj(["table", "tests"], table=STR,
                                                                            tests=INT)}),
-    "StepResult": obj(["index", "test", "method", "path", "passed", "failures"],
-                      index=INT, test=STR, method=STR, path=STR, passed=BOOL, failures=LIST_STR, status=INT,
-                      response={"description": "The response of the student's API (any JSON)"}),
-    "TestResults": obj(["results", "errors"], errors=LIST_STR, results={"type": "array", "items": obj(
-        ["file", "name", "table", "source", "passed", "steps"], file=STR, name=STR, table=STR,
-        source=STR, passed=BOOL, steps={"type": "array", "items": ref("StepResult")})}),
-    "StepResults": obj(["steps"], steps={"type": "array", "items": ref("StepResult")}),
     "Exported": obj(["files"], files=LIST_STR),
 
     "PanelData": obj(["name", "data", "etag"], name=STR, etag=STR,
@@ -144,7 +137,6 @@ OPERATIONS = {
     "get_config": ("Config", None),
     "patch_config": ("ConfigSaved", {"type": "object"}),
     "database_test": ("ConnectionTest", obj([], host=STR, port=INT, user=STR, password=STR, name=STR)),
-    "database_list": ("DatabaseList", obj([], host=STR, port=INT, user=STR, password=STR)),
     "get_schema": ("Schema", None),
     "list_users": ("Users", None),
     "set_password": ("Updated", obj(["password"], password=STR)),
@@ -159,12 +151,10 @@ OPERATIONS = {
     "generate_endpoints_route": ("EndpointsGenerated", obj([], tables=LIST_STR)),
     "list_tests": ("Tests", None),
     "get_test": ("Entry", None),
-    "put_test": ("Saved", {"type": "object", "description": "The test: description and steps"}),
+    "put_test": ("Saved", {"type": "object", "description": "The unit test, in the short or the long form"}),
     "delete_test": ("Deleted", None),
     "customize_test": ("Moved", None),
     "generate_tests_route": ("TestsGenerated", obj([], tables=LIST_STR)),
-    "run_tests": ("TestResults", obj([], names=LIST_STR, tables=LIST_STR)),
-    "try_steps": ("StepResults", obj(["test"], test={"type": "object", "description": "A unit test"})),
     "get_panel_data": ("PanelData", None),
     "put_panel_data": ("PanelDataSaved", {"description": "Any JSON"}),
     "get_stats": ("Stats", None),

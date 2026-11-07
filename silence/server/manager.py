@@ -209,8 +209,6 @@ def log_request(response):
 
     group = g.get("log_group") or ("api" if is_api_path(path) else "web")
     count(response, group, path)
-    if request.headers.get("X-Silence-Test"):
-        return response  # The requests of the tests count, but they are not logged
 
     code = response.status_code
     code_color = COLORS["GREEN"] if code < 400 else COLORS["YELLOW"] if code < 500 else COLORS["RED"]

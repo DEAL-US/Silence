@@ -35,8 +35,9 @@ def try_config_without_secret():
 
 
 def try_schema_and_users():
-    names = [r["name"] for r in requests.get(ADMIN + "/schema").json()["relations"]]
-    assert {"departments", "employees", "topemployees"} <= set(names)
+    relations = {r["name"]: r for r in requests.get(ADMIN + "/schema").json()["relations"]}
+    assert {"departments", "employees", "topemployees"} <= set(relations)
+    assert relations["departments"]["rows"] > 0
     users = requests.get(ADMIN + "/users").json()["users"]
     assert users and all(u["password"] == "argon2" for u in users[:5])
     token = requests.post(f"{ADMIN}/users/{users[0]['id']}/session").json()["sessionToken"]
@@ -78,17 +79,15 @@ def try_endpoint_files():
 
 def try_tests():
     tests = requests.get(ADMIN + "/tests").json()["tests"]
-    assert tests
-    r = requests.post(ADMIN + "/tests/run", json={"names": ["employees_salary_ok"]}).json()
-    assert len(r["results"]) == 1 and r["results"][0]["passed"]
-    unit = {"GET /departments": None, "expect": 200}
-    assert requests.post(ADMIN + "/tests/try", json={"test": unit}).json()["steps"][0]["passed"]
+    assert tests and all(t["expect"].get("status") for t in tests if t["source"] == "auto")
+    # Silence does not run tests: the student runs them (the admin panel, the .http export)
+    assert requests.post(ADMIN + "/tests/run", json={}).status_code in (404, 405)
     # The tests of tests/ are unit tests: the composite ones belong to the admin panel
-    bad = requests.post(ADMIN + "/tests/try", json={"test": {"steps": ["departments_getAll_ok"]}})
+    bad = requests.put(ADMIN + "/tests/ci_check/flow", json={"steps": ["departments_getAll_ok"]})
     assert bad.status_code == 400
-    # The tests count in the statistics (in the group of the student's API)
+    # The requests to the student's API count in the statistics
     before = requests.get(ADMIN + "/stats").json()["api"]["requests"]
-    requests.post(ADMIN + "/tests/run", json={"names": ["departments_getById_ok"]})
+    requests.get(BASE_URL + "/departments")
     assert requests.get(ADMIN + "/stats").json()["api"]["requests"] == before + 1
 
 
@@ -130,8 +129,12 @@ def try_response_schemas():
     check("get_config", requests.get(ADMIN + "/config"), 200)
     check("patch_config", requests.patch(ADMIN + "/config/debug", json={"debug": False}), 200)
     check("patch_config", requests.patch(ADMIN + "/config/auth", json={"password_mode": "x"}), 400)
-    check("database_test", requests.post(ADMIN + "/database/test", json={**conn, "name": db["name"]}), 200)
-    check("database_list", requests.post(ADMIN + "/database/list", json=conn), 200)
+    test = requests.post(ADMIN + "/database/test", json={**conn, "name": db["name"]})
+    check("database_test", test, 200)
+    assert test.json()["ok"] and db["name"] in test.json()["databases"]
+    wrong = requests.post(ADMIN + "/database/test", json={**conn, "name": "does_not_exist_db"})
+    check("database_test", wrong, 200)
+    assert not wrong.json()["ok"] and wrong.json()["databases"]
     check("get_schema", requests.get(ADMIN + "/schema"), 200)
     users = requests.get(ADMIN + "/users")
     check("list_users", users, 200)
@@ -150,11 +153,8 @@ def try_response_schemas():
     tests = requests.get(ADMIN + "/tests")
     check("list_tests", tests, 200)
     check("get_test", requests.get(ADMIN + "/tests/employees/employees_salary_ok"), 200)
-    check("run_tests", requests.post(ADMIN + "/tests/run", json={"names": ["employees_salary_ok"]}), 200)
     check("put_panel_data", requests.put(ADMIN + "/panel-data/ci_schema", json={"a": 1}), 200)
     check("get_panel_data", requests.get(ADMIN + "/panel-data/ci_schema"), 200)
-    check("run_tests", requests.post(ADMIN + "/tests/run", json={"names": ["no_such_test"]}), 400)
-    check("try_steps", requests.post(ADMIN + "/tests/try", json={"test": {"GET /departments": None}}), 200)
     check("get_stats", requests.get(ADMIN + "/stats"), 200)
 
 

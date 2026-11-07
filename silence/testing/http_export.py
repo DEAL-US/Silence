@@ -8,9 +8,8 @@ from silence.testing.model import load_tests, tests_dir
 
 ###############################################################################
 # Export of the tests to .http files for VS Code's REST Client extension, to
-# explore the API by hand (silence createtests --http). Unlike silence test,
-# the requests are really sent: they change the database, and the checks of
-# "expect" are only comments.
+# run them by hand (silence createtests --http). The requests are really
+# sent: they change the database, and the checks of "expect" are only comments.
 ###############################################################################
 
 HTTP_DIR = "http"
@@ -30,7 +29,7 @@ def export_table(table, tests, base_url):
     users = sorted({t.request["as"] for t in tests if t.request.get("as") is not None}, key=str)
     lines = [
         f"# Tests of {table}, exported by Silence for VS Code's REST Client extension.",
-        "# Sending these requests CHANGES THE DATABASE (silence test rolls them back; this does not).",
+        "# Sending these requests CHANGES THE DATABASE.",
         "# The checks of each test are in the comments (# Expect: ...).",
         "#",
         "# How to use it:",

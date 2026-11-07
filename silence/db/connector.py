@@ -1,6 +1,3 @@
-import contextvars
-from contextlib import contextmanager
-
 import pymysql
 from pymysql.constants import CLIENT
 
@@ -8,15 +5,7 @@ from silence.settings import settings
 
 ###############################################################################
 # The connector builds the connections to the database.
-#
-# Test mode: while a test runs, every query of the thread uses the same
-# connection, inside a transaction that is rolled back at the end, so the
-# tests never change the database. Statements that commit implicitly (DDL,
-# or a COMMIT inside a procedure or trigger) break this guarantee.
 ###############################################################################
-
-# Connection shared by the queries of the current test (None: normal mode)
-TEST_CONNECTION = contextvars.ContextVar("silence_test_connection", default=None)
 
 
 def get_conn(db_conn=None):
@@ -45,20 +34,3 @@ def test_connection(db_conn):
         return None
     except pymysql.MySQLError as exc:
         return exc.args[1] if len(exc.args) > 1 else str(exc)
-
-
-@contextmanager
-def rollback_transaction():
-    '''Runs the block in test mode: every query uses one connection, inside a
-    transaction that is rolled back when the block ends'''
-    conn = get_conn()
-    conn.begin()
-    token = TEST_CONNECTION.set(conn)
-    try:
-        yield conn
-    finally:
-        TEST_CONNECTION.reset(token)
-        try:
-            conn.rollback()
-        finally:
-            conn.close()

@@ -17,7 +17,9 @@ test_admin_api.py` comprueba que una URL lo cumple.
   definición de un endpoint, que son los de su fichero (`auth_required`…).
 - **Todo en inglés**: rutas, campos y mensajes.
 - **Una operación por cada acción de la CLI o del panel**, con el mismo código detrás:
-  `silence createapi` es `POST /endpoints/generate`, y `silence test`, `POST /tests/run`.
+  `silence createapi` es `POST /endpoints/generate`, y `silence createtests`, `POST /tests/generate`.
+- **Silence no ejecuta tests**: los define, los genera y los exporta; los ejecuta el alumno
+  contra su API (desde el panel o con la exportación `.http`), sin transacciones: cambian la BD.
 - **Ficheros del proyecto como recursos**: un endpoint o un test se identifica por su fichero
   (sin `.json`) y su nombre: `/endpoints/photos/delete` es `delete` en `endpoints/photos.json`.
   Los ficheros `auto_<tabla>` los genera Silence; los demás son del usuario.
@@ -115,26 +117,21 @@ no es válido, 400 y no guarda.
 ### Base de datos
 
 **`POST /database/test`**, con `{"host", "port", "user", "password", "name"}` (`name`
-opcional): prueba una conexión sin guardarla.
+opcional): prueba una conexión sin guardarla y, si el usuario puede conectarse, dice qué BD ve.
 
 ```json
-{"ok": true, "error": null}
+{"ok": true, "error": null, "databases": ["animals_db", "gallery_db", "silence_gallery_db"]}
 ```
 
-**`POST /database/list`**, con `{"host", "port", "user", "password"}`: las BD que ve ese
-usuario.
+(con un error de conexión: `{"ok": false, "error": "Access denied for user …", "databases": []}`;
+con una BD que no existe, `ok` es `false` pero `databases` trae las que ve)
 
-```json
-{"ok": true, "databases": ["animals_db", "gallery_db", "silence_gallery_db"]}
-```
-
-(con un error de conexión: `{"ok": false, "error": "Access denied for user …"}`)
-
-**`GET /schema`**: tablas y vistas de la BD.
+**`GET /schema`**: tablas y vistas de la BD, con su número de filas (`rows`; `null` si no se
+puede contar, por ejemplo una vista que ya no funciona).
 
 ```json
 {"database": "silence_gallery_db",
- "relations": [{"name": "comments", "view": false, "pk": ["comment_id"],
+ "relations": [{"name": "comments", "view": false, "pk": ["comment_id"], "rows": 12,
                 "fks": [{"column": "user_id", "refTable": "users", "refColumn": "user_id"}],
                 "uniques": [],
                 "columns": [{"name": "comment_id", "type": "int(11)", "nullable": false, "default": null,
@@ -251,22 +248,10 @@ compuesto, y va en los datos del panel.
 **`POST /tests/generate`**, con `{"tables": [...]}` opcional: como `silence createtests`.
 Responde `{"tables": [{"table": "photos", "tests": 14}]}`.
 
-**`POST /tests/run`**, con `{"names": [...], "tables": [...]}` (opcionales; todos por defecto):
-como `silence test`. Cada test se ejecuta en una transacción que se deshace. `steps` tiene un
-solo elemento (la petición del test): `status` y `response` (la respuesta de la API del alumno),
-y `failures` (por qué no ha pasado).
-
-```json
-{"results": [{"file": "auto_departments", "name": "departments_getById_not_found", "table": "departments",
-              "source": "auto", "passed": true,
-              "steps": [{"index": 0, "test": "departments_getById_not_found", "method": "GET",
-                         "path": "/departments/999999999", "status": 404, "passed": true, "failures": [],
-                         "response": {"code": 404, "message": "Not found"}}]}],
- "errors": []}
-```
-
-**`POST /tests/try`**, con `{"test": {...}}`: ejecuta un test sin guardarlo (también con
-`ROLLBACK`). Responde `{"steps": [...]}`, como los de `tests/run`.
+Los tests generados solo esperan un código de estado. Silence no los ejecuta: no hay
+`tests/run` ni `tests/try` ni `silence test`. El panel los ejecuta contra la API del alumno en el
+orden `GET`, `POST`, `PUT`, `DELETE` (para que las lecturas vean los datos originales y los
+borrados vayan al final), abriendo la sesión de cada `as` con `POST /users/{id}/session`.
 
 **`POST /tests/export`**, con `{"format": "http", "tables": [...]}`: como `silence createtests
 --http`. Responde `{"files": ["tests/http/photos.http"]}`.
@@ -293,7 +278,7 @@ proyecto. Silence lo guarda sin saber qué es ni validarlo; versionarlo es decis
 - `web`: los ficheros de `web/` (la aplicación del alumno), por fichero y por tipo (`page`,
   `style`, `script`, `image`, `font`, `data`, `other`).
 
-Cuentan también las peticiones de los tests (`tests/run`, `tests/try`); no cuentan los ficheros
+Cuentan todas las peticiones a la API del alumno, también las de los tests; no cuentan los ficheros
 del panel (`/admin/`). Se guardan en memoria: se pierden al reiniciar.
 
 ```json

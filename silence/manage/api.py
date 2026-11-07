@@ -152,14 +152,7 @@ def connection_args(v):
 
 @manage.route("/database/test", methods=["POST"])
 def database_test():
-    '''Tries a connection without saving it'''
-    error = test_connection(connection_args(body()))
-    return jsonify({"ok": error is None, "error": error})
-
-
-@manage.route("/database/list", methods=["POST"])
-def database_list():
-    '''The databases that a user can see'''
+    '''Tries a connection without saving it; if the user can connect, also the databases it sees'''
     a = connection_args(body())
     try:
         conn = pymysql.connect(host=a["host"], port=a["port"], user=a["username"], password=a["password"],
@@ -169,16 +162,25 @@ def database_list():
             names = [r[0] for r in cur.fetchall()
                      if r[0] not in ("information_schema", "mysql", "performance_schema", "sys")]
         conn.close()
-        return jsonify({"ok": True, "databases": names})
     except pymysql.MySQLError as exc:
-        return jsonify({"ok": False, "error": exc.args[1] if len(exc.args) > 1 else str(exc)})
+        return jsonify({"ok": False, "error": exc.args[1] if len(exc.args) > 1 else str(exc), "databases": []})
+    error = test_connection(a) if a["database"] else None
+    if error is None and a["database"] and a["database"] not in names:
+        error = f"There is no database '{a['database']}' (or this user cannot see it)"
+    return jsonify({"ok": error is None, "error": error, "databases": names})
 
 
 @manage.route("/schema")
 def get_schema():
-    '''Tables and views of the database, with their columns and keys'''
+    '''Tables and views of the database, with their columns, keys and number of rows'''
     require_db()
-    return jsonify(db_schema.get_schema(refresh=True).to_dict())
+    data = db_schema.get_schema(refresh=True).to_dict()
+    for rel in data["relations"]:
+        try:
+            rel["rows"] = dal.query(f"SELECT COUNT(*) AS n FROM `{rel['name']}`")[0]["n"]
+        except DatabaseError:
+            rel["rows"] = None  # E.g., a view that no longer works
+    return jsonify(data)
 
 
 ###############################################################################
@@ -468,38 +470,6 @@ def generate_tests_route():
         raise HTTPError(400, str(exc))
     watcher.bump()
     return jsonify(res)
-
-
-@manage.route("/tests/run", methods=["POST"])
-def run_tests():
-    '''Runs the tests (as silence test), each one rolled back'''
-    from silence.testing import runner
-    require_db()
-    v = body()
-    suite = test_model.load_tests()
-    try:
-        names = suite.select((v.get("names") or []) + (v.get("tables") or []))
-    except ValueError as exc:
-        raise HTTPError(400, str(exc))
-    results = runner.run_tests(suite, names)
-    for r in results:
-        r["file"] = r["file"].removesuffix(".json")  # As in the rest of this API
-    return jsonify({"results": results, "errors": suite.errors})
-
-
-@manage.route("/tests/try", methods=["POST"])
-def try_steps():
-    '''Runs a test without saving it (rolled back): {"test": its definition}'''
-    from silence.testing import runner
-    from silence.exceptions import TestDefinitionError
-    require_db()
-    definition = body().get("test")
-    if not isinstance(definition, dict):
-        raise HTTPError(400, "Send the test to try, as {\"test\": {...}}")
-    try:
-        return jsonify({"steps": runner.try_definition(definition)})
-    except TestDefinitionError as exc:
-        raise HTTPError(400, str(exc))
 
 
 @manage.route("/tests/export", methods=["POST"])

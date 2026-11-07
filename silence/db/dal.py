@@ -1,6 +1,6 @@
 from pymysql.cursors import DictCursor
 
-from silence.db.connector import get_conn, TEST_CONNECTION
+from silence.db.connector import get_conn
 from silence.exceptions import DatabaseError
 from silence.logging.default_logger import logger
 
@@ -10,8 +10,7 @@ from silence.logging.default_logger import logger
 ###############################################################################
 
 def _run(q, params, fetch):
-    test_conn = TEST_CONNECTION.get()
-    conn = test_conn or get_conn()
+    conn = get_conn()
     cursor = conn.cursor(DictCursor)
     try:
         cursor.execute(q, params or None)
@@ -23,17 +22,14 @@ def _run(q, params, fetch):
             # A CALL may return a result set
             if cursor.description:
                 res["rows"] = list(cursor.fetchall())
-        if test_conn is None:
-            conn.commit()
+        conn.commit()
         return res
     except Exception as exc:
-        if test_conn is None:
-            conn.rollback()
+        conn.rollback()
         raise DatabaseError(exc) from exc
     finally:
         cursor.close()
-        if test_conn is None:
-            conn.close()
+        conn.close()
 
 
 def query(q, params=None):

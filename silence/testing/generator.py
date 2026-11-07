@@ -10,13 +10,13 @@ from silence.testing.model import load_tests, tests_dir, AUTO_PREFIX, short_unit
 
 ###############################################################################
 # Generation of tests from the endpoints (on demand, from the admin panel),
-# into tests/auto_<table>.json. For each endpoint:
-#   positive: the request that should work, with the current response as the
-#             reference (status, number of rows, the row);
+# into tests/auto_<table>.json. For each endpoint, with the status expected:
+#   positive: the request that should work (2xx);
 #   negative: no session (401), another role (403), another owner (403),
 #             a row that does not exist (404), a required param missing (400).
-# Tables with the full CRUD also get a composed test (POST, GET, PUT, DELETE).
-# The tests whose name is in a custom file are not generated again.
+# Silence does not run them: the student runs them (from the admin panel, or
+# with the .http export). The tests whose name is in a custom file are not
+# generated again.
 ###############################################################################
 
 TEST_PASSWORD = "Test-1234"
@@ -309,24 +309,6 @@ def tests_for_endpoint(ep, ctx):
     return tests
 
 
-def fill_references(tests):
-    '''Positive GET tests: the current response is the reference (number of rows, the row)'''
-    from silence.testing.model import Test
-    from silence.testing.runner import run_isolated
-    for name, t in tests.items():
-        if not t.pop("positive", False) or t.get("request", {}).get("method") != "GET":
-            continue
-        res = run_isolated(Test(name, short_unit(t), "generated.json"))[0]
-        data = res.get("response")
-        if res.get("status") == 200 and isinstance(data, list):
-            if "$" in t["endpoint"].split(" ", 1)[1] or len(data) == 1:
-                if data:
-                    t["expect"]["row"] = data[0]
-            t["expect"]["count"] = len(data)
-    for t in tests.values():
-        t.pop("positive", None)
-
-
 def generate(tables=None):
     '''Writes tests/auto_<table>.json for the endpoints of the given tables (all by default)'''
     REGISTRY.load()
@@ -347,7 +329,8 @@ def generate(tables=None):
         for ep in eps:
             tests.update(tests_for_endpoint(ep, ctx))
         tests = {n: t for n, t in tests.items() if n not in customs}
-        fill_references(tests)
+        for t in tests.values():
+            t.pop("positive", None)
 
         path = os.path.join(folder, f"{AUTO_PREFIX}{table}.json")
         if tests:

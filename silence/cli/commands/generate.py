@@ -54,7 +54,7 @@ def createtests(args):
         sys.exit(1)
     for t in res["tables"]:
         logger.info("    · %s: %d tests", t["table"], t["tests"])
-    logger.info("Tests written in tests/auto_<table>.json; run them with 'silence test'.")
+    logger.info("Tests written in tests/auto_<table>.json; run them from the admin panel, or export them with --http.")
     if args.http:
         for f in http_export.export(args.tables or None)["files"]:
             logger.info("    · %s", f)
