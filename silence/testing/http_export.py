@@ -39,11 +39,17 @@ def export_table(table, tests, base_url):
         f"# Tests of {table}, exported by Silence for VS Code's REST Client extension.",
         "# Sending these requests CHANGES THE DATABASE (silence test rolls them back; this does not).",
         "# The checks of each test are in the comments (# Expect: ...).",
+        "#",
+        "# How to use it:",
+        "#   1. Write the password of each user below, without quotes (password_2 = secret).",
+        "#   2. Send the login requests first: the others use their token, and REST Client",
+        "#      does not send them by itself (without a login, they get 401).",
+        "#   3. Send the requests of a test in order: a step may use the response of the previous one.",
         "",
         f"@base = {base_url}",
     ]
     for u in users:
-        lines.append(f"@password_{u} = ")
+        lines.append(f"@password_{u} =")
     lines.append("")
 
     pwd = settings.USER_AUTH_DATA["password"]
@@ -51,7 +57,7 @@ def export_table(table, tests, base_url):
     for u in users:
         lines += [
             "###",
-            f"# Login of user {u} (write its password above)",
+            f"# Login of user {u}: send it first (with its password above)",
             f"# @name login_{u}",
             "POST {{base}}/login",
             "Content-Type: application/json",
