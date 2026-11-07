@@ -17,6 +17,8 @@ from silence import __version__
 
 def port_in_use(address, port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # As the server does: a port that has just been released (TIME_WAIT) is not in use
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             s.bind((address, port))
             return False
