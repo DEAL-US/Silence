@@ -4,10 +4,7 @@
         "endpoint": "GET /topemployees",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/topemployees"
-                },
+                "GET /topemployees": null,
                 "expect": {
                     "status": 200,
                     "count": 3

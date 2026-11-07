@@ -4,14 +4,8 @@
         "endpoint": "PUT /employees/ban/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/ban/1",
-                    "body": {}
-                },
-                "expect": {
-                    "status": 200
-                }
+                "PUT /employees/ban/1": {},
+                "expect": 200
             }
         ]
     },
@@ -20,14 +14,8 @@
         "endpoint": "PUT /employees/ban/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/ban/999999999",
-                    "body": {}
-                },
-                "expect": {
-                    "status": 404
-                }
+                "PUT /employees/ban/999999999": {},
+                "expect": 404
             }
         ]
     },
@@ -36,14 +24,8 @@
         "endpoint": "PUT /employees/unban/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/unban/1",
-                    "body": {}
-                },
-                "expect": {
-                    "status": 200
-                }
+                "PUT /employees/unban/1": {},
+                "expect": 200
             }
         ]
     },
@@ -52,14 +34,8 @@
         "endpoint": "PUT /employees/unban/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/unban/999999999",
-                    "body": {}
-                },
-                "expect": {
-                    "status": 404
-                }
+                "PUT /employees/unban/999999999": {},
+                "expect": 404
             }
         ]
     }

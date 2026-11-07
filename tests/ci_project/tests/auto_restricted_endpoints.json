@@ -4,10 +4,7 @@
         "endpoint": "GET /departments/freeAccess",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/freeAccess"
-                },
+                "GET /departments/freeAccess": null,
                 "expect": {
                     "status": 200,
                     "count": 3
@@ -20,11 +17,8 @@
         "endpoint": "GET /departments/onlyLogged",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/onlyLogged",
-                    "as": 1
-                },
+                "GET /departments/onlyLogged": null,
+                "as": 1,
                 "expect": {
                     "status": 200,
                     "count": 3
@@ -37,13 +31,8 @@
         "endpoint": "GET /departments/onlyLogged",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/onlyLogged"
-                },
-                "expect": {
-                    "status": 401
-                }
+                "GET /departments/onlyLogged": null,
+                "expect": 401
             }
         ]
     },
@@ -52,11 +41,8 @@
         "endpoint": "GET /departments/onlyManagerOrCEO",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/onlyManagerOrCEO",
-                    "as": 1
-                },
+                "GET /departments/onlyManagerOrCEO": null,
+                "as": 1,
                 "expect": {
                     "status": 200,
                     "count": 3
@@ -69,13 +55,8 @@
         "endpoint": "GET /departments/onlyManagerOrCEO",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/onlyManagerOrCEO"
-                },
-                "expect": {
-                    "status": 401
-                }
+                "GET /departments/onlyManagerOrCEO": null,
+                "expect": 401
             }
         ]
     },
@@ -84,14 +65,9 @@
         "endpoint": "GET /departments/onlyManagerOrCEO",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/onlyManagerOrCEO",
-                    "as": 4
-                },
-                "expect": {
-                    "status": 403
-                }
+                "GET /departments/onlyManagerOrCEO": null,
+                "as": 4,
+                "expect": 403
             }
         ]
     },
@@ -100,11 +76,8 @@
         "endpoint": "GET /departments/onlyCEO",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/onlyCEO",
-                    "as": 2
-                },
+                "GET /departments/onlyCEO": null,
+                "as": 2,
                 "expect": {
                     "status": 200,
                     "count": 3
@@ -117,13 +90,8 @@
         "endpoint": "GET /departments/onlyCEO",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/onlyCEO"
-                },
-                "expect": {
-                    "status": 401
-                }
+                "GET /departments/onlyCEO": null,
+                "expect": 401
             }
         ]
     },
@@ -132,14 +100,9 @@
         "endpoint": "GET /departments/onlyCEO",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/onlyCEO",
-                    "as": 1
-                },
-                "expect": {
-                    "status": 403
-                }
+                "GET /departments/onlyCEO": null,
+                "as": 1,
+                "expect": 403
             }
         ]
     }

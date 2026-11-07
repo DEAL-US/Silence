@@ -4,10 +4,7 @@
         "endpoint": "GET /departments",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments"
-                },
+                "GET /departments": null,
                 "expect": {
                     "status": 200,
                     "count": 3
@@ -20,10 +17,7 @@
         "endpoint": "GET /departments/$departmentId",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/1"
-                },
+                "GET /departments/1": null,
                 "expect": {
                     "status": 200,
                     "row": {
@@ -41,13 +35,8 @@
         "endpoint": "GET /departments/$departmentId",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/999999999"
-                },
-                "expect": {
-                    "status": 404
-                }
+                "GET /departments/999999999": null,
+                "expect": 404
             }
         ]
     },
@@ -56,18 +45,12 @@
         "endpoint": "POST /departments",
         "steps": [
             {
-                "request": {
-                    "method": "POST",
-                    "path": "/departments",
-                    "as": 1,
-                    "body": {
-                        "name": "Arte",
-                        "city": "Cádiz-t1"
-                    }
+                "POST /departments": {
+                    "name": "Arte",
+                    "city": "Cádiz-t1"
                 },
-                "expect": {
-                    "status": 201
-                }
+                "as": 1,
+                "expect": 201
             }
         ]
     },
@@ -76,17 +59,11 @@
         "endpoint": "POST /departments",
         "steps": [
             {
-                "request": {
-                    "method": "POST",
-                    "path": "/departments",
-                    "body": {
-                        "name": "Arte",
-                        "city": "Cádiz-t1"
-                    }
+                "POST /departments": {
+                    "name": "Arte",
+                    "city": "Cádiz-t1"
                 },
-                "expect": {
-                    "status": 401
-                }
+                "expect": 401
             }
         ]
     },
@@ -95,18 +72,12 @@
         "endpoint": "PUT /departments/$departmentId",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/departments/1",
-                    "as": 1,
-                    "body": {
-                        "name": "Arte",
-                        "city": "Cádiz"
-                    }
+                "PUT /departments/1": {
+                    "name": "Arte",
+                    "city": "Cádiz"
                 },
-                "expect": {
-                    "status": 200
-                }
+                "as": 1,
+                "expect": 200
             }
         ]
     },
@@ -115,18 +86,12 @@
         "endpoint": "PUT /departments/$departmentId",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/departments/999999999",
-                    "as": 1,
-                    "body": {
-                        "name": "Arte",
-                        "city": "Cádiz"
-                    }
+                "PUT /departments/999999999": {
+                    "name": "Arte",
+                    "city": "Cádiz"
                 },
-                "expect": {
-                    "status": 404
-                }
+                "as": 1,
+                "expect": 404
             }
         ]
     },
@@ -135,17 +100,11 @@
         "endpoint": "PUT /departments/$departmentId",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/departments/1",
-                    "body": {
-                        "name": "Arte",
-                        "city": "Cádiz-t1"
-                    }
+                "PUT /departments/1": {
+                    "name": "Arte",
+                    "city": "Cádiz-t1"
                 },
-                "expect": {
-                    "status": 401
-                }
+                "expect": 401
             }
         ]
     },
@@ -154,14 +113,9 @@
         "endpoint": "DELETE /departments/$departmentId",
         "steps": [
             {
-                "request": {
-                    "method": "DELETE",
-                    "path": "/departments/3",
-                    "as": 1
-                },
-                "expect": {
-                    "status": 200
-                }
+                "DELETE /departments/3": null,
+                "as": 1,
+                "expect": 200
             }
         ]
     },
@@ -170,14 +124,9 @@
         "endpoint": "DELETE /departments/$departmentId",
         "steps": [
             {
-                "request": {
-                    "method": "DELETE",
-                    "path": "/departments/999999999",
-                    "as": 1
-                },
-                "expect": {
-                    "status": 404
-                }
+                "DELETE /departments/999999999": null,
+                "as": 1,
+                "expect": 404
             }
         ]
     },
@@ -186,13 +135,8 @@
         "endpoint": "DELETE /departments/$departmentId",
         "steps": [
             {
-                "request": {
-                    "method": "DELETE",
-                    "path": "/departments/3"
-                },
-                "expect": {
-                    "status": 401
-                }
+                "DELETE /departments/3": null,
+                "expect": 401
             }
         ]
     },
@@ -201,27 +145,18 @@
         "endpoint": "POST /departments (flow)",
         "steps": [
             {
-                "request": {
-                    "method": "POST",
-                    "path": "/departments",
-                    "as": 1,
-                    "body": {
-                        "name": "Arte",
-                        "city": "Cádiz-t1"
-                    }
+                "POST /departments": {
+                    "name": "Arte",
+                    "city": "Cádiz-t1"
                 },
-                "expect": {
-                    "status": 201
-                },
+                "as": 1,
+                "expect": 201,
                 "save": {
                     "id": "lastId"
                 }
             },
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/${id}"
-                },
+                "GET /departments/${id}": null,
                 "expect": {
                     "status": 200,
                     "row": {
@@ -231,37 +166,21 @@
                 }
             },
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/departments/${id}",
-                    "as": 1,
-                    "body": {
-                        "name": "Arte",
-                        "city": "Cádiz-t1"
-                    }
+                "PUT /departments/${id}": {
+                    "name": "Arte",
+                    "city": "Cádiz-t1"
                 },
-                "expect": {
-                    "status": 200
-                }
+                "as": 1,
+                "expect": 200
             },
             {
-                "request": {
-                    "method": "DELETE",
-                    "path": "/departments/${id}",
-                    "as": 1
-                },
-                "expect": {
-                    "status": 200
-                }
+                "DELETE /departments/${id}": null,
+                "as": 1,
+                "expect": 200
             },
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/departments/${id}"
-                },
-                "expect": {
-                    "status": 404
-                }
+                "GET /departments/${id}": null,
+                "expect": 404
             }
         ]
     }

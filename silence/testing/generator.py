@@ -6,7 +6,7 @@ from silence.db.schema import get_schema
 from silence.settings import settings
 from silence.server.endpoints import REGISTRY
 from silence.server.session import get_field
-from silence.testing.model import load_tests, tests_dir, AUTO_PREFIX
+from silence.testing.model import load_tests, tests_dir, AUTO_PREFIX, short_step
 from silence.testing.runner import run_test_steps
 
 ###############################################################################
@@ -395,6 +395,8 @@ def generate(tables=None):
 
         path = os.path.join(folder, f"{AUTO_PREFIX}{table}.json")
         if tests:
+            # Written in the short form, which is also the example for the students' own tests
+            tests = {n: {**t, "steps": [short_step(st) for st in t["steps"]]} for n, t in tests.items()}
             with open(path, "w", encoding="utf8") as f:
                 json.dump(tests, f, indent=4, ensure_ascii=False, default=str)
                 f.write("\n")

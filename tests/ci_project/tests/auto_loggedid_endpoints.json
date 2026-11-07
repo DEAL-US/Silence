@@ -4,11 +4,8 @@
         "endpoint": "GET /employees/logged",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/employees/logged",
-                    "as": 1
-                },
+                "GET /employees/logged": null,
+                "as": 1,
                 "expect": {
                     "status": 200,
                     "row": {
@@ -32,13 +29,8 @@
         "endpoint": "GET /employees/logged",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/employees/logged"
-                },
-                "expect": {
-                    "status": 401
-                }
+                "GET /employees/logged": null,
+                "expect": 401
             }
         ]
     },
@@ -47,11 +39,8 @@
         "endpoint": "GET /employees/logged_restricted",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/employees/logged_restricted",
-                    "as": 2
-                },
+                "GET /employees/logged_restricted": null,
+                "as": 2,
                 "expect": {
                     "status": 200,
                     "row": {
@@ -75,13 +64,8 @@
         "endpoint": "GET /employees/logged_restricted",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/employees/logged_restricted"
-                },
-                "expect": {
-                    "status": 401
-                }
+                "GET /employees/logged_restricted": null,
+                "expect": 401
             }
         ]
     },
@@ -90,14 +74,9 @@
         "endpoint": "GET /employees/logged_restricted",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/employees/logged_restricted",
-                    "as": 1
-                },
-                "expect": {
-                    "status": 403
-                }
+                "GET /employees/logged_restricted": null,
+                "as": 1,
+                "expect": 403
             }
         ]
     }

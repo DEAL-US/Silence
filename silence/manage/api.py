@@ -426,7 +426,7 @@ def list_tests():
     for t in suite.tests:
         d = t.to_dict()
         d["file"] = d["file"].removesuffix(".json")
-        d["steps"] = d.pop("data")["steps"]
+        d["steps"] = d.pop("data")["steps"]  # As written in the file (short or long form)
         tests.append(d)
     return jsonify({"tests": tests, "files": etags(test_model.tests_dir()), "errors": suite.errors})
 
@@ -489,7 +489,11 @@ def try_steps():
     steps = body().get("steps")
     if not isinstance(steps, list) or not steps:
         raise HTTPError(400, "Send the steps to try")
-    return jsonify({"steps": runner.truncate(runner.run_test_steps(steps))})
+    from silence.exceptions import TestDefinitionError
+    try:
+        return jsonify({"steps": runner.truncate(runner.run_test_steps(steps))})
+    except TestDefinitionError as exc:
+        raise HTTPError(400, str(exc))
 
 
 @manage.route("/tests/export", methods=["POST"])

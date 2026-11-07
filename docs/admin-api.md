@@ -79,12 +79,12 @@ Renombrar un endpoint es `PUT` del nombre nuevo y `DELETE` del antiguo.
 
 | Operación | Cuerpo | Respuesta |
 |---|---|---|
-| `GET /tests` | | `{tests: [...], files: {…}}`. Cada test: `file`, `name`, `table`, `source`, `description` y sus `steps` |
+| `GET /tests` | | `{tests: [...], files: {…}}`. Cada test: `file`, `name`, `table`, `source`, `description`, `first` (método y ruta de su primera petición) y sus `steps` tal como están en el fichero (forma corta o larga) |
 | `GET`/`PUT`/`DELETE /tests/{file}/{name}` | El test | Como los endpoints: solo los personalizados se escriben o se borran |
 | `POST /tests/{file}/{name}/customize` | | Lo mueve a `<tabla>.json` |
 | `POST /tests/generate` | `{tables?}` | Como `silence createtests` |
 | `POST /tests/run` | `{names?, tables?}` | Como `silence test`: `{results: [{file, name, passed, steps: [{status, failures, response}]}]}`. Cada test, en una transacción con `ROLLBACK` |
-| `POST /tests/try` | `{steps}` | Ejecuta pasos sin guardarlos (al componer un test); también con `ROLLBACK` |
+| `POST /tests/try` | `{steps}` | Ejecuta pasos (en forma corta o larga) sin guardarlos (al componer un test); también con `ROLLBACK`; 400 si un paso no es válido |
 | `POST /tests/export` | `{format: "http", tables?}` | Como `silence createtests --http`: escribe `tests/http/<tabla>.http` y devuelve los ficheros |
 
 ### Estadísticas

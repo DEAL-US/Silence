@@ -4,10 +4,7 @@
         "endpoint": "GET /employees",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/employees"
-                },
+                "GET /employees": null,
                 "expect": {
                     "status": 200,
                     "count": 5
@@ -20,10 +17,7 @@
         "endpoint": "GET /employees/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/employees/1"
-                },
+                "GET /employees/1": null,
                 "expect": {
                     "status": 200,
                     "row": {
@@ -47,13 +41,8 @@
         "endpoint": "GET /employees/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/employees/999999999"
-                },
-                "expect": {
-                    "status": 404
-                }
+                "GET /employees/999999999": null,
+                "expect": 404
             }
         ]
     },
@@ -62,25 +51,19 @@
         "endpoint": "POST /employees",
         "steps": [
             {
-                "request": {
-                    "method": "POST",
-                    "path": "/employees",
-                    "as": 1,
-                    "body": {
-                        "email": "t1.perianez@company.com",
-                        "password": "Test-1234",
-                        "departmentId": 1,
-                        "bossId": null,
-                        "firstName": "Pedro",
-                        "lastName": "Periáñez",
-                        "salary": 2300.0,
-                        "position": "Manager",
-                        "isActive": 1
-                    }
+                "POST /employees": {
+                    "email": "t1.perianez@company.com",
+                    "password": "Test-1234",
+                    "departmentId": 1,
+                    "bossId": null,
+                    "firstName": "Pedro",
+                    "lastName": "Periáñez",
+                    "salary": 2300.0,
+                    "position": "Manager",
+                    "isActive": 1
                 },
-                "expect": {
-                    "status": 201
-                }
+                "as": 1,
+                "expect": 201
             }
         ]
     },
@@ -89,21 +72,17 @@
         "endpoint": "POST /employees",
         "steps": [
             {
-                "request": {
-                    "method": "POST",
-                    "path": "/employees",
-                    "as": 1,
-                    "body": {
-                        "password": "Test-1234",
-                        "departmentId": 1,
-                        "bossId": null,
-                        "firstName": "Pedro",
-                        "lastName": "Periáñez",
-                        "salary": 2300.0,
-                        "position": "Manager",
-                        "isActive": 1
-                    }
+                "POST /employees": {
+                    "password": "Test-1234",
+                    "departmentId": 1,
+                    "bossId": null,
+                    "firstName": "Pedro",
+                    "lastName": "Periáñez",
+                    "salary": 2300.0,
+                    "position": "Manager",
+                    "isActive": 1
                 },
+                "as": 1,
                 "expect": {
                     "status": 400,
                     "message": "email"
@@ -116,24 +95,18 @@
         "endpoint": "POST /employees",
         "steps": [
             {
-                "request": {
-                    "method": "POST",
-                    "path": "/employees",
-                    "body": {
-                        "email": "t1.perianez@company.com",
-                        "password": "Test-1234",
-                        "departmentId": 1,
-                        "bossId": null,
-                        "firstName": "Pedro",
-                        "lastName": "Periáñez",
-                        "salary": 2300.0,
-                        "position": "Manager",
-                        "isActive": 1
-                    }
+                "POST /employees": {
+                    "email": "t1.perianez@company.com",
+                    "password": "Test-1234",
+                    "departmentId": 1,
+                    "bossId": null,
+                    "firstName": "Pedro",
+                    "lastName": "Periáñez",
+                    "salary": 2300.0,
+                    "position": "Manager",
+                    "isActive": 1
                 },
-                "expect": {
-                    "status": 401
-                }
+                "expect": 401
             }
         ]
     },
@@ -142,25 +115,19 @@
         "endpoint": "PUT /employees/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/1",
-                    "as": 1,
-                    "body": {
-                        "email": "perianez@company.com",
-                        "password": "Test-1234",
-                        "departmentId": 1,
-                        "bossId": null,
-                        "firstName": "Pedro",
-                        "lastName": "Periáñez",
-                        "salary": 2300.0,
-                        "position": "Manager",
-                        "isActive": 1
-                    }
+                "PUT /employees/1": {
+                    "email": "perianez@company.com",
+                    "password": "Test-1234",
+                    "departmentId": 1,
+                    "bossId": null,
+                    "firstName": "Pedro",
+                    "lastName": "Periáñez",
+                    "salary": 2300.0,
+                    "position": "Manager",
+                    "isActive": 1
                 },
-                "expect": {
-                    "status": 200
-                }
+                "as": 1,
+                "expect": 200
             }
         ]
     },
@@ -169,25 +136,19 @@
         "endpoint": "PUT /employees/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/999999999",
-                    "as": 1,
-                    "body": {
-                        "email": "perianez@company.com",
-                        "password": "Test-1234",
-                        "departmentId": 1,
-                        "bossId": null,
-                        "firstName": "Pedro",
-                        "lastName": "Periáñez",
-                        "salary": 2300.0,
-                        "position": "Manager",
-                        "isActive": 1
-                    }
+                "PUT /employees/999999999": {
+                    "email": "perianez@company.com",
+                    "password": "Test-1234",
+                    "departmentId": 1,
+                    "bossId": null,
+                    "firstName": "Pedro",
+                    "lastName": "Periáñez",
+                    "salary": 2300.0,
+                    "position": "Manager",
+                    "isActive": 1
                 },
-                "expect": {
-                    "status": 404
-                }
+                "as": 1,
+                "expect": 404
             }
         ]
     },
@@ -196,24 +157,18 @@
         "endpoint": "PUT /employees/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/1",
-                    "body": {
-                        "email": "t1.perianez@company.com",
-                        "password": "Test-1234",
-                        "departmentId": 1,
-                        "bossId": null,
-                        "firstName": "Pedro",
-                        "lastName": "Periáñez",
-                        "salary": 2300.0,
-                        "position": "Manager",
-                        "isActive": 1
-                    }
+                "PUT /employees/1": {
+                    "email": "t1.perianez@company.com",
+                    "password": "Test-1234",
+                    "departmentId": 1,
+                    "bossId": null,
+                    "firstName": "Pedro",
+                    "lastName": "Periáñez",
+                    "salary": 2300.0,
+                    "position": "Manager",
+                    "isActive": 1
                 },
-                "expect": {
-                    "status": 401
-                }
+                "expect": 401
             }
         ]
     },
@@ -222,14 +177,9 @@
         "endpoint": "DELETE /employees/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "DELETE",
-                    "path": "/employees/4",
-                    "as": 1
-                },
-                "expect": {
-                    "status": 200
-                }
+                "DELETE /employees/4": null,
+                "as": 1,
+                "expect": 200
             }
         ]
     },
@@ -238,14 +188,9 @@
         "endpoint": "DELETE /employees/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "DELETE",
-                    "path": "/employees/999999999",
-                    "as": 1
-                },
-                "expect": {
-                    "status": 404
-                }
+                "DELETE /employees/999999999": null,
+                "as": 1,
+                "expect": 404
             }
         ]
     },
@@ -254,13 +199,8 @@
         "endpoint": "DELETE /employees/$employeeId",
         "steps": [
             {
-                "request": {
-                    "method": "DELETE",
-                    "path": "/employees/4"
-                },
-                "expect": {
-                    "status": 401
-                }
+                "DELETE /employees/4": null,
+                "expect": 401
             }
         ]
     },
@@ -269,17 +209,11 @@
         "endpoint": "PUT /employees/$employeeId/salary",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/2/salary",
-                    "as": 1,
-                    "body": {
-                        "salary": 2500.0
-                    }
+                "PUT /employees/2/salary": {
+                    "salary": 2500.0
                 },
-                "expect": {
-                    "status": 200
-                }
+                "as": 1,
+                "expect": 200
             }
         ]
     },
@@ -288,17 +222,11 @@
         "endpoint": "PUT /employees/$employeeId/salary",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/999999999/salary",
-                    "as": 1,
-                    "body": {
-                        "salary": 2500.0
-                    }
+                "PUT /employees/999999999/salary": {
+                    "salary": 2500.0
                 },
-                "expect": {
-                    "status": 404
-                }
+                "as": 1,
+                "expect": 404
             }
         ]
     },
@@ -307,16 +235,10 @@
         "endpoint": "PUT /employees/$employeeId/salary",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/2/salary",
-                    "body": {
-                        "salary": 2500.0
-                    }
+                "PUT /employees/2/salary": {
+                    "salary": 2500.0
                 },
-                "expect": {
-                    "status": 401
-                }
+                "expect": 401
             }
         ]
     },
@@ -325,17 +247,11 @@
         "endpoint": "PUT /employees/$employeeId/salary",
         "steps": [
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/2/salary",
-                    "as": 2,
-                    "body": {
-                        "salary": 2500.0
-                    }
+                "PUT /employees/2/salary": {
+                    "salary": 2500.0
                 },
-                "expect": {
-                    "status": 403
-                }
+                "as": 2,
+                "expect": 403
             }
         ]
     },
@@ -344,34 +260,25 @@
         "endpoint": "POST /employees (flow)",
         "steps": [
             {
-                "request": {
-                    "method": "POST",
-                    "path": "/employees",
-                    "as": 1,
-                    "body": {
-                        "email": "t7.perianez@company.com",
-                        "password": "Test-1234",
-                        "departmentId": 1,
-                        "bossId": null,
-                        "firstName": "Pedro",
-                        "lastName": "Periáñez",
-                        "salary": 2300.0,
-                        "position": "Manager",
-                        "isActive": 1
-                    }
+                "POST /employees": {
+                    "email": "t7.perianez@company.com",
+                    "password": "Test-1234",
+                    "departmentId": 1,
+                    "bossId": null,
+                    "firstName": "Pedro",
+                    "lastName": "Periáñez",
+                    "salary": 2300.0,
+                    "position": "Manager",
+                    "isActive": 1
                 },
-                "expect": {
-                    "status": 201
-                },
+                "as": 1,
+                "expect": 201,
                 "save": {
                     "id": "lastId"
                 }
             },
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/employees/${id}"
-                },
+                "GET /employees/${id}": null,
                 "expect": {
                     "status": 200,
                     "row": {
@@ -387,44 +294,28 @@
                 }
             },
             {
-                "request": {
-                    "method": "PUT",
-                    "path": "/employees/${id}",
-                    "as": 1,
-                    "body": {
-                        "email": "t7.perianez@company.com",
-                        "password": "Test-1234",
-                        "departmentId": 1,
-                        "bossId": null,
-                        "firstName": "Pedro",
-                        "lastName": "Periáñez",
-                        "salary": 2300.0,
-                        "position": "Manager",
-                        "isActive": 1
-                    }
+                "PUT /employees/${id}": {
+                    "email": "t7.perianez@company.com",
+                    "password": "Test-1234",
+                    "departmentId": 1,
+                    "bossId": null,
+                    "firstName": "Pedro",
+                    "lastName": "Periáñez",
+                    "salary": 2300.0,
+                    "position": "Manager",
+                    "isActive": 1
                 },
-                "expect": {
-                    "status": 200
-                }
+                "as": 1,
+                "expect": 200
             },
             {
-                "request": {
-                    "method": "DELETE",
-                    "path": "/employees/${id}",
-                    "as": 1
-                },
-                "expect": {
-                    "status": 200
-                }
+                "DELETE /employees/${id}": null,
+                "as": 1,
+                "expect": 200
             },
             {
-                "request": {
-                    "method": "GET",
-                    "path": "/employees/${id}"
-                },
-                "expect": {
-                    "status": 404
-                }
+                "GET /employees/${id}": null,
+                "expect": 404
             }
         ]
     }

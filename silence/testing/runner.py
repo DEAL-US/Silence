@@ -70,8 +70,11 @@ def same(expected, actual):
 
 def check(expect, status, data):
     failures = []
-    if "status" in expect and expect["status"] != status:
-        failures.append(f"expected status {expect['status']}, got {status}")
+    if "status" in expect:
+        if expect["status"] != status:
+            failures.append(f"expected status {expect['status']}, got {status}")
+    elif not 200 <= status < 300:
+        failures.append(f"expected a 2xx status, got {status}")
     if "count" in expect:
         n = len(data) if isinstance(data, list) else None
         if n != expect["count"]:
@@ -122,8 +125,11 @@ def run_steps(steps, client):
 
 
 def run_test_steps(steps):
-    '''Runs some steps in test mode (rolled back) and returns their results'''
+    '''Runs some steps (short or long form) in test mode (rolled back) and returns their results.
+    TestDefinitionError if a step is not valid'''
     from silence.server.manager import APP
+    from silence.testing.model import normalize_step
+    steps = [normalize_step(step, i) for i, step in enumerate(steps)]
     with rollback_transaction():
         return run_steps(steps, APP.test_client())
 
