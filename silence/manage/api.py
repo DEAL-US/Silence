@@ -81,6 +81,13 @@ def root():
                     "studentApi": {"prefix": settings.API_PREFIX, "sessionHeader": "Token"}})
 
 
+def scripts_missing():
+    '''database.scripts that are not in sql/ (e.g., silence.json edited by hand, or a script deleted)'''
+    from silence.db import scripts
+    absent = scripts.missing(settings.project["database"].get("scripts") or [])
+    return [f"database.scripts: there is no sql/{s}" for s in absent]
+
+
 @manage.route("/status")
 def status():
     '''State of the project: database, users, endpoints, tests, errors and revision'''
@@ -96,7 +103,7 @@ def status():
                       "auto": sum(1 for e in REGISTRY.endpoints if e.source == "auto"),
                       "custom": sum(1 for e in REGISTRY.endpoints if e.source == "custom")},
         "tests": {"count": len(suite.tests)},
-        "errors": {"config": settings.errors, "endpoints": REGISTRY.errors, "tests": suite.errors},
+        "errors": {"config": settings.errors + scripts_missing(), "endpoints": REGISTRY.errors, "tests": suite.errors},
     })
 
 
@@ -124,7 +131,12 @@ def patch_config(section):
         values = bool(values["debug"])
     elif not isinstance(values, dict):
         raise HTTPError(400, "Send an object with the values to change")
-    if section == "database":
+    if section == "database" and isinstance(values.get("scripts"), list):
+        from silence.db import scripts
+        absent = scripts.missing([s for s in values["scripts"] if isinstance(s, str)])
+        if absent:
+            raise HTTPError(400, f"Not saved: there is no {', '.join('sql/' + s for s in absent)} in the project")
+    if section == "database" and set(values) - {"scripts"}:
         new = {**settings.project["database"], **values}
         error = test_connection({"host": new["host"], "port": new["port"], "username": new["user"],
                                  "password": new["password"], "database": new["name"]})

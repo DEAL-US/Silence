@@ -140,6 +140,10 @@ Si un script falla, 400 con dónde: `{"code": 400, "message": "populate.sql, lin
 "file": "populate.sql", "line": 12, "statement": "INSERT INTO …"}` (los anteriores ya se han
 ejecutado). Sin scripts en `database.scripts`, 409.
 
+`PATCH /config/database` con `scripts` comprueba que existen en `sql/` (si no, 400 y no guarda
+nada); los que falten después (un script borrado, `silence.json` editado a mano) salen en los
+errores de configuración de `GET /status`.
+
 **`GET /schema`**: tablas y vistas de la BD, con su número de filas (`rows`; `null` si no se
 puede contar, por ejemplo una vista que ya no funciona).
 

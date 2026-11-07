@@ -20,6 +20,11 @@ def sql_dir():
     return os.path.join(settings.PROJECT_DIR, SQL_DIR)
 
 
+def missing(names):
+    '''The scripts of a list that are not in sql/'''
+    return [n for n in names if not os.path.isfile(os.path.join(sql_dir(), n))]
+
+
 def split(text):
     '''The statements of a script: by its delimiter (";" or the one of DELIMITER), outside
     strings and comments. Returns [(line, statement)], line: where the statement starts'''
