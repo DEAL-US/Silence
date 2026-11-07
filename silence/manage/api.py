@@ -170,6 +170,25 @@ def database_test():
     return jsonify({"ok": error is None, "error": error, "databases": names})
 
 
+@manage.route("/database/reload", methods=["POST"])
+def database_reload():
+    '''Creates the database again with the scripts of database.scripts, in order, as silence createdb
+    of Silence 2 (e.g., to run the tests again from the original data)'''
+    from silence.db import scripts
+    require_db()
+    if not settings.project["database"].get("scripts"):
+        raise HTTPError(409, "Choose the scripts that reload the database first (database.scripts)")
+    try:
+        done = scripts.reload()
+    except scripts.ScriptError as exc:
+        db_schema.invalidate()
+        return jsonify({"code": 400, "message": str(exc), "file": exc.file, "line": exc.line,
+                        "statement": exc.statement[:2000]}), 400
+    db_schema.invalidate()
+    REGISTRY.load()
+    return jsonify({"scripts": done})
+
+
 @manage.route("/schema")
 def get_schema():
     '''Tables and views of the database, with their columns, keys and number of rows'''

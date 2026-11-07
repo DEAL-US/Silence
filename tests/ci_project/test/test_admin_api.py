@@ -156,6 +156,12 @@ def try_response_schemas():
     check("put_panel_data", requests.put(ADMIN + "/panel-data/ci_schema", json={"a": 1}), 200)
     check("get_panel_data", requests.get(ADMIN + "/panel-data/ci_schema"), 200)
     check("get_stats", requests.get(ADMIN + "/stats"), 200)
+    # The database created again with database.scripts, as silence createdb of Silence 2
+    reloaded = requests.post(ADMIN + "/database/reload")
+    check("database_reload", reloaded, 200)
+    assert [s["file"] for s in reloaded.json()["scripts"]] == ["create_tables.sql", "create_views.sql",
+                                                              "populate_database.sql"]
+    assert requests.get(BASE_URL + "/departments").status_code == 200
 
 
 def run():

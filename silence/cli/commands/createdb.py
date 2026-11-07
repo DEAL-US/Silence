@@ -1,0 +1,44 @@
+import sys
+
+from silence.settings import settings, PROJECT_FILE
+from silence.logging.default_logger import logger
+from silence.db.connector import test_connection
+
+###############################################################################
+# silence createdb: creates the database again (DROP and CREATE) and runs the
+# scripts of sql/ listed in silence.json (database.scripts), in order, as in
+# Silence 2 (SQL_SCRIPTS). The same code as POST /_silence/v1/database/reload
+# (Reload, in the admin panel). The database does not need to exist before.
+###############################################################################
+
+def handle(args):
+    if not settings.IS_PROJECT:
+        logger.error("There is no %s here: run this command in the folder of a Silence project.", PROJECT_FILE)
+        sys.exit(1)
+    settings.require_valid()
+    if not settings.DB_CONN["database"]:
+        logger.error("There is no database in %s (database.name): set it there or in the admin panel.", PROJECT_FILE)
+        sys.exit(1)
+    if not settings.project["database"].get("scripts"):
+        logger.error('List the scripts of sql/ in %s, in the order to run them: "database": {"scripts": '
+                     '["create_tables.sql", "populate.sql"]} (or in the admin panel).', PROJECT_FILE)
+        sys.exit(1)
+    error = test_connection({**settings.DB_CONN, "database": None})
+    if error:
+        logger.error("Cannot connect to MariaDB (%s): check the database settings of %s.", error, PROJECT_FILE)
+        sys.exit(1)
+
+    from silence.db import scripts
+    logger.info("Creating the database %s again...", settings.DB_CONN["database"])
+    try:
+        done = scripts.reload()
+    except scripts.ScriptError as exc:
+        for d in getattr(exc, "done", []):
+            logger.info("    · %s: %d statements", d["file"], d["statements"])
+        logger.error("%s", exc)
+        if exc.statement:
+            logger.error("    %s", exc.statement.strip().splitlines()[0][:200])
+        sys.exit(1)
+    for d in done:
+        logger.info("    · %s: %d statements", d["file"], d["statements"])
+    logger.info("Done!")

@@ -5,7 +5,7 @@ import sys
 from silence import __version__
 from silence.settings import settings
 from silence.logging.default_logger import logger
-from silence.cli.commands import run, new, list_templates, generate, admin
+from silence.cli.commands import run, new, list_templates, generate, admin, createdb
 
 ###############################################################################
 # Command line interface: the entry point of the 'silence' command.
@@ -35,6 +35,9 @@ def run_from_command_line():
     p.add_argument("--port", type=int, help="HTTP port (by default, the project's)")
     p.add_argument("--no-browser", action="store_true", help="Do not open the admin panel")
     p.set_defaults(handler=run.handle)
+
+    p = subparsers.add_parser("createdb", help="Creates the database again with the scripts of sql/ (database.scripts)")
+    p.set_defaults(handler=createdb.handle)
 
     p = subparsers.add_parser("createapi", help="Generates the endpoints of the tables (endpoints/auto_<table>.json)")
     p.add_argument("tables", nargs="*", help="Only these tables or views")

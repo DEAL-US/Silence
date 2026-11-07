@@ -10,7 +10,12 @@
         "port": 3306,
         "user": "iissi_user",
         "password": "iissi$user",
-        "name": "silence_ci_db"
+        "name": "silence_ci_db",
+        "scripts": [
+            "create_tables.sql",
+            "create_views.sql",
+            "populate_database.sql"
+        ]
     },
     "auth": {
         "table": "employees",

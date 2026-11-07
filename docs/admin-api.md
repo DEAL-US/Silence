@@ -126,6 +126,20 @@ opcional): prueba una conexión sin guardarla y, si el usuario puede conectarse,
 (con un error de conexión: `{"ok": false, "error": "Access denied for user …", "databases": []}`;
 con una BD que no existe, `ok` es `false` pero `databases` trae las que ve)
 
+**`POST /database/reload`**: crea de nuevo la BD con los scripts de `sql/` que lista
+`database.scripts` de `silence.json`, en ese orden, como `silence createdb` (y como
+`SQL_SCRIPTS` en Silence 2): `DROP DATABASE`, `CREATE DATABASE` y cada script tras un `USE`,
+con `DELIMITER` para los procedimientos y triggers. Sirve, por ejemplo, para volver a ejecutar
+los tests desde los datos originales.
+
+```json
+{"scripts": [{"file": "create_tables.sql", "statements": 4}, {"file": "populate.sql", "statements": 2}]}
+```
+
+Si un script falla, 400 con dónde: `{"code": 400, "message": "populate.sql, line 12: …",
+"file": "populate.sql", "line": 12, "statement": "INSERT INTO …"}` (los anteriores ya se han
+ejecutado). Sin scripts en `database.scripts`, 409.
+
 **`GET /schema`**: tablas y vistas de la BD, con su número de filas (`rows`; `null` si no se
 puede contar, por ejemplo una vista que ya no funciona).
 

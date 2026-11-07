@@ -39,6 +39,8 @@ DEFAULT_PROJECT = {
         "user": "iissi_user",
         "password": "iissi$user",
         "name": "",
+        # Scripts of sql/ that reload the database (from the admin panel), in order
+        "scripts": [],
     },
     "auth": {
         # Table and columns of the application's users (empty: not linked)
@@ -131,6 +133,9 @@ def validate(p):
     for key in ("host", "user", "password", "name"):
         check("database", key, is_str, "a text")
     check("database", "port", is_port, "a port number (1-65535)")
+    check("database", "scripts", lambda v: isinstance(v, list) and all(
+        is_str(f) and f.endswith(".sql") and "/" not in f and "\\" not in f for f in v),
+        'a list of files of sql/ (e.g., ["create_tables.sql", "populate.sql"])')
     for key in ("table", "identifier", "password", "role", "active", "default_role"):
         check("auth", key, is_str, "a text (\"\" if not used)")
     check("auth", "password_mode", lambda v: v in PASSWORD_MODES, " or ".join(f'"{m}"' for m in PASSWORD_MODES))

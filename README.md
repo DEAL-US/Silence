@@ -14,6 +14,7 @@
 > silence new myproject       # frontend template ez-ui (default; --template, --url) + admin panel (--admin, --no-admin)
 > cd myproject
 > silence run                 # opens the admin panel at http://127.0.0.1:8080/admin/
+> silence createdb            # creates the database again with the scripts of silence.json (database.scripts)
 > silence createapi           # or from the panel: endpoints/auto_<table>.json
 > silence createtests [--http] # tests/auto_<table>.json (the student runs them: admin panel or .http)
 > silence hash <password>     # argon2 hash
