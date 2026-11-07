@@ -66,9 +66,9 @@ Sin tabla enlazada, 409.
 
 | Operación | Cuerpo | Respuesta |
 |---|---|---|
-| `GET /endpoints` | | `{endpoints: [...], files: {photos: etag, …}}`. Cada endpoint: `file`, `name`, `table`, `source` (`auto` o `custom`), su definición (`route`, `method`, `sql`, `auth_required`, `allowed_roles`, `description`, `request_body_params`, `owner`) y `warnings` |
+| `GET /endpoints` | | `{endpoints: [...], files: {photos: etag, …}}`. Cada endpoint: `file`, `name`, `table`, `source` (`auto` o `custom`), su definición (`route`, `method`, `sql`, `auth_required`, `allowed_roles`, `description`, `request_body_params`, `owner`), `overrides` (los ficheros `auto_` cuyo endpoint sustituye) y `warnings` |
 | `GET /endpoints/{file}/{name}` | | Un endpoint |
-| `PUT /endpoints/{file}/{name}` | La definición | Crea o reemplaza un endpoint personalizado. 400 si no es válido (con el motivo); 409 si su método y ruta ya están en otro sitio; en un fichero `auto_`, 400 |
+| `PUT /endpoints/{file}/{name}` | La definición | Crea o reemplaza un endpoint personalizado. 400 si no es válido (con el motivo); 409 si su método y ruta ya están en otro endpoint personalizado (si están en uno autogenerado, el personalizado lo sustituye); en un fichero `auto_`, 400 |
 | `DELETE /endpoints/{file}/{name}` | | Solo los personalizados |
 | `POST /endpoints/{file}/{name}/customize` | | Lo mueve de `auto_<tabla>.json` a `<tabla>.json`; devuelve su nueva ubicación |
 | `POST /endpoints/generate` | `{tables?}` | Como `silence createapi`: escribe `auto_<tabla>.json` y la API JS; devuelve lo generado y lo que no se genera por estar personalizado |
