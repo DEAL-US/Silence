@@ -1,3 +1,4 @@
+import json
 import mimetypes
 import logging
 import os
@@ -203,7 +204,24 @@ def log_and_count(response):
         if msg:
             line += f" {msg}"
     logger.info(line)
+    if settings.LOG_BODIES and request.method in ("POST", "PUT") and group != "web":
+        body = logged_body()
+        if body:
+            logger.info(f"{' ' * 22}{COLORS['YELLOW']}body{RESET} {body}")
     return response
+
+
+def logged_body(max_chars=300):
+    '''The body of the request for the console, without passwords'''
+    data = request.get_json(silent=True) if request.is_json else request.form.to_dict()
+    if not isinstance(data, dict) or not data:
+        return ""
+    hidden = {"password"}
+    if settings.AUTH_LINKED:
+        hidden.add(settings.USER_AUTH_DATA["password"].lower())
+    shown = {k: ("***" if k.lower() in hidden else v) for k, v in data.items()}
+    text = json.dumps(shown, ensure_ascii=False, default=str)
+    return text if len(text) <= max_chars else text[:max_chars] + "…"
 
 
 ###############################################################################

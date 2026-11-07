@@ -43,8 +43,9 @@ COMPONENTS = {
     "Config": obj(["config", "etag"], etag=STR, config=obj(
         ["version", "server", "database", "auth", "js_api", "debug"],
         version=INT,
-        server=obj(["address", "port", "api_prefix", "open_browser"], address=STR, port=INT, api_prefix=STR,
-                   open_browser=BOOL),
+        server=obj(["address", "port", "api_prefix", "open_browser", "log_bodies", "decimals_as_strings",
+                    "check_updates"], address=STR, port=INT, api_prefix=STR, open_browser=BOOL,
+                   log_bodies=BOOL, decimals_as_strings=BOOL, check_updates=BOOL),
         database=obj(["host", "port", "user", "password", "name"], host=STR, port=INT, user=STR, password=STR,
                      name=STR),
         auth=ref("AuthSettings"),

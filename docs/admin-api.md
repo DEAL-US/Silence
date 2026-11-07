@@ -88,7 +88,8 @@ ficheros, como texto.
 
 ```json
 {"config": {"version": 3,
-            "server": {"address": "127.0.0.1", "port": 8080, "api_prefix": "/api", "open_browser": true},
+            "server": {"address": "127.0.0.1", "port": 8080, "api_prefix": "/api", "open_browser": true,
+                       "log_bodies": true, "decimals_as_strings": false, "check_updates": true},
             "database": {"host": "127.0.0.1", "port": 3306, "user": "iissi_user", "password": "iissi$user",
                          "name": "silence_gallery_db"},
             "auth": {"table": "users", "identifier": "email", "password": "password", "role": "",

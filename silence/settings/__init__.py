@@ -26,6 +26,12 @@ DEFAULT_PROJECT = {
         "port": 8080,
         "api_prefix": "/api",
         "open_browser": True,
+        # Shows in the console the body of each POST and PUT to the API (never passwords)
+        "log_bodies": True,
+        # DECIMAL columns as text ("19.90") instead of numbers, to keep their exact value
+        "decimals_as_strings": False,
+        # Checks at start whether there is a newer Silence (needs network)
+        "check_updates": True,
     },
     "database": {
         "host": "127.0.0.1",
@@ -61,9 +67,7 @@ DEFAULT_PROJECT = {
 # Settings that are not stored in silence.json
 FIXED_SETTINGS = {
     "COLORED_OUTPUT": True,
-    "DECIMALS_AS_STRINGS": False,
     "HTTP_CACHE_TIME": 0,
-    "CHECK_FOR_UPDATES": True,
     "CHECK_USER_IS_ACTIVE": True,
     "DEFAULT_ACTIVE_STATUS": True,
     "GITHUB_TEMPLATES_OWNER": "IISSI-US",
@@ -123,7 +127,8 @@ def validate(p):
     check("server", "port", is_port, "a port number (1-65535)")
     check("server", "api_prefix", lambda v: is_str(v) and v.strip("/") != "" and " " not in v,
           "a URL prefix (e.g., \"/api\")")
-    check("server", "open_browser", is_bool, "true or false")
+    for key in ("open_browser", "log_bodies", "decimals_as_strings", "check_updates"):
+        check("server", key, is_bool, "true or false")
     for key in ("host", "user", "password", "name"):
         check("database", key, is_str, "a text")
     check("database", "port", is_port, "a port number (1-65535)")
@@ -197,6 +202,9 @@ class Settings:
         self.HTTP_PORT = getattr(self, "port_override", None) or int(server["port"])
         self.API_PREFIX = "/" + server["api_prefix"].strip("/")
         self.OPEN_BROWSER = bool(server["open_browser"])
+        self.LOG_BODIES = bool(server["log_bodies"])
+        self.DECIMALS_AS_STRINGS = bool(server["decimals_as_strings"])
+        self.CHECK_FOR_UPDATES = bool(server["check_updates"])
         self.DB_CONN = {
             "host": db["host"],
             "port": int(db["port"]),
