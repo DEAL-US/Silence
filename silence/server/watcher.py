@@ -56,11 +56,17 @@ def reload(changed):
     rel = sorted(os.path.relpath(p, settings.PROJECT_DIR) for p in changed)
     if any(os.path.basename(p) == PROJECT_FILE for p in changed):
         settings.load(settings.PROJECT_DIR)
+        if settings.errors:
+            logger.error("%s has errors (the previous values are kept until they are fixed):", PROJECT_FILE)
+            for err in settings.errors:
+                logger.error("    · %s", err)
         schema.invalidate()
     if any(os.path.basename(os.path.dirname(p)) in ("endpoints",) for p in changed) or \
             any(os.path.basename(p) == PROJECT_FILE for p in changed):
         REGISTRY.load().log_errors()
     bump()
+    if settings.errors and rel == [PROJECT_FILE]:
+        return  # Already reported: nothing has been reloaded
     logger.info("Reloaded %s", ", ".join(rel))
 
 

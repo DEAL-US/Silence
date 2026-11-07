@@ -92,7 +92,7 @@ def status():
                       "auto": sum(1 for e in REGISTRY.endpoints if e.source == "auto"),
                       "custom": sum(1 for e in REGISTRY.endpoints if e.source == "custom")},
         "tests": {"count": len(suite.tests)},
-        "errors": {"endpoints": REGISTRY.errors, "tests": suite.errors},
+        "errors": {"config": settings.errors, "endpoints": REGISTRY.errors, "tests": suite.errors},
     })
 
 
@@ -126,7 +126,10 @@ def patch_config(section):
                                  "password": new["password"], "database": new["name"]})
         if error:
             raise HTTPError(400, f"Cannot connect: {error}")
-    settings.update(section, values)
+    try:
+        settings.update(section, values)
+    except ValueError as exc:
+        raise HTTPError(400, f"Not saved: {exc}")
     db_schema.invalidate()
     REGISTRY.load()
     watcher.bump()

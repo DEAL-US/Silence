@@ -95,6 +95,56 @@ def unknown_keys(defaults, values, prefix=""):
     return res
 
 
+PASSWORD_MODES = ("argon2", "plain")
+
+
+def validate(p):
+    '''The problems of the values of silence.json (after merging the defaults), as text'''
+    errors = []
+
+    def check(section, key, ok, expected):
+        value = p[section][key] if section else p[key]
+        if not ok(value):
+            where = f"{section}.{key}" if section else key
+            errors.append(f"{where} must be {expected}, not {json.dumps(value, ensure_ascii=False)}")
+
+    is_str = lambda v: isinstance(v, str)
+    is_bool = lambda v: isinstance(v, bool)
+    is_port = lambda v: isinstance(v, int) and not isinstance(v, bool) and 0 < v < 65536
+
+    for section in ("server", "database", "auth", "js_api"):
+        if not isinstance(p.get(section), dict):
+            errors.append(f"{section} must be an object")
+    if errors:
+        return errors
+
+    check(None, "version", lambda v: v == 3, "3")
+    check("server", "address", lambda v: is_str(v) and v != "", "an address (e.g., \"127.0.0.1\")")
+    check("server", "port", is_port, "a port number (1-65535)")
+    check("server", "api_prefix", lambda v: is_str(v) and v.strip("/") != "" and " " not in v,
+          "a URL prefix (e.g., \"/api\")")
+    check("server", "open_browser", is_bool, "true or false")
+    for key in ("host", "user", "password", "name"):
+        check("database", key, is_str, "a text")
+    check("database", "port", is_port, "a port number (1-65535)")
+    for key in ("table", "identifier", "password", "role", "active", "default_role"):
+        check("auth", key, is_str, "a text (\"\" if not used)")
+    check("auth", "password_mode", lambda v: v in PASSWORD_MODES, " or ".join(f'"{m}"' for m in PASSWORD_MODES))
+    check("auth", "login", is_bool, "true or false")
+    check("auth", "register", is_bool, "true or false")
+    check("auth", "token_max_age", lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0,
+          "a number of seconds")
+    a = p["auth"]
+    if is_str(a.get("table")) and a["table"] and not (a.get("identifier") and a.get("password")):
+        errors.append("auth: with a users table, identifier and password are needed")
+    check("js_api", "enabled", is_bool, "true or false")
+    check("js_api", "dir", lambda v: is_str(v) and ".." not in v.split("/") and not v.startswith("/"),
+          "a folder inside the project (e.g., \"web/js/api/_auto\")")
+    check(None, "debug", is_bool, "true or false")
+    check(None, "secret_key", lambda v: is_str(v) and v != "", "a text")
+    return errors
+
+
 class Settings:
     def __init__(self, project_dir=None):
         self.load(project_dir)
@@ -105,14 +155,32 @@ class Settings:
         self.PROJECT_PATH = os.path.join(self.PROJECT_DIR, PROJECT_FILE)
         self.IS_PROJECT = os.path.isfile(self.PROJECT_PATH)
         self.unknown_settings = []
+        self.errors = []
 
         values = {}
         if self.IS_PROJECT:
-            with open(self.PROJECT_PATH, encoding="utf8") as f:
-                values = json.load(f)
-            self.unknown_settings = unknown_keys(DEFAULT_PROJECT, values)
+            try:
+                with open(self.PROJECT_PATH, encoding="utf8") as f:
+                    values = json.load(f)
+                if not isinstance(values, dict):
+                    raise ValueError("it must contain an object")
+            except ValueError as exc:
+                self.errors = [f"{PROJECT_FILE} is not valid JSON: {exc}"]
+                values = None
+            if values is not None:
+                self.unknown_settings = unknown_keys(DEFAULT_PROJECT, values)
 
-        self.project = merge(DEFAULT_PROJECT, values)
+        project = merge(DEFAULT_PROJECT, values) if values is not None else None
+        if project is not None:
+            self.errors = validate(project)
+        if self.errors:
+            # Keep the previous values if there are any (a reload while running);
+            # otherwise the defaults, and the commands refuse to run (see require_valid)
+            if not hasattr(self, "project"):
+                self.project = merge(DEFAULT_PROJECT, {})
+                self.apply()
+            return
+        self.project = project
         self.apply()
 
     def apply(self):
@@ -154,16 +222,31 @@ class Settings:
         self.JS_API_DIR = p["js_api"]["dir"]
 
     def update(self, section, values):
-        '''Changes some values of a section (or a top-level key) and saves silence.json'''
-        if section in self.project and isinstance(self.project[section], dict):
-            known = {k: v for k, v in values.items() if k in DEFAULT_PROJECT[section]}
-            self.project[section].update(known)
-        elif section in DEFAULT_PROJECT:
-            self.project[section] = values
-        else:
+        '''Changes some values of a section (or a top-level key) and saves silence.json.
+        ValueError (with the problems) if the result is not valid: nothing is saved'''
+        if section not in DEFAULT_PROJECT:
             raise KeyError(f"Unknown settings section '{section}'")
+        new = json.loads(json.dumps(self.project))
+        if isinstance(DEFAULT_PROJECT[section], dict):
+            new[section].update({k: v for k, v in values.items() if k in DEFAULT_PROJECT[section]})
+        else:
+            new[section] = values
+        errors = validate(new)
+        if errors:
+            raise ValueError("; ".join(errors))
+        self.project = new
+        self.errors = []
         self.apply()
         self.save()
+
+    def require_valid(self):
+        '''Stops the command if silence.json has errors'''
+        if self.errors:
+            from silence.logging.default_logger import logger
+            logger.error("%s has errors:", PROJECT_FILE)
+            for err in self.errors:
+                logger.error("    · %s", err)
+            raise SystemExit(1)
 
     def save(self):
         with open(self.PROJECT_PATH, "w", encoding="utf8") as f:

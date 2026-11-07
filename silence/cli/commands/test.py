@@ -14,6 +14,7 @@ def handle(args):
         logger.error("There is no %s here: run this command in the folder of a Silence project.", PROJECT_FILE)
         sys.exit(1)
 
+    settings.require_valid()
     from silence.server import manager as server_manager
     from silence.testing import runner, model
 

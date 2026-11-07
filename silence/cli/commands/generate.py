@@ -16,6 +16,7 @@ def require_project():
     if not settings.IS_PROJECT:
         logger.error("There is no %s here: run this command in the folder of a Silence project.", PROJECT_FILE)
         sys.exit(1)
+    settings.require_valid()
     error = test_connection(settings.DB_CONN) if settings.DB_CONN["database"] else "no database selected"
     if error:
         logger.error("Cannot connect to the database (%s): set it in %s or in the admin panel.", error, PROJECT_FILE)

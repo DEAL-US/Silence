@@ -44,6 +44,7 @@ def handle(args):
                      "(create one with 'silence new <name>').", PROJECT_FILE)
         sys.exit(1)
 
+    settings.require_valid()
     if args.port:
         settings.port_override = args.port
         settings.HTTP_PORT = args.port

@@ -25,6 +25,13 @@ def try_config_without_secret():
     assert r.status_code == 400  # Tested before saving: nothing changes
     r = requests.patch(ADMIN + "/config/nothing", json={})
     assert r.status_code == 404
+    # Invalid values are not saved
+    r = requests.patch(ADMIN + "/config/auth", json={"password_mode": "whatever"})
+    assert r.status_code == 400 and "password_mode" in r.json()["message"]
+    r = requests.patch(ADMIN + "/config/server", json={"port": "eight"})
+    assert r.status_code == 400
+    assert requests.get(ADMIN + "/config").json()["config"]["auth"]["password_mode"] == "argon2"
+    assert requests.get(ADMIN + "/status").json()["errors"]["config"] == []
 
 
 def try_schema_and_users():
