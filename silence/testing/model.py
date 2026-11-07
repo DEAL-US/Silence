@@ -85,6 +85,8 @@ def load_tests():
     files = sorted(f for f in os.listdir(folder) if f.endswith(".json")) if os.path.isdir(folder) else []
     for filename in files:
         path = os.path.join(folder, filename)
+        if os.path.getsize(path) == 0:
+            continue  # Just created by an editor: as if it did not exist yet
         try:
             with open(path, encoding="utf8") as f:
                 content = json.load(f)
