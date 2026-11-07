@@ -6,8 +6,7 @@ from silence.db.schema import get_schema
 from silence.settings import settings
 from silence.server.endpoints import REGISTRY
 from silence.server.session import get_field
-from silence.testing.model import load_tests, tests_dir, AUTO_PREFIX, short_step
-from silence.testing.runner import run_test_steps
+from silence.testing.model import load_tests, tests_dir, AUTO_PREFIX, short_unit
 
 ###############################################################################
 # Generation of tests from the endpoints (on demand, from the admin panel),
@@ -82,16 +81,14 @@ class Context:
         return False
 
 
-def step(method, path, as_user=None, body=None, expect=None, save=None):
+def unit(method, path, as_user=None, body=None, expect=None):
+    '''A unit test (long form, written later in the short form)'''
     req = {"method": method, "path": path}
     if as_user is not None:
         req["as"] = as_user
     if body is not None:
         req["body"] = body
-    s = {"request": req, "expect": expect or {}}
-    if save:
-        s["save"] = save
-    return s
+    return {"request": req, "expect": expect or {}}
 
 
 def fill_route(route, values):
@@ -229,9 +226,9 @@ def tests_for_endpoint(ep, ctx):
     label = f"{ep.method} {ep.route}"
     tests = {}
 
-    def add(case, description, steps, positive=False):
+    def add(case, description, test, positive=False):
         tests[f"{base}_{case}"] = {"description": f"{label}: {description}", "endpoint": label,
-                                   "positive": positive, "steps": steps}
+                                   "positive": positive, **test}
 
     # The row used by the positive case, and its user
     row, user = None, None
@@ -261,109 +258,71 @@ def tests_for_endpoint(ep, ctx):
     as_user = ctx.user_ref(user)
     can_run = not needs_user or user is not None
 
+    # The params of the route: from the row (None if one is unknown), or values that do not exist
     values = route_values(ep, rel, row) if ep.url_params else {}
     path = fill_route(ep.route, values) if values is not None else None
+    missing_path = fill_route(ep.route, missing_values(ep, rel)) if rel else None
 
     # Positive case
     if can_run and path is not None:
         if ep.method == "GET":
-            add("ok", "returns the current rows", [step("GET", path, as_user, expect={"status": 200})], True)
+            add("ok", "returns the current rows", unit("GET", path, as_user, expect={"status": 200}), True)
         elif ep.method == "POST" and row is not None:
             body = body_from_row(ep, rel, row, ctx, mutate_uniques=True)
-            add("ok", "creates a row", [step("POST", path, as_user, body, {"status": 201})], True)
+            add("ok", "creates a row", unit("POST", path, as_user, body, {"status": 201}), True)
         elif ep.method == "PUT" and positive_row is not None:
             body = body_from_row(ep, rel, row, ctx, mutate_uniques=False)
-            add("ok", "updates a row (with its current values)", [step("PUT", path, as_user, body, {"status": 200})], True)
+            add("ok", "updates a row (with its current values)", unit("PUT", path, as_user, body, {"status": 200}), True)
         elif ep.method == "DELETE" and positive_row is not None:
-            add("ok", "deletes a row that no other row references", [step("DELETE", path, as_user, expect={"status": 200})], True)
+            add("ok", "deletes a row that no other row references", unit("DELETE", path, as_user, expect={"status": 200}), True)
 
     # A row that does not exist
     if ep.url_params and ep.method in ("GET", "PUT", "DELETE") and can_run and rel is not None:
         body = body_from_row(ep, rel, row, ctx, False) if ep.method == "PUT" and row else None
-        missing_path = fill_route(ep.route, missing_values(ep, rel))
-        add("not_found", "a row that does not exist is a 404",
-            [step(ep.method, missing_path, as_user, body, {"status": 404})])
+        add("not_found", "a row that does not exist is a 404", unit(ep.method, missing_path, as_user, body, {"status": 404}))
 
     # A required param missing
-    if ep.method == "POST" and can_run and row is not None:
+    if ep.method == "POST" and can_run and row is not None and path is not None:
         p = required_param(ep, rel)
         if p:
             body = body_from_row(ep, rel, row, ctx, mutate_uniques=True)
             del body[p]
-            add("missing_param", f"without '{p}' is a 400",
-                [step("POST", path, as_user, body, {"status": 400, "message": p})])
+            add("missing_param", f"without '{p}' is a 400", unit("POST", path, as_user, body, {"status": 400, "message": p}))
 
     # Sessions, roles and owners
-    any_path = path or (fill_route(ep.route, missing_values(ep, rel)) if rel else None)
+    any_path = path or missing_path
     if needs_user and any_path is not None:
         body = body_from_row(ep, rel, row, ctx, True) if ep.method in ("POST", "PUT") and row else None
-        add("no_session", "without a session is a 401", [step(ep.method, any_path, None, body, {"status": 401})])
+        add("no_session", "without a session is a 401", unit(ep.method, any_path, None, body, {"status": 401}))
 
         other = ctx.other_role_user(ep.allowed_roles)
         if other is not None:
             add("wrong_role", f"with the role {ctx.role(other)!r} is a 403",
-                [step(ep.method, any_path, ctx.user_ref(other), body, {"status": 403})])
+                unit(ep.method, any_path, ctx.user_ref(other), body, {"status": 403}))
 
         if ep.owner and ep.method in ("PUT", "DELETE") and row is not None and path is not None:
             intruder = ctx.other_user(ep.allowed_roles, row.get(ep.owner))
             if intruder is not None:
                 add("not_owner", "by a user who is not the owner is a 403",
-                    [step(ep.method, path, ctx.user_ref(intruder), body, {"status": 403})])
+                    unit(ep.method, path, ctx.user_ref(intruder), body, {"status": 403}))
 
     return tests
 
 
-def flow_test(table, eps, ctx):
-    '''A composed test for a table with the full CRUD: POST, GET, PUT, DELETE, GET'''
-    route_all = "/" + table.lower()
-    crud = [e for e in eps if e.route == route_all
-            or (len(e.url_params) == 1 and e.route == f"{route_all}/${e.url_params[0]}")]
-    by_method = {e.method + ("1" if e.url_params else "N"): e for e in crud}
-    needed = ("POSTN", "GET1", "PUT1", "DELETE1")
-    if not all(k in by_method for k in needed):
-        return None
-    post, get1, put1, del1 = (by_method[k] for k in needed)
-    rel = ctx.schema.get(table)
-    rows = ctx.sample(table)
-    if rel is None or not rows or rel.single_pk is None or len(get1.url_params) != 1:
-        return None
-    user = ctx.allowed_user(post.allowed_roles) if (post.auth_required or post.owner) else None
-    if (post.auth_required or post.owner) and user is None:
-        return None
-    as_user = ctx.user_ref(user)
-    body = body_from_row(post, rel, rows[0], ctx, mutate_uniques=True, n=7)
-    p = get1.url_params[0]
-    path = lambda ep: ep.route.replace("$" + ep.url_params[0], "${id}")
-    check_row = {k: v for k, v in body.items() if k != settings.USER_AUTH_DATA["password"]}
-    return {
-        "description": f"Creates a row of {table}, reads it, updates it, deletes it and checks that it is gone",
-        "endpoint": f"POST /{table.lower()} (flow)",
-        "positive": True,
-        "steps": [
-            step("POST", post.route, as_user, body, {"status": 201}, save={"id": "lastId"}),
-            step("GET", path(get1), as_user if get1.auth_required else None, expect={"status": 200, "row": check_row}),
-            step("PUT", path(put1), as_user, body_from_row(put1, rel, {**rows[0], **body}, ctx, False), {"status": 200}),
-            step("DELETE", path(del1), as_user, expect={"status": 200}),
-            step("GET", path(get1), as_user if get1.auth_required else None, expect={"status": 404}),
-        ],
-    }
-
-
 def fill_references(tests):
-    '''Positive tests: the current response is the reference (number of rows, the row)'''
-    for t in tests.values():
-        if not t.pop("positive", False) or len(t["steps"]) != 1:
+    '''Positive GET tests: the current response is the reference (number of rows, the row)'''
+    from silence.testing.model import Test
+    from silence.testing.runner import run_isolated
+    for name, t in tests.items():
+        if not t.pop("positive", False) or t.get("request", {}).get("method") != "GET":
             continue
-        s = t["steps"][0]
-        if s["request"]["method"] != "GET":
-            continue
-        res = run_test_steps(t["steps"])[0]
+        res = run_isolated(Test(name, short_unit(t), "generated.json"))[0]
         data = res.get("response")
         if res.get("status") == 200 and isinstance(data, list):
             if "$" in t["endpoint"].split(" ", 1)[1] or len(data) == 1:
                 if data:
-                    s["expect"]["row"] = data[0]
-            s["expect"]["count"] = len(data)
+                    t["expect"]["row"] = data[0]
+            t["expect"]["count"] = len(data)
     for t in tests.values():
         t.pop("positive", None)
 
@@ -387,16 +346,13 @@ def generate(tables=None):
         tests = {}
         for ep in eps:
             tests.update(tests_for_endpoint(ep, ctx))
-        flow = flow_test(table, eps, ctx)
-        if flow:
-            tests[f"{table}_flow"] = flow
         tests = {n: t for n, t in tests.items() if n not in customs}
         fill_references(tests)
 
         path = os.path.join(folder, f"{AUTO_PREFIX}{table}.json")
         if tests:
-            # Written in the short form, which is also the example for the students' own tests
-            tests = {n: {**t, "steps": [short_step(st) for st in t["steps"]]} for n, t in tests.items()}
+            # The unit tests in the short form, which is also the example for the students' own tests
+            tests = {n: short_unit(t) for n, t in tests.items()}
             with open(path, "w", encoding="utf8") as f:
                 json.dump(tests, f, indent=4, ensure_ascii=False, default=str)
                 f.write("\n")

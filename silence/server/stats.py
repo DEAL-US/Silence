@@ -2,43 +2,103 @@ import threading
 import time
 
 ###############################################################################
-# Request statistics, kept in memory (nothing is written in the project).
-# Three groups: "silence" (login, register, summary), "api" (the student's
-# endpoints) and "web" (the student's static files). The admin panel's own
-# requests are not counted.
+# Request statistics, kept in memory (nothing is written in the project), in
+# three groups, as Silence of Rust (silence-dev4) shows them:
+#   "api":     the student's endpoints (endpoints/*.json), by endpoint
+#   "silence": Silence's own API: login, register, the API summary and the
+#              admin API (/_silence/v1, the admin panel's traffic)
+#   "web":     the files of web/ (the app that the student develops), by file
+# The requests of the tests count too; the files of the admin panel do not.
 ###############################################################################
-
-GROUPS = ("silence", "api", "web")
 
 _lock = threading.Lock()
 _started = time.time()
-_data = {g: {} for g in GROUPS}
+
+KINDS = {"html": "page", "htm": "page", "css": "style", "js": "script", "mjs": "script", "json": "data",
+         "png": "image", "jpg": "image", "jpeg": "image", "gif": "image", "svg": "image", "webp": "image",
+         "ico": "image", "woff": "font", "woff2": "font", "ttf": "font"}
 
 
-def record(group, key, status, elapsed_ms):
+def _api_group():
+    return {"requests": 0, "errors": 0, "totalMs": 0.0, "byMethod": {}, "byStatus": {}, "endpoints": {},
+            "unmatched": {}}
+
+
+_data = {"api": _api_group(), "silence": _api_group(),
+         "web": {"requests": 0, "notFound": 0, "bytes": 0, "byKind": {}, "files": {}}}
+
+
+def file_kind(path):
+    ext = path.rsplit(".", 1)[-1].lower() if "." in path.rsplit("/", 1)[-1] else "html"
+    return KINDS.get(ext, "other")
+
+
+def record_api(group, method, key, status, elapsed_ms, matched=True):
+    '''A request to the student's API ("api") or to Silence's ("silence"); key: the endpoint'''
     with _lock:
-        entry = _data[group].setdefault(key, {"count": 0, "errors": 0, "status": {}, "totalMs": 0.0})
-        entry["count"] += 1
-        entry["totalMs"] += elapsed_ms
-        entry["status"][str(status)] = entry["status"].get(str(status), 0) + 1
+        g = _data[group]
+        g["requests"] += 1
+        g["totalMs"] += elapsed_ms
+        g["byMethod"][method] = g["byMethod"].get(method, 0) + 1
+        g["byStatus"][str(status)] = g["byStatus"].get(str(status), 0) + 1
         if status >= 400:
-            entry["errors"] += 1
+            g["errors"] += 1
+        if not matched:
+            g["unmatched"][key] = g["unmatched"].get(key, 0) + 1
+            return
+        e = g["endpoints"].setdefault(key, {"requests": 0, "errors": 0, "totalMs": 0.0, "maxMs": 0.0, "byStatus": {}})
+        e["requests"] += 1
+        e["totalMs"] += elapsed_ms
+        e["maxMs"] = max(e["maxMs"], elapsed_ms)
+        e["byStatus"][str(status)] = e["byStatus"].get(str(status), 0) + 1
+        if status >= 400:
+            e["errors"] += 1
+
+
+def record_web(path, status, size):
+    with _lock:
+        w = _data["web"]
+        kind = file_kind(path)
+        w["requests"] += 1
+        w["byKind"][kind] = w["byKind"].get(kind, 0) + 1
+        f = w["files"].setdefault(path, {"kind": kind, "requests": 0, "notFound": 0, "bytes": 0})
+        f["requests"] += 1
+        if status == 404:
+            w["notFound"] += 1
+            f["notFound"] += 1
+        else:
+            w["bytes"] += size
+            f["bytes"] += size
+
+
+def _api_report(g):
+    endpoints = []
+    for key, e in g["endpoints"].items():
+        method, _, route = key.partition(" ")
+        endpoints.append({"method": method, "route": route, "requests": e["requests"], "errors": e["errors"],
+                          "byStatus": dict(e["byStatus"]), "avgMs": round(e["totalMs"] / e["requests"], 1),
+                          "maxMs": round(e["maxMs"], 1)})
+    endpoints.sort(key=lambda e: -e["requests"])
+    return {"requests": g["requests"], "errors": g["errors"],
+            "avgMs": round(g["totalMs"] / g["requests"], 1) if g["requests"] else 0,
+            "byMethod": dict(g["byMethod"]), "byStatus": dict(g["byStatus"]),
+            "endpoints": endpoints, "unmatched": dict(g["unmatched"])}
 
 
 def snapshot():
     with _lock:
-        res = {"since": _started, "groups": {}}
-        for group, entries in _data.items():
-            rows = [{"key": k, "count": e["count"], "errors": e["errors"], "status": dict(e["status"]),
-                     "avgMs": round(e["totalMs"] / e["count"], 1)} for k, e in entries.items()]
-            rows.sort(key=lambda r: -r["count"])
-            res["groups"][group] = {"total": sum(r["count"] for r in rows), "entries": rows}
-        return res
+        w = _data["web"]
+        files = [{"path": p, **f} for p, f in w["files"].items()]
+        files.sort(key=lambda f: -f["requests"])
+        return {"since": _started, "api": _api_report(_data["api"]), "silence": _api_report(_data["silence"]),
+                "web": {"requests": w["requests"], "notFound": w["notFound"], "bytes": w["bytes"],
+                        "byKind": dict(w["byKind"]), "files": files}}
 
 
 def reset():
     global _started
     with _lock:
-        for group in GROUPS:
-            _data[group].clear()
+        _data["api"] = _api_group()
+        _data["silence"] = _api_group()
+        _data["web"] = {"requests": 0, "notFound": 0, "bytes": 0, "byKind": {}, "files": {}}
         _started = time.time()

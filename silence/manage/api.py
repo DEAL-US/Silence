@@ -1,3 +1,4 @@
+import json
 import os
 import re
 
@@ -429,7 +430,6 @@ def list_tests():
     for t in suite.tests:
         d = t.to_dict()
         d["file"] = d["file"].removesuffix(".json")
-        d["steps"] = d.pop("data")["steps"]  # As written in the file (short or long form)
         tests.append(d)
     return jsonify({"tests": tests, "files": etags(test_model.tests_dir()), "errors": suite.errors})
 
@@ -489,15 +489,15 @@ def run_tests():
 
 @manage.route("/tests/try", methods=["POST"])
 def try_steps():
-    '''Runs some steps without saving them (rolled back)'''
+    '''Runs a test without saving it (rolled back): {"test": its definition}'''
     from silence.testing import runner
-    require_db()
-    steps = body().get("steps")
-    if not isinstance(steps, list) or not steps:
-        raise HTTPError(400, "Send the steps to try")
     from silence.exceptions import TestDefinitionError
+    require_db()
+    definition = body().get("test")
+    if not isinstance(definition, dict):
+        raise HTTPError(400, "Send the test to try, as {\"test\": {...}}")
     try:
-        return jsonify({"steps": runner.truncate(runner.run_test_steps(steps))})
+        return jsonify({"steps": runner.try_definition(definition)})
     except TestDefinitionError as exc:
         raise HTTPError(400, str(exc))
 
@@ -514,12 +514,44 @@ def export_tests():
 
 
 ###############################################################################
+# The admin panel's own data (e.g., its composite tests), in the project's
+# admin/data/<name>.json. Silence stores it without knowing what it is.
+###############################################################################
+
+def panel_data_path(name):
+    return os.path.join(settings.PROJECT_DIR, "admin", "data", f"{name_or_400(name)}.json")
+
+
+@manage.route("/panel-data/<name>")
+def get_panel_data(name):
+    '''Data saved by the admin panel (null if there is none)'''
+    path = panel_data_path(name)
+    data = read_json(path) if os.path.isfile(path) else None
+    return jsonify({"name": name, "data": data, "etag": etag_of(path)})
+
+
+@manage.route("/panel-data/<name>", methods=["PUT"])
+def put_panel_data(name):
+    '''Saves data of the admin panel (any JSON), in admin/data/<name>.json'''
+    path = panel_data_path(name)
+    check_if_match(path)
+    data = request.get_json(silent=True)
+    if data is None:
+        raise HTTPError(400, "Send the data as JSON")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+        f.write("\n")
+    return jsonify({"name": name, "etag": etag_of(path)})
+
+
+###############################################################################
 # Statistics
 ###############################################################################
 
 @manage.route("/stats")
 def get_stats():
-    '''Requests since Silence started, by group and route'''
+    '''Requests since Silence started: the student's API, Silence's API and the web app'''
     return jsonify(stats.snapshot())
 
 

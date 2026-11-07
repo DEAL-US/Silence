@@ -1,47 +1,37 @@
 {
-    "employees_salary_by_boss": {
-        "description": "Only the boss of an employee changes their salary (owner = bossId), within the CHECK",
-        "steps": [
-            {
-                "request": {"method": "PUT", "path": "/employees/4/salary", "as": 2, "body": {"salary": 1500}},
-                "expect": {"status": 200}
-            },
-            {
-                "request": {"method": "GET", "path": "/employees/4"},
-                "expect": {"status": 200, "row": {"salary": 1500}}
-            },
-            {
-                "request": {"method": "PUT", "path": "/employees/4/salary", "as": 1, "body": {"salary": 9000}},
-                "expect": {"status": 403}
-            },
-            {
-                "request": {"method": "PUT", "path": "/employees/4/salary", "as": 2, "body": {"salary": -5}},
-                "expect": {"status": 400, "message": "validSalary"}
-            },
-            {
-                "request": {"method": "PUT", "path": "/employees/999/salary", "as": 2, "body": {"salary": 1500}},
-                "expect": {"status": 404}
-            }
-        ]
+    "employees_salary_ok": {
+        "description": "The boss of an employee changes their salary",
+        "PUT /employees/4/salary": {"salary": 1500},
+        "as": 2,
+        "expect": 200
     },
-    "employees_register_and_login": {
-        "description": "A user registers, logs in with the new password and reads their own data",
-        "steps": [
-            {
-                "request": {"method": "POST", "path": "/register", "body": {
-                    "email": "flow@company.com", "password": "flow", "firstName": "Flow", "lastName": "Test",
-                    "salary": 1000, "departmentId": 1}},
-                "expect": {"status": 200},
-                "save": {"token": "sessionToken", "id": "user.employeeId"}
-            },
-            {
-                "request": {"method": "POST", "path": "/login", "body": {"email": "flow@company.com", "password": "flow"}},
-                "expect": {"status": 200}
-            },
-            {
-                "request": {"method": "GET", "path": "/employees/${id}"},
-                "expect": {"status": 200, "row": {"email": "flow@company.com", "isActive": 1}}
-            }
-        ]
+    "employees_salary_not_boss": {
+        "description": "Somebody who is not the boss cannot change the salary (owner = bossId)",
+        "PUT /employees/4/salary": {"salary": 9000},
+        "as": 1,
+        "expect": 403
+    },
+    "employees_salary_check": {
+        "description": "A negative salary breaks the CHECK validSalary",
+        "PUT /employees/4/salary": {"salary": -5},
+        "as": 2,
+        "expect": {"status": 400, "message": "validSalary"}
+    },
+    "employees_salary_not_found": {
+        "description": "The salary of an employee that does not exist",
+        "PUT /employees/999/salary": {"salary": 1500},
+        "as": 2,
+        "expect": 404
+    },
+    "employees_register": {
+        "description": "A new user registers",
+        "POST /register": {"email": "flow@company.com", "password": "flow", "firstName": "Flow",
+                           "lastName": "Test", "salary": 1000, "departmentId": 1},
+        "expect": 200
+    },
+    "employees_login": {
+        "description": "A user logs in with the password of the sample data",
+        "POST /login": {"email": "perianez@company.com", "password": "perianez"},
+        "expect": 200
     }
 }

@@ -1,5 +1,4 @@
 import json
-import re
 
 from silence.db import dal
 from silence.db.connector import rollback_transaction
@@ -9,40 +8,10 @@ from silence.settings import settings
 ###############################################################################
 # Runs tests through the API (Flask's test client, in the same process), each
 # test inside a transaction that is rolled back: the database is left as it
-# was. The requests of the tests are neither logged nor counted in the stats.
+# was. The requests of the tests count in the statistics, but they are not logged in the console.
 ###############################################################################
 
 TEST_HEADER = "X-Silence-Test"
-RE_VAR = re.compile(r"\$\{(\w+)\}")
-
-
-def substitute(value, variables):
-    '''Replaces ${name} with the saved variables (keeping the type if the whole value is one)'''
-    if isinstance(value, str):
-        m = re.fullmatch(r"\$\{(\w+)\}", value)
-        if m and m.group(1) in variables:
-            return variables[m.group(1)]
-        return RE_VAR.sub(lambda m: str(variables.get(m.group(1), m.group(0))), value)
-    if isinstance(value, dict):
-        return {k: substitute(v, variables) for k, v in value.items()}
-    if isinstance(value, list):
-        return [substitute(v, variables) for v in value]
-    return value
-
-
-def extract(data, path):
-    '''Value of "lastId", "0.photo_id", "user.email"... in the response'''
-    for part in str(path).split("."):
-        if isinstance(data, list):
-            try:
-                data = data[int(part)]
-            except (ValueError, IndexError):
-                return None
-        elif isinstance(data, dict):
-            data = data.get(part)
-        else:
-            return None
-    return data
 
 
 def token_for(user_ref):
@@ -94,44 +63,39 @@ def check(expect, status, data):
     return failures
 
 
-def run_steps(steps, client):
-    '''Runs the steps of a test. Returns the result of each step (it stops at the first failure)'''
-    variables, results = {}, []
-    for i, step in enumerate(steps):
-        req = substitute(step.get("request", {}), variables)
-        method = req.get("method", "GET").upper()
-        path = req["path"]
-        res = {"index": i, "method": method, "path": path, "passed": False, "failures": []}
-        try:
-            headers = {TEST_HEADER: "1"}
-            token = token_for(req.get("as"))
-            if token:
-                headers["Token"] = token
-            resp = client.open(settings.API_PREFIX + path, method=method, headers=headers,
-                               json=req.get("body") if method in ("POST", "PUT") else None)
-            data = resp.get_json(silent=True)
-            res["status"] = resp.status_code
-            res["response"] = data
-            res["failures"] = check(step.get("expect", {}), resp.status_code, data)
-            for var, where in (step.get("save") or {}).items():
-                variables[var] = extract(data, where)
-        except Exception as exc:
-            res["failures"] = [f"{type(exc).__name__}: {exc}"]
-        res["passed"] = not res["failures"]
-        results.append(res)
-        if not res["passed"]:
-            break
-    return results
+def run_test(test, client):
+    '''Runs a unit test. Returns its result as a list of one step (the format of the results)'''
+    req = test.request
+    res = {"index": 0, "test": test.name, "method": req["method"], "path": req["path"],
+           "passed": False, "failures": []}
+    try:
+        headers = {TEST_HEADER: "1"}
+        token = token_for(req.get("as"))
+        if token:
+            headers["Token"] = token
+        resp = client.open(settings.API_PREFIX + req["path"], method=req["method"], headers=headers,
+                           json=req.get("body") if req["method"] in ("POST", "PUT") else None)
+        data = resp.get_json(silent=True)
+        res["status"] = resp.status_code
+        res["response"] = data
+        res["failures"] = check(test.expect, resp.status_code, data)
+    except Exception as exc:
+        res["failures"] = [f"{type(exc).__name__}: {exc}"]
+    res["passed"] = not res["failures"]
+    return [res]
 
 
-def run_test_steps(steps):
-    '''Runs some steps (short or long form) in test mode (rolled back) and returns their results.
-    TestDefinitionError if a step is not valid'''
+def run_isolated(test):
+    '''Runs a test in test mode: in a transaction that is rolled back'''
     from silence.server.manager import APP
-    from silence.testing.model import normalize_step
-    steps = [normalize_step(step, i) for i, step in enumerate(steps)]
     with rollback_transaction():
-        return run_steps(steps, APP.test_client())
+        return run_test(test, APP.test_client())
+
+
+def try_definition(definition):
+    '''Runs a test that is not saved (e.g., while editing it). TestDefinitionError if it is not valid'''
+    from silence.testing.model import Test
+    return truncate(run_isolated(Test("(not saved)", definition, "try.json")))
 
 
 def run_tests(suite, names=None):
@@ -139,10 +103,9 @@ def run_tests(suite, names=None):
     for test in suite.tests:
         if names and test.name not in names:
             continue
-        steps = run_test_steps(test.steps)
-        passed = all(s["passed"] for s in steps) and len(steps) == len(test.steps)
-        results.append({"name": test.name, "file": test.file, "source": test.source,
-                        "table": test.table, "passed": passed, "steps": truncate(steps)})
+        steps = run_isolated(test)
+        results.append({"name": test.name, "file": test.file, "source": test.source, "table": test.table,
+                        "passed": steps[0]["passed"], "steps": truncate(steps)})
     return results
 
 

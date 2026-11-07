@@ -2,108 +2,60 @@
     "restricted_endpoints_freeAccess_ok": {
         "description": "GET /departments/freeAccess: returns the current rows",
         "endpoint": "GET /departments/freeAccess",
-        "steps": [
-            {
-                "GET /departments/freeAccess": null,
-                "expect": {
-                    "status": 200,
-                    "count": 3
-                }
-            }
-        ]
+        "GET /departments/freeAccess": null,
+        "expect": 200
     },
     "restricted_endpoints_onlyLogged_ok": {
         "description": "GET /departments/onlyLogged: returns the current rows",
         "endpoint": "GET /departments/onlyLogged",
-        "steps": [
-            {
-                "GET /departments/onlyLogged": null,
-                "as": 1,
-                "expect": {
-                    "status": 200,
-                    "count": 3
-                }
-            }
-        ]
+        "GET /departments/onlyLogged": null,
+        "as": 1,
+        "expect": 200
     },
     "restricted_endpoints_onlyLogged_no_session": {
         "description": "GET /departments/onlyLogged: without a session is a 401",
         "endpoint": "GET /departments/onlyLogged",
-        "steps": [
-            {
-                "GET /departments/onlyLogged": null,
-                "expect": 401
-            }
-        ]
+        "GET /departments/onlyLogged": null,
+        "expect": 401
     },
     "restricted_endpoints_onlyManagerOrCEO_ok": {
         "description": "GET /departments/onlyManagerOrCEO: returns the current rows",
         "endpoint": "GET /departments/onlyManagerOrCEO",
-        "steps": [
-            {
-                "GET /departments/onlyManagerOrCEO": null,
-                "as": 1,
-                "expect": {
-                    "status": 200,
-                    "count": 3
-                }
-            }
-        ]
+        "GET /departments/onlyManagerOrCEO": null,
+        "as": 1,
+        "expect": 200
     },
     "restricted_endpoints_onlyManagerOrCEO_no_session": {
         "description": "GET /departments/onlyManagerOrCEO: without a session is a 401",
         "endpoint": "GET /departments/onlyManagerOrCEO",
-        "steps": [
-            {
-                "GET /departments/onlyManagerOrCEO": null,
-                "expect": 401
-            }
-        ]
+        "GET /departments/onlyManagerOrCEO": null,
+        "expect": 401
     },
     "restricted_endpoints_onlyManagerOrCEO_wrong_role": {
         "description": "GET /departments/onlyManagerOrCEO: with the role 'Programmer' is a 403",
         "endpoint": "GET /departments/onlyManagerOrCEO",
-        "steps": [
-            {
-                "GET /departments/onlyManagerOrCEO": null,
-                "as": 4,
-                "expect": 403
-            }
-        ]
+        "GET /departments/onlyManagerOrCEO": null,
+        "as": 4,
+        "expect": 403
     },
     "restricted_endpoints_onlyCEO_ok": {
         "description": "GET /departments/onlyCEO: returns the current rows",
         "endpoint": "GET /departments/onlyCEO",
-        "steps": [
-            {
-                "GET /departments/onlyCEO": null,
-                "as": 2,
-                "expect": {
-                    "status": 200,
-                    "count": 3
-                }
-            }
-        ]
+        "GET /departments/onlyCEO": null,
+        "as": 2,
+        "expect": 200
     },
     "restricted_endpoints_onlyCEO_no_session": {
         "description": "GET /departments/onlyCEO: without a session is a 401",
         "endpoint": "GET /departments/onlyCEO",
-        "steps": [
-            {
-                "GET /departments/onlyCEO": null,
-                "expect": 401
-            }
-        ]
+        "GET /departments/onlyCEO": null,
+        "expect": 401
     },
     "restricted_endpoints_onlyCEO_wrong_role": {
         "description": "GET /departments/onlyCEO: with the role 'Manager' is a 403",
         "endpoint": "GET /departments/onlyCEO",
-        "steps": [
-            {
-                "GET /departments/onlyCEO": null,
-                "as": 1,
-                "expect": 403
-            }
-        ]
+        "GET /departments/onlyCEO": null,
+        "as": 1,
+        "expect": 403
     }
 }

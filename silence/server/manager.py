@@ -1,8 +1,8 @@
 import json
 import mimetypes
+import time
 import logging
 import os
-import time
 from datetime import datetime
 
 from flask import Flask, jsonify, request, g, send_from_directory
@@ -68,25 +68,25 @@ def dispatch(path):
     sub = "/" + path.strip("/") if path else ""
 
     if sub == "" and method == "GET":
-        g.stats_group, g.stats_key = "silence", "GET " + settings.API_PREFIX
+        g.log_group, g.stats_key = "silence", "GET /"
         return jsonify(api_summary()), 200
     if sub == "/login" and method == "POST" and settings.ENABLE_LOGIN:
-        g.stats_group, g.stats_key = "silence", "POST /login"
+        g.log_group, g.stats_key = "silence", "POST /login"
         res, status = auth_endpoints.login()
         return jsonify(res), status
     if sub == "/register" and method == "POST" and settings.ENABLE_REGISTER:
-        g.stats_group, g.stats_key = "silence", "POST /register"
+        g.log_group, g.stats_key = "silence", "POST /register"
         res, status = auth_endpoints.register()
         return jsonify(res), status
 
     ep, url_params = REGISTRY.match(method, sub)
     if ep is None:
-        g.stats_group, g.stats_key = "api", f"{method} (no endpoint)"
+        g.log_group, g.stats_key, g.stats_matched = "api", f"{method} {sub}", False
         if REGISTRY.route_exists(sub):
             raise HTTPError(405, f"{method} is not allowed on {settings.API_PREFIX}{sub}")
         raise HTTPError(404, f"There is no endpoint {method} {settings.API_PREFIX}{sub}")
 
-    g.stats_group, g.stats_key = "api", f"{ep.method} {ep.route}"
+    g.log_group, g.stats_key = "api", f"{ep.method} {ep.route}"
     res, status = run_endpoint(ep, url_params)
     return jsonify(res), status
 
@@ -102,7 +102,7 @@ def register_api_routes():
 ###############################################################################
 
 def serve_web(path="index.html"):
-    g.stats_group, g.stats_key = "web", "/" + path
+    g.log_group = "web"
     folder = web_dir()
     full = os.path.join(folder, path)
     if os.path.isdir(full):
@@ -183,16 +183,34 @@ def start_timer():
     g.start = time.perf_counter()
 
 
-@APP.after_request
-def log_and_count(response):
-    path = request.path
-    if is_admin_path(path) or request.headers.get("X-Silence-Test"):
-        return response  # The admin panel and the tests are neither logged nor counted
-
+def count(response, group, path):
+    '''Records the request in the statistics (stats.py)'''
     elapsed = (time.perf_counter() - g.get("start", time.perf_counter())) * 1000
-    group = g.get("stats_group") or ("api" if is_api_path(path) else "web")
-    key = g.get("stats_key") or path
-    stats.record(group, key, response.status_code, elapsed)
+    code = response.status_code
+    if group == "web":
+        size = response.content_length if response.content_length is not None else 0
+        stats.record_web(path, code, size)
+    elif group == "admin":
+        rule = request.url_rule.rule if request.url_rule else path
+        stats.record_api("silence", request.method, f"{request.method} {rule}", code, elapsed)
+    else:
+        key = g.get("stats_key") or f"{request.method} {path}"
+        stats.record_api(group, request.method, key, code, elapsed, matched=g.get("stats_matched", True))
+
+
+@APP.after_request
+def log_request(response):
+    path = request.path
+    if path == "/admin" or path.startswith("/admin/"):
+        return response  # The files of the admin panel: neither logged nor counted
+    if path == "/_silence" or path.startswith("/_silence/"):
+        count(response, "admin", path)
+        return response  # The admin API is counted (Silence's API) but not logged
+
+    group = g.get("log_group") or ("api" if is_api_path(path) else "web")
+    count(response, group, path)
+    if request.headers.get("X-Silence-Test"):
+        return response  # The requests of the tests count, but they are not logged
 
     code = response.status_code
     code_color = COLORS["GREEN"] if code < 400 else COLORS["YELLOW"] if code < 500 else COLORS["RED"]

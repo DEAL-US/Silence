@@ -79,10 +79,28 @@ def try_endpoint_files():
 def try_tests():
     tests = requests.get(ADMIN + "/tests").json()["tests"]
     assert tests
-    r = requests.post(ADMIN + "/tests/run", json={"names": ["employees_salary_by_boss"]}).json()
+    r = requests.post(ADMIN + "/tests/run", json={"names": ["employees_salary_ok"]}).json()
     assert len(r["results"]) == 1 and r["results"][0]["passed"]
-    steps = [{"request": {"method": "GET", "path": "/departments"}, "expect": {"status": 200}}]
-    assert requests.post(ADMIN + "/tests/try", json={"steps": steps}).json()["steps"][0]["passed"]
+    unit = {"GET /departments": None, "expect": 200}
+    assert requests.post(ADMIN + "/tests/try", json={"test": unit}).json()["steps"][0]["passed"]
+    # The tests of tests/ are unit tests: the composite ones belong to the admin panel
+    bad = requests.post(ADMIN + "/tests/try", json={"test": {"steps": ["departments_getAll_ok"]}})
+    assert bad.status_code == 400
+    # The tests count in the statistics (in the group of the student's API)
+    before = requests.get(ADMIN + "/stats").json()["api"]["requests"]
+    requests.post(ADMIN + "/tests/run", json={"names": ["departments_getById_ok"]})
+    assert requests.get(ADMIN + "/stats").json()["api"]["requests"] == before + 1
+
+
+def try_panel_data():
+    """The admin panel saves its own data (e.g., its composite tests) in admin/data/"""
+    assert requests.get(ADMIN + "/panel-data/ci_check").json()["data"] is None
+    saved = requests.put(ADMIN + "/panel-data/ci_check", json=[{"name": "flow", "steps": ["a", "b"]}]).json()
+    assert saved["etag"]
+    assert requests.get(ADMIN + "/panel-data/ci_check").json()["data"][0]["steps"] == ["a", "b"]
+    r = requests.put(ADMIN + "/panel-data/ci_check", json=[], headers={"If-Match": "old"})
+    assert r.status_code == 412
+    assert requests.put(ADMIN + "/panel-data/bad.name", json=[]).status_code == 400  # Only letters, digits, _ and -
 
 
 def try_openapi():
@@ -131,10 +149,12 @@ def try_response_schemas():
     check("delete_endpoint", requests.delete(ADMIN + "/endpoints/schema_check/names"), 200)
     tests = requests.get(ADMIN + "/tests")
     check("list_tests", tests, 200)
-    check("get_test", requests.get(ADMIN + "/tests/employees/employees_salary_by_boss"), 200)
-    check("run_tests", requests.post(ADMIN + "/tests/run", json={"names": ["employees_salary_by_boss"]}), 200)
+    check("get_test", requests.get(ADMIN + "/tests/employees/employees_salary_ok"), 200)
+    check("run_tests", requests.post(ADMIN + "/tests/run", json={"names": ["employees_salary_ok"]}), 200)
+    check("put_panel_data", requests.put(ADMIN + "/panel-data/ci_schema", json={"a": 1}), 200)
+    check("get_panel_data", requests.get(ADMIN + "/panel-data/ci_schema"), 200)
     check("run_tests", requests.post(ADMIN + "/tests/run", json={"names": ["no_such_test"]}), 400)
-    check("try_steps", requests.post(ADMIN + "/tests/try", json={"steps": [{"GET /departments": None}]}), 200)
+    check("try_steps", requests.post(ADMIN + "/tests/try", json={"test": {"GET /departments": None}}), 200)
     check("get_stats", requests.get(ADMIN + "/stats"), 200)
 
 
@@ -142,7 +162,7 @@ def run():
     print("Testing the admin API...")
     for name, test in [("root and status", try_root_and_status), ("config", try_config_without_secret),
                        ("schema and users", try_schema_and_users), ("endpoint files", try_endpoint_files),
-                       ("tests", try_tests), ("openapi", try_openapi),
+                       ("tests", try_tests), ("panel data", try_panel_data), ("openapi", try_openapi),
                        ("response schemas", try_response_schemas)]:
         logger.warning("testing the admin API: %s", name)
         test()

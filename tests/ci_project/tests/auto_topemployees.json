@@ -2,14 +2,7 @@
     "topemployees_getAll_ok": {
         "description": "GET /topemployees: returns the current rows",
         "endpoint": "GET /topemployees",
-        "steps": [
-            {
-                "GET /topemployees": null,
-                "expect": {
-                    "status": 200,
-                    "count": 3
-                }
-            }
-        ]
+        "GET /topemployees": null,
+        "expect": 200
     }
 }

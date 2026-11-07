@@ -2,41 +2,25 @@
     "banned_endpoints_ban_user_ok": {
         "description": "PUT /employees/ban/$employeeId: updates a row (with its current values)",
         "endpoint": "PUT /employees/ban/$employeeId",
-        "steps": [
-            {
-                "PUT /employees/ban/1": {},
-                "expect": 200
-            }
-        ]
+        "PUT /employees/ban/1": {},
+        "expect": 200
     },
     "banned_endpoints_ban_user_not_found": {
         "description": "PUT /employees/ban/$employeeId: a row that does not exist is a 404",
         "endpoint": "PUT /employees/ban/$employeeId",
-        "steps": [
-            {
-                "PUT /employees/ban/999999999": {},
-                "expect": 404
-            }
-        ]
+        "PUT /employees/ban/999999999": {},
+        "expect": 404
     },
     "banned_endpoints_unban_user_ok": {
         "description": "PUT /employees/unban/$employeeId: updates a row (with its current values)",
         "endpoint": "PUT /employees/unban/$employeeId",
-        "steps": [
-            {
-                "PUT /employees/unban/1": {},
-                "expect": 200
-            }
-        ]
+        "PUT /employees/unban/1": {},
+        "expect": 200
     },
     "banned_endpoints_unban_user_not_found": {
         "description": "PUT /employees/unban/$employeeId: a row that does not exist is a 404",
         "endpoint": "PUT /employees/unban/$employeeId",
-        "steps": [
-            {
-                "PUT /employees/unban/999999999": {},
-                "expect": 404
-            }
-        ]
+        "PUT /employees/unban/999999999": {},
+        "expect": 404
     }
 }

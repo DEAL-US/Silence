@@ -14,38 +14,32 @@ from silence.exceptions import TestDefinitionError
 #                            touches them, except when the panel saves one.
 # A test name cannot be in two files.
 #
-# A test is a list of steps; each one sends a request and checks the response.
-# Short form (the one that Silence generates):
+# Every test is a unit test: one request and what is expected. The composite
+# tests (sequences of unit tests, in composite_tests.json) are run by the admin
+# panel, not by Silence.
 #
-#   "photos_only_owner_deletes": {
-#       "description": "A photo of david can only be deleted by david",
-#       "steps": [
-#           {"POST /photos": {"user_id": 2, "title": "Test", "url": "x.jpg", "visibility": "Pública"},
-#            "as": 2, "save": {"id": "lastId"}},
-#           {"GET /photos/${id}": null, "expect": {"row": {"user_id": 2}}},
-#           {"DELETE /photos/${id}": null, "as": 3, "expect": 403},
-#           {"DELETE /photos/${id}": null, "as": 2}
-#       ]
+#   "employees_getById_ok": {
+#       "description": "GET /employees/$employeeId: returns the row",
+#       "GET /employees/1": null,
+#       "as": 2,
+#       "expect": {"status": 200, "row": {"email": "perianez@company.com"}}
 #   }
 #
-#   "METHOD path": the request, and its value the body (null without body).
+#   "METHOD path": the request (path after the API prefix), and its value the
+#       body (null without body).
 #   as: the primary key of the user that sends the request (no password
 #       needed); missing or null: no session.
 #   expect: the status (403), or an object with status, count (number of
 #       rows), row (some fields of the first row or of the object) and message
 #       (text contained in the error message). Without expect, or without
 #       status, any 2xx status is expected.
-#   save: variables taken from the response ("lastId", "0.photo_id"...), to
-#       use as ${name} in the next steps.
 #
-# The long form also works: {"request": {"method", "path", "body", "as"},
-# "expect": {...}, "save": {...}}.
+# The long form also works: {"request": {"method", "path", "body", "as"}, "expect": {...}}.
 ###############################################################################
 
 TESTS_DIR = "tests"
 AUTO_PREFIX = "auto_"
 METHODS = ("GET", "POST", "PUT", "DELETE")
-STEP_KEYS = {"as", "expect", "save"}
 EXPECT_KEYS = {"status", "count", "row", "message"}
 
 
@@ -60,58 +54,53 @@ def normalize_expect(expect, where):
     return dict(expect)
 
 
-def normalize_step(step, index=None):
-    '''A step in the short or the long form, as {"request": {method, path, body, as}, "expect", "save"}'''
-    where = "a step" if index is None else f"step {index + 1}"
-    if not isinstance(step, dict):
-        raise TestDefinitionError(f"{where} must be an object")
-
-    if "request" in step:  # Long form
-        req = step["request"]
-        if not isinstance(req, dict) or not isinstance(req.get("path"), str):
-            raise TestDefinitionError(f"{where} has no request.path")
-        request = {"method": str(req.get("method", "GET")).upper(), "path": req["path"],
-                   "body": req.get("body"), "as": req.get("as")}
-        rest = {k: v for k, v in step.items() if k != "request"}
-    else:  # Short form: "METHOD path": body
-        keys = [k for k in step if k not in STEP_KEYS]
-        if len(keys) != 1 or " " not in keys[0]:
-            raise TestDefinitionError(f"{where} must have one request, as \"GET /photos\": null")
-        method, path = keys[0].split(" ", 1)
-        request = {"method": method.upper(), "path": path.strip(), "body": step[keys[0]], "as": step.get("as")}
-        rest = {k: v for k, v in step.items() if k in STEP_KEYS and k != "as"}
-
-    if request["method"] not in METHODS:
-        raise TestDefinitionError(f"{where}: unknown method {request['method']}")
-    if not request["path"].startswith("/"):
-        raise TestDefinitionError(f"{where}: the path must start with / (after the API prefix)")
-    unknown = set(rest) - {"expect", "save"}
-    if unknown:
-        raise TestDefinitionError(f"{where}: unknown keys {', '.join(sorted(unknown))}")
-    save = rest.get("save") or {}
-    if not isinstance(save, dict):
-        raise TestDefinitionError(f"{where}: save must be an object, as {{\"id\": \"lastId\"}}")
-    return {"request": request, "expect": normalize_expect(rest.get("expect"), where), "save": save}
-
-
-def short_step(step):
-    '''A step in the long form, written in the short form'''
-    req = step["request"]
-    res = {f"{req['method']} {req['path']}": req.get("body")}
+def short_unit(test):
+    '''A unit test given as {description, endpoint, request: {method, path, body, as}, expect},
+    written in the short form'''
+    req = test["request"]
+    res = {k: test[k] for k in ("description", "endpoint") if test.get(k)}
+    res[f"{req['method']} {req['path']}"] = req.get("body")
     if req.get("as") is not None:
         res["as"] = req["as"]
-    expect = step.get("expect") or {}
+    expect = test.get("expect") or {}
     if set(expect) == {"status"}:
         res["expect"] = expect["status"]
     elif expect:
         res["expect"] = expect
-    if step.get("save"):
-        res["save"] = step["save"]
     return res
 
 
 def tests_dir():
     return os.path.join(settings.PROJECT_DIR, TESTS_DIR)
+
+
+UNIT_KEYS = {"description", "endpoint", "as", "expect", "request"}
+
+
+def parse_unit(data, where):
+    '''The request of a unit test (short or long form), as {method, path, body, as}'''
+    if "request" in data:  # Long form
+        req = data["request"]
+        if not isinstance(req, dict) or not isinstance(req.get("path"), str):
+            raise TestDefinitionError(f"{where} has no request.path")
+        request = {"method": str(req.get("method", "GET")).upper(), "path": req["path"],
+                   "body": req.get("body"), "as": req.get("as", data.get("as"))}
+        unknown = set(data) - UNIT_KEYS
+    else:  # Short form: "METHOD path": body
+        keys = [k for k in data if k not in UNIT_KEYS]
+        if len(keys) != 1 or " " not in keys[0]:
+            raise TestDefinitionError(f"{where} must have one request, as \"GET /photos\": null "
+                                      "(or steps, if it is a composite test)")
+        method, path = keys[0].split(" ", 1)
+        request = {"method": method.upper(), "path": path.strip(), "body": data[keys[0]], "as": data.get("as")}
+        unknown = set()
+    if unknown:
+        raise TestDefinitionError(f"{where}: unknown keys {', '.join(sorted(unknown))}")
+    if request["method"] not in METHODS:
+        raise TestDefinitionError(f"{where}: unknown method {request['method']}")
+    if not request["path"].startswith("/"):
+        raise TestDefinitionError(f"{where}: the path must start with / (after the API prefix)")
+    return request
 
 
 class Test:
@@ -121,24 +110,24 @@ class Test:
         stem = os.path.splitext(self.file)[0]
         self.table = stem[len(AUTO_PREFIX):] if stem.startswith(AUTO_PREFIX) else stem
         self.source = "auto" if self.file.startswith(AUTO_PREFIX) else "custom"
+        if not isinstance(data, dict):
+            raise TestDefinitionError(f"'{name}' in {self.file} must be an object")
         self.data = data
         self.description = data.get("description", "")
         self.endpoint = data.get("endpoint", "")
-        steps = data.get("steps")
-        if not isinstance(steps, list) or not steps:
-            raise TestDefinitionError(f"'{name}' in {self.file} has no steps")
-        try:
-            # The steps in the long form, which the runner uses
-            self.steps = [normalize_step(step, i) for i, step in enumerate(steps)]
-        except TestDefinitionError as exc:
-            raise TestDefinitionError(f"'{name}' in {self.file}: {exc}")
+        where = f"'{name}' in {self.file}"
+        if "steps" in data:
+            raise TestDefinitionError(f"{where} has steps: the tests of tests/ are unit tests (one request); "
+                                      "the composite tests go in composite_tests.json, and the admin panel runs them")
+        self.request = parse_unit(data, where)
+        self.expect = normalize_expect(data.get("expect"), where)
 
     def to_dict(self):
-        first = self.steps[0]["request"]
         return {"name": self.name, "file": self.file, "table": self.table, "source": self.source,
-                "description": self.description, "endpoint": self.endpoint,
-                "composite": len(self.steps) > 1, "data": self.data,
-                "first": {"method": first["method"], "path": first["path"]}}
+                "description": self.description, "endpoint": self.endpoint, "definition": self.data,
+                "request": {"method": self.request["method"], "path": self.request["path"],
+                            "body": self.request["body"], "as": self.request["as"]},
+                "expect": self.expect}
 
 
 class Suite:

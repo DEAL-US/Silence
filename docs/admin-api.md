@@ -225,70 +225,89 @@ Renombrar un endpoint es `PUT` del nombre nuevo y `DELETE` del antiguo.
 
 ### Tests
 
-**Un test**: `description`, `endpoint` (opcional, informativo) y `steps`. Cada paso, en forma
-corta (`{"MÉTODO /ruta": cuerpo, "as": id, "expect": …, "save": {…}}`) o larga
-(`{"request": {"method", "path", "body", "as"}, "expect", "save"}`); ver la cabecera de
-`silence/testing/model.py`.
+**Un test** (de `tests/`) es siempre **unitario**: una petición y lo que se espera, en forma
+corta (`{"MÉTODO /ruta": cuerpo, "as": id, "expect": …}`) o larga (`{"request": {"method",
+"path", "body", "as"}, "expect"}`); ver la cabecera de `silence/testing/model.py`. Los **tests
+compuestos** (secuencias de unitarios) no son de Silence: los guarda y los ejecuta el panel
+(ver «Datos del panel»).
 
-**`GET /tests`**: los tests, las versiones de los ficheros y los errores. `steps` va tal como
-está en el fichero; `first` es la primera petición, ya interpretada.
+**`GET /tests`**: los tests, las versiones de los ficheros y los errores. `definition` va tal
+como está en el fichero; `request` y `expect`, ya interpretados.
 
 ```json
-{"tests": [{"file": "photos", "name": "photos_only_owner_deletes", "table": "photos", "source": "custom",
-            "description": "A photo of david can only be deleted by david", "endpoint": "", "composite": true,
-            "first": {"method": "POST", "path": "/photos"},
-            "steps": [{"POST /photos": {"user_id": 2, "title": "Test"}, "as": 2, "save": {"id": "lastId"}},
-                      {"DELETE /photos/${id}": null, "as": 3, "expect": 403}]}],
- "files": {"auto_photos": "67c343e20cd053aa", "photos": "dc6da4e7e8b50d6a"},
+{"tests": [{"file": "employees", "name": "employees_salary_ok", "table": "employees", "source": "custom",
+            "description": "The boss of an employee changes their salary", "endpoint": "",
+            "definition": {"PUT /employees/4/salary": {"salary": 1500}, "as": 2, "expect": 200},
+            "request": {"method": "PUT", "path": "/employees/4/salary", "body": {"salary": 1500}, "as": 2},
+            "expect": {"status": 200}}],
+ "files": {"auto_employees": "67c343e20cd053aa", "employees": "dc6da4e7e8b50d6a"},
  "errors": []}
 ```
 
 **`GET`/`PUT`/`DELETE /tests/{file}/{name}`** y **`POST /tests/{file}/{name}/customize`**: como
-los de los endpoints (`data` es el test).
+los de los endpoints (`data` es el test). Un test con `steps` no es válido (400): es un
+compuesto, y va en los datos del panel.
 
 **`POST /tests/generate`**, con `{"tables": [...]}` opcional: como `silence createtests`.
 Responde `{"tables": [{"table": "photos", "tests": 14}]}`.
 
 **`POST /tests/run`**, con `{"names": [...], "tables": [...]}` (opcionales; todos por defecto):
-como `silence test`. Cada test se ejecuta en una transacción que se deshace. Por cada paso:
-`status` y `response` (la respuesta de la API del alumno), y `failures` (por qué no ha pasado).
-Un test se para en el primer paso que falla.
+como `silence test`. Cada test se ejecuta en una transacción que se deshace. `steps` tiene un
+solo elemento (la petición del test): `status` y `response` (la respuesta de la API del alumno),
+y `failures` (por qué no ha pasado).
 
 ```json
-{"results": [{"file": "photos", "name": "photos_without_expect_fails_on_404", "table": "photos",
-              "source": "custom", "passed": false,
-              "steps": [{"index": 0, "method": "GET", "path": "/photos/999", "status": 404, "passed": false,
-                         "failures": ["expected a 2xx status, got 404"],
+{"results": [{"file": "auto_departments", "name": "departments_getById_not_found", "table": "departments",
+              "source": "auto", "passed": true,
+              "steps": [{"index": 0, "test": "departments_getById_not_found", "method": "GET",
+                         "path": "/departments/999999999", "status": 404, "passed": true, "failures": [],
                          "response": {"code": 404, "message": "Not found"}}]}],
  "errors": []}
 ```
 
-**`POST /tests/try`**, con `{"steps": [...]}`: ejecuta unos pasos sin guardarlos (también con
-`ROLLBACK`). Responde `{"steps": [...]}`, con el mismo formato que los de `tests/run`.
+**`POST /tests/try`**, con `{"test": {...}}`: ejecuta un test sin guardarlo (también con
+`ROLLBACK`). Responde `{"steps": [...]}`, como los de `tests/run`.
 
 **`POST /tests/export`**, con `{"format": "http", "tables": [...]}`: como `silence createtests
 --http`. Responde `{"files": ["tests/http/photos.http"]}`.
 
+### Datos del panel
+
+El panel guarda lo suyo (por ejemplo, sus tests compuestos) en `admin/data/<nombre>.json` del
+proyecto. Silence lo guarda sin saber qué es ni validarlo; versionarlo es decisión del alumno.
+
+**`GET /panel-data/{name}`**: `{"name", "data", "etag"}`; `data` es `null` si no hay nada.
+
+**`PUT /panel-data/{name}`**, con cualquier JSON: lo guarda y responde `{"name", "etag"}`
+(`If-Match`, como los demás ficheros). `name`: letras, dígitos, `_` y `-`.
+
 ### Estadísticas
 
 **`GET /stats`**: las peticiones desde que arrancó el servidor (`since`, en segundos desde
-1970), por grupo:
+1970), en tres grupos, como Silence de Rust:
 
-- `api`: los endpoints del alumno, agrupados por el endpoint (`GET /photos/$photo_id`), no por
-  la ruta pedida; las que no encuentran endpoint, como `GET (no endpoint)`.
-- `web`: los ficheros de `web/` (`/index.html`).
-- `silence`: el login, el registro y el resumen de la API del alumno.
+- `api`: la API del alumno (sus endpoints), por endpoint (`GET /photos/$photo_id`, no la ruta
+  pedida); las que no encuentran endpoint, en `unmatched`.
+- `silence`: la API de Silence: el login, el registro, el resumen y esta API de administración
+  (el tráfico del panel).
+- `web`: los ficheros de `web/` (la aplicación del alumno), por fichero y por tipo (`page`,
+  `style`, `script`, `image`, `font`, `data`, `other`).
 
-No cuentan las peticiones a esta API, al panel (`/admin/`) ni las de los tests. En cada
-entrada: `count`, `errors` (estado ≥ 400), `status` (cuántas de cada código) y `avgMs`. Las
-entradas van de más a menos peticiones.
+Cuentan también las peticiones de los tests (`tests/run`, `tests/try`); no cuentan los ficheros
+del panel (`/admin/`). Se guardan en memoria: se pierden al reiniciar.
 
 ```json
 {"since": 1794049274.44,
- "groups": {"api": {"total": 2, "entries": [{"key": "GET /photos", "count": 1, "errors": 0, "status": {"200": 1}, "avgMs": 27.6},
-                                             {"key": "GET /photos/$photo_id", "count": 1, "errors": 1, "status": {"404": 1}, "avgMs": 36.4}]},
-            "web": {"total": 1, "entries": [{"key": "/index.html", "count": 1, "errors": 0, "status": {"200": 1}, "avgMs": 0.3}]},
-            "silence": {"total": 0, "entries": []}}}
+ "api": {"requests": 2, "errors": 1, "avgMs": 32.0, "byMethod": {"GET": 2}, "byStatus": {"200": 1, "404": 1},
+         "endpoints": [{"method": "GET", "route": "/photos/$photo_id", "requests": 1, "errors": 1,
+                        "byStatus": {"404": 1}, "avgMs": 36.4, "maxMs": 36.4}],
+         "unmatched": {"GET /nothing": 1}},
+ "silence": {"requests": 12, "errors": 0, "avgMs": 3.1, "byMethod": {"GET": 12}, "byStatus": {"200": 12},
+             "endpoints": [{"method": "GET", "route": "/_silence/v1/status", "requests": 10, "errors": 0,
+                            "byStatus": {"200": 10}, "avgMs": 2.5, "maxMs": 6.0}],
+             "unmatched": {}},
+ "web": {"requests": 3, "notFound": 1, "bytes": 2048, "byKind": {"page": 2, "image": 1},
+         "files": [{"path": "/index.html", "kind": "page", "requests": 2, "notFound": 0, "bytes": 2048}]}}
 ```
 
 **`DELETE /stats`**: las pone a cero. Responde `{"reset": true}`.

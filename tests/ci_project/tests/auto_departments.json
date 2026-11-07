@@ -2,186 +2,87 @@
     "departments_getAll_ok": {
         "description": "GET /departments: returns the current rows",
         "endpoint": "GET /departments",
-        "steps": [
-            {
-                "GET /departments": null,
-                "expect": {
-                    "status": 200,
-                    "count": 3
-                }
-            }
-        ]
+        "GET /departments": null,
+        "expect": 200
     },
     "departments_getById_ok": {
         "description": "GET /departments/$departmentId: returns the current rows",
         "endpoint": "GET /departments/$departmentId",
-        "steps": [
-            {
-                "GET /departments/1": null,
-                "expect": {
-                    "status": 200,
-                    "row": {
-                        "city": "Cádiz",
-                        "departmentId": 1,
-                        "name": "Arte"
-                    },
-                    "count": 1
-                }
-            }
-        ]
+        "GET /departments/1": null,
+        "expect": 200
     },
     "departments_getById_not_found": {
         "description": "GET /departments/$departmentId: a row that does not exist is a 404",
         "endpoint": "GET /departments/$departmentId",
-        "steps": [
-            {
-                "GET /departments/999999999": null,
-                "expect": 404
-            }
-        ]
+        "GET /departments/999999999": null,
+        "expect": 404
     },
     "departments_create_ok": {
         "description": "POST /departments: creates a row",
         "endpoint": "POST /departments",
-        "steps": [
-            {
-                "POST /departments": {
-                    "name": "Arte",
-                    "city": "Cádiz-t1"
-                },
-                "as": 1,
-                "expect": 201
-            }
-        ]
+        "POST /departments": {
+            "name": "Arte",
+            "city": "Cádiz-t1"
+        },
+        "as": 1,
+        "expect": 201
     },
     "departments_create_no_session": {
         "description": "POST /departments: without a session is a 401",
         "endpoint": "POST /departments",
-        "steps": [
-            {
-                "POST /departments": {
-                    "name": "Arte",
-                    "city": "Cádiz-t1"
-                },
-                "expect": 401
-            }
-        ]
+        "POST /departments": {
+            "name": "Arte",
+            "city": "Cádiz-t1"
+        },
+        "expect": 401
     },
     "departments_update_ok": {
         "description": "PUT /departments/$departmentId: updates a row (with its current values)",
         "endpoint": "PUT /departments/$departmentId",
-        "steps": [
-            {
-                "PUT /departments/1": {
-                    "name": "Arte",
-                    "city": "Cádiz"
-                },
-                "as": 1,
-                "expect": 200
-            }
-        ]
+        "PUT /departments/1": {
+            "name": "Arte",
+            "city": "Cádiz"
+        },
+        "as": 1,
+        "expect": 200
     },
     "departments_update_not_found": {
         "description": "PUT /departments/$departmentId: a row that does not exist is a 404",
         "endpoint": "PUT /departments/$departmentId",
-        "steps": [
-            {
-                "PUT /departments/999999999": {
-                    "name": "Arte",
-                    "city": "Cádiz"
-                },
-                "as": 1,
-                "expect": 404
-            }
-        ]
+        "PUT /departments/999999999": {
+            "name": "Arte",
+            "city": "Cádiz"
+        },
+        "as": 1,
+        "expect": 404
     },
     "departments_update_no_session": {
         "description": "PUT /departments/$departmentId: without a session is a 401",
         "endpoint": "PUT /departments/$departmentId",
-        "steps": [
-            {
-                "PUT /departments/1": {
-                    "name": "Arte",
-                    "city": "Cádiz-t1"
-                },
-                "expect": 401
-            }
-        ]
+        "PUT /departments/1": {
+            "name": "Arte",
+            "city": "Cádiz-t1"
+        },
+        "expect": 401
     },
     "departments_delete_ok": {
         "description": "DELETE /departments/$departmentId: deletes a row that no other row references",
         "endpoint": "DELETE /departments/$departmentId",
-        "steps": [
-            {
-                "DELETE /departments/3": null,
-                "as": 1,
-                "expect": 200
-            }
-        ]
+        "DELETE /departments/3": null,
+        "as": 1,
+        "expect": 200
     },
     "departments_delete_not_found": {
         "description": "DELETE /departments/$departmentId: a row that does not exist is a 404",
         "endpoint": "DELETE /departments/$departmentId",
-        "steps": [
-            {
-                "DELETE /departments/999999999": null,
-                "as": 1,
-                "expect": 404
-            }
-        ]
+        "DELETE /departments/999999999": null,
+        "as": 1,
+        "expect": 404
     },
     "departments_delete_no_session": {
         "description": "DELETE /departments/$departmentId: without a session is a 401",
         "endpoint": "DELETE /departments/$departmentId",
-        "steps": [
-            {
-                "DELETE /departments/3": null,
-                "expect": 401
-            }
-        ]
-    },
-    "departments_flow": {
-        "description": "Creates a row of departments, reads it, updates it, deletes it and checks that it is gone",
-        "endpoint": "POST /departments (flow)",
-        "steps": [
-            {
-                "POST /departments": {
-                    "name": "Arte",
-                    "city": "Cádiz-t1"
-                },
-                "as": 1,
-                "expect": 201,
-                "save": {
-                    "id": "lastId"
-                }
-            },
-            {
-                "GET /departments/${id}": null,
-                "expect": {
-                    "status": 200,
-                    "row": {
-                        "name": "Arte",
-                        "city": "Cádiz-t1"
-                    }
-                }
-            },
-            {
-                "PUT /departments/${id}": {
-                    "name": "Arte",
-                    "city": "Cádiz-t1"
-                },
-                "as": 1,
-                "expect": 200
-            },
-            {
-                "DELETE /departments/${id}": null,
-                "as": 1,
-                "expect": 200
-            },
-            {
-                "GET /departments/${id}": null,
-                "expect": 404
-            }
-        ]
+        "DELETE /departments/3": null,
+        "expect": 401
     }
 }

@@ -1,6 +1,5 @@
 import json
 import os
-import re
 
 from silence.db import dal
 from silence.db.schema import get_schema
@@ -15,7 +14,6 @@ from silence.testing.model import load_tests, tests_dir
 ###############################################################################
 
 HTTP_DIR = "http"
-RE_VAR = re.compile(r"\$\{(\w+)\}")
 
 
 def user_identifier(user_ref):
@@ -28,13 +26,8 @@ def user_identifier(user_ref):
     return rows[0]["i"] if rows else str(user_ref)
 
 
-def http_value(text, request_names):
-    '''${var} of the tests becomes a reference to the response of a named request'''
-    return RE_VAR.sub(lambda m: request_names.get(m.group(1), m.group(0)), text)
-
-
 def export_table(table, tests, base_url):
-    users = sorted({s["request"]["as"] for t in tests for s in t.steps if s["request"].get("as") is not None}, key=str)
+    users = sorted({t.request["as"] for t in tests if t.request.get("as") is not None}, key=str)
     lines = [
         f"# Tests of {table}, exported by Silence for VS Code's REST Client extension.",
         "# Sending these requests CHANGES THE DATABASE (silence test rolls them back; this does not).",
@@ -44,7 +37,6 @@ def export_table(table, tests, base_url):
         "#   1. Write the password of each user below, without quotes (password_2 = secret).",
         "#   2. Send the login requests first: the others use their token, and REST Client",
         "#      does not send them by itself (without a login, they get 401).",
-        "#   3. Send the requests of a test in order: a step may use the response of the previous one.",
         "",
         f"@base = {base_url}",
     ]
@@ -67,29 +59,18 @@ def export_table(table, tests, base_url):
         ]
 
     for t in tests:
-        names = {}
-        for i, step in enumerate(t.steps):
-            req = step["request"]
-            name = f"{t.name}_{i + 1}"
-            lines.append("###")
-            if i == 0:
-                lines.append(f"# {t.name}: {t.description}")
-            expect = step.get("expect") or {}
-            if expect:
-                lines.append("# Expect: " + json.dumps(expect, ensure_ascii=False))
-            lines.append(f"# @name {name}")
-            method = req.get("method", "GET").upper()
-            lines.append(f"{method} {{{{base}}}}{http_value(req['path'], names)}")
-            if req.get("as") is not None:
-                lines.append(f"Token: {{{{login_{req['as']}.response.body.$.sessionToken}}}}")
-            if method in ("POST", "PUT") and req.get("body") is not None:
-                body = http_value(json.dumps(req["body"], ensure_ascii=False, indent=2), names)
-                lines += ["Content-Type: application/json", "", body]
-            lines.append("")
-            for var, where in (step.get("save") or {}).items():
-                # JSONPath of REST Client: lastId -> $.lastId, 0.photo_id -> $[0].photo_id
-                path = "$" + "".join(f"[{p}]" if p.isdigit() else f".{p}" for p in str(where).split("."))
-                names[var] = f"{{{{{name}.response.body.{path}}}}}"
+        req = t.request
+        lines.append("###")
+        lines.append(f"# {t.name}: {t.description}")
+        if t.expect:
+            lines.append("# Expect: " + json.dumps(t.expect, ensure_ascii=False))
+        lines.append(f"# @name {t.name}")
+        lines.append(f"{req['method']} {{{{base}}}}{req['path']}")
+        if req.get("as") is not None:
+            lines.append(f"Token: {{{{login_{req['as']}.response.body.$.sessionToken}}}}")
+        if req["method"] in ("POST", "PUT") and req.get("body") is not None:
+            lines += ["Content-Type: application/json", "", json.dumps(req["body"], ensure_ascii=False, indent=2)]
+        lines.append("")
     return "\n".join(lines)
 
 
