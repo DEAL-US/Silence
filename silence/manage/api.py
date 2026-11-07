@@ -234,16 +234,6 @@ def set_password(user_id):
     return jsonify({"updated": 1})
 
 
-@manage.route("/users/password", methods=["PUT"])
-def set_all_passwords():
-    '''Sets the same password for every user'''
-    rel = users_rel()
-    password = body().get("password")
-    if not password:
-        raise HTTPError(400, "The password cannot be empty")
-    return jsonify({"updated": store_password(rel, password)})
-
-
 @manage.route("/users/<user_id>/session", methods=["POST"])
 def user_session(user_id):
     '''Opens a session for a user without its password'''
@@ -561,7 +551,7 @@ def openapi():
                 op["parameters"] = params
             if request_body is not None:
                 op["requestBody"] = json_of(request_body)
-            if method in ("PUT", "PATCH", "DELETE") and op_id not in ("set_password", "set_all_passwords"):
+            if method in ("PUT", "PATCH", "DELETE") and op_id != "set_password":
                 op.setdefault("parameters", []).append(
                     {"name": "If-Match", "in": "header", "required": False, "schema": {"type": "string"},
                      "description": "Version (etag) of the file that was read; 412 if it has changed"})

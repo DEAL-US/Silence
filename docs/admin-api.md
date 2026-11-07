@@ -153,8 +153,8 @@ Sin tabla enlazada, todas responden 409.
  "users": [{"id": 1, "identifier": "agu@gallery.com", "role": null, "active": null, "password": "argon2"}]}
 ```
 
-**`PUT /users/{id}/password`** y **`PUT /users/password`** (todos), con `{"password": "…"}`: la
-guardan cifrada o no, según `auth.password_mode`. Responden `{"updated": N}`.
+**`PUT /users/{id}/password`**, con `{"password": "…"}`: la guarda cifrada o no, según
+`auth.password_mode`. Responde `{"updated": 1}`.
 
 **`POST /users/{id}/session`**: la sesión de ese usuario, sin su contraseña, para usarla con la
 API del alumno; `user` es su fila sin la contraseña.

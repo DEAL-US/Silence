@@ -140,7 +140,6 @@ OPERATIONS = {
     "get_schema": ("Schema", None),
     "list_users": ("Users", None),
     "set_password": ("Updated", obj(["password"], password=STR)),
-    "set_all_passwords": ("Updated", obj(["password"], password=STR)),
     "user_session": ("Session", None),
     "hash_value": ("Hash", obj(["password"], password=STR)),
     "list_endpoints": ("Endpoints", None),
