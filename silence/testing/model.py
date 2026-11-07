@@ -118,7 +118,7 @@ class Test:
         where = f"'{name}' in {self.file}"
         if "steps" in data:
             raise TestDefinitionError(f"{where} has steps: the tests of tests/ are unit tests (one request); "
-                                      "the composite tests go in composite_tests.json, and the admin panel runs them")
+                                      "the composite tests belong to the admin panel")
         self.request = parse_unit(data, where)
         self.expect = normalize_expect(data.get("expect"), where)
 
