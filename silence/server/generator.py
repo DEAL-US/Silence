@@ -23,7 +23,8 @@ def write_json(path, data):
 
 
 def crud_endpoints(rel):
-    '''The CRUD endpoints of a table (or only getAll for a view or a table without a single PK)'''
+    '''The CRUD endpoints of a table (or only getAll for a view or a table without a single PK).
+    All of them public: requiring a session, roles or an owner is what customizing is for'''
     name = rel.name
     route_all = "/" + name.lower()
     res = {
@@ -53,7 +54,7 @@ def crud_endpoints(rel):
             "description": f"Creates a new entry in '{name}'",
             "route": route_all, "method": "POST",
             "sql": f"INSERT INTO {name}({', '.join(insertable)}) VALUES ({', '.join('$' + c for c in insertable)})",
-            "auth_required": True, "allowed_roles": ["*"],
+            "auth_required": False, "allowed_roles": ["*"],
             "request_body_params": insertable,
         }
     if updatable:
@@ -61,14 +62,14 @@ def crud_endpoints(rel):
             "description": f"Updates an existing entry in '{name}' by its primary key",
             "route": route_one, "method": "PUT",
             "sql": f"UPDATE {name} SET {', '.join(f'{c} = ${c}' for c in updatable)} WHERE {pk} = ${pk}",
-            "auth_required": True, "allowed_roles": ["*"],
+            "auth_required": False, "allowed_roles": ["*"],
             "request_body_params": updatable,
         }
     res["delete"] = {
         "description": f"Deletes an existing entry in '{name}' by its primary key",
         "route": route_one, "method": "DELETE",
         "sql": f"DELETE FROM {name} WHERE {pk} = ${pk}",
-        "auth_required": True, "allowed_roles": ["*"],
+        "auth_required": False, "allowed_roles": ["*"],
     }
     return res
 

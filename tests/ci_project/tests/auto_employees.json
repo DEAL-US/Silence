@@ -46,6 +46,57 @@
             }
         ]
     },
+    "employees_updateSalary_ok": {
+        "description": "PUT /employees/$employeeId/salary: updates a row (with its current values)",
+        "endpoint": "PUT /employees/$employeeId/salary",
+        "steps": [
+            {
+                "PUT /employees/2/salary": {
+                    "salary": 2500.0
+                },
+                "as": 1,
+                "expect": 200
+            }
+        ]
+    },
+    "employees_updateSalary_not_found": {
+        "description": "PUT /employees/$employeeId/salary: a row that does not exist is a 404",
+        "endpoint": "PUT /employees/$employeeId/salary",
+        "steps": [
+            {
+                "PUT /employees/999999999/salary": {
+                    "salary": 2500.0
+                },
+                "as": 1,
+                "expect": 404
+            }
+        ]
+    },
+    "employees_updateSalary_no_session": {
+        "description": "PUT /employees/$employeeId/salary: without a session is a 401",
+        "endpoint": "PUT /employees/$employeeId/salary",
+        "steps": [
+            {
+                "PUT /employees/2/salary": {
+                    "salary": 2500.0
+                },
+                "expect": 401
+            }
+        ]
+    },
+    "employees_updateSalary_not_owner": {
+        "description": "PUT /employees/$employeeId/salary: by a user who is not the owner is a 403",
+        "endpoint": "PUT /employees/$employeeId/salary",
+        "steps": [
+            {
+                "PUT /employees/2/salary": {
+                    "salary": 2500.0
+                },
+                "as": 2,
+                "expect": 403
+            }
+        ]
+    },
     "employees_create_ok": {
         "description": "POST /employees: creates a row",
         "endpoint": "POST /employees",
@@ -201,57 +252,6 @@
             {
                 "DELETE /employees/4": null,
                 "expect": 401
-            }
-        ]
-    },
-    "employees_updateSalary_ok": {
-        "description": "PUT /employees/$employeeId/salary: updates a row (with its current values)",
-        "endpoint": "PUT /employees/$employeeId/salary",
-        "steps": [
-            {
-                "PUT /employees/2/salary": {
-                    "salary": 2500.0
-                },
-                "as": 1,
-                "expect": 200
-            }
-        ]
-    },
-    "employees_updateSalary_not_found": {
-        "description": "PUT /employees/$employeeId/salary: a row that does not exist is a 404",
-        "endpoint": "PUT /employees/$employeeId/salary",
-        "steps": [
-            {
-                "PUT /employees/999999999/salary": {
-                    "salary": 2500.0
-                },
-                "as": 1,
-                "expect": 404
-            }
-        ]
-    },
-    "employees_updateSalary_no_session": {
-        "description": "PUT /employees/$employeeId/salary: without a session is a 401",
-        "endpoint": "PUT /employees/$employeeId/salary",
-        "steps": [
-            {
-                "PUT /employees/2/salary": {
-                    "salary": 2500.0
-                },
-                "expect": 401
-            }
-        ]
-    },
-    "employees_updateSalary_not_owner": {
-        "description": "PUT /employees/$employeeId/salary: by a user who is not the owner is a 403",
-        "endpoint": "PUT /employees/$employeeId/salary",
-        "steps": [
-            {
-                "PUT /employees/2/salary": {
-                    "salary": 2500.0
-                },
-                "as": 2,
-                "expect": 403
             }
         ]
     },
