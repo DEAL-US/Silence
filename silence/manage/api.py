@@ -474,7 +474,7 @@ def delete_test(file, name):
 
 
 ###############################################################################
-# The admin panel's own data (e.g., its composite tests), in the project's
+# The admin panel's own data (e.g., its scenarios), in the project's
 # admin/data/<name>.json. Silence stores it without knowing what it is.
 ###############################################################################
 

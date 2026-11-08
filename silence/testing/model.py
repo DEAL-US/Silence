@@ -14,7 +14,7 @@ from silence.exceptions import TestDefinitionError
 #   custom     tests/<table>.json, written by the student (from the admin panel),
 #              e.g., for the business rules. Their names cannot be the names of
 #              generated tests.
-# The composite tests (sequences of unit tests) belong to the admin panel.
+# The scenarios (sequences of unit tests) belong to the admin panel.
 #
 #   "employees_updateSalary_403": {
 #       "description": "An employee who is not the boss cannot change a salary",
@@ -88,7 +88,7 @@ def parse_unit(data, where):
         keys = [k for k in data if k not in UNIT_KEYS]
         if len(keys) != 1 or " " not in keys[0]:
             raise TestDefinitionError(f"{where} must have one request, as \"GET /photos\": null "
-                                      "(or steps, if it is a composite test)")
+                                      "(a sequence of tests is a scenario, in the admin panel)")
         method, path = keys[0].split(" ", 1)
         request = {"method": method.upper(), "path": path.strip(), "body": data[keys[0]], "as": data.get("as")}
         unknown = set()
@@ -117,7 +117,7 @@ class Test:
         where = f"'{name}' in {self.file}"
         if "steps" in data:
             raise TestDefinitionError(f"{where} has steps: the tests of tests/ are unit tests (one request); "
-                                      "the composite tests belong to the admin panel")
+                                      "the scenarios (sequences of tests) belong to the admin panel")
         self.request = parse_unit(data, where)
         self.expect = normalize_expect(data.get("expect"), where)
 

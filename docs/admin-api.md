@@ -255,7 +255,7 @@ id, "expect": 403}` o `"expect": {"status": 400, "message": "validSalary"}`) o l
   de negocio). No pueden llamarse como un generado (409; uno así en un fichero sale como error y
   no se carga).
 
-Los **tests compuestos** (secuencias de unitarios) no son de Silence: los guarda y los ejecuta el
+Los **escenarios** (*scenarios*: secuencias de unitarios) no son de Silence: los guarda y los ejecuta el
 panel (ver «Datos del panel»). Un fichero `tests/auto_*.json` de una versión anterior no se
 carga: sale como error.
 
@@ -274,7 +274,7 @@ errores. `definition` va tal como está en el fichero (en los generados, en form
 ```
 
 **`GET`/`PUT`/`DELETE /tests/{file}/{name}`**: como los de los endpoints (`data` es el test), solo
-para los propios; `PUT` con el nombre de un generado, 409. Un test con `steps` (es un compuesto: va en los datos del panel) o con otra
+para los propios; `PUT` con el nombre de un generado, 409. Un test con `steps` (es un escenario: va en los datos del panel) o con otra
 cosa esperada que no sea `status` y `message` no es válido (400).
 
 Silence no ejecuta los tests: no hay `tests/run`, `tests/try` ni `silence test`. Tampoco se
@@ -284,7 +284,7 @@ generan, personalizan ni exportan ficheros (`tests/generate`, `…/customize`, `
 
 ### Datos del panel
 
-El panel guarda lo suyo (por ejemplo, sus tests compuestos) en `admin/data/<nombre>.json` del
+El panel guarda lo suyo (por ejemplo, sus escenarios, en `scenarios.json`) en `admin/data/<nombre>.json` del
 proyecto. Silence lo guarda sin saber qué es ni validarlo; versionarlo es decisión del alumno.
 
 **`GET /panel-data/{name}`**: `{"name", "data", "etag"}`; `data` es `null` si no hay nada.

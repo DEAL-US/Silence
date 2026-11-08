@@ -91,7 +91,7 @@ def try_tests():
     assert requests.put(f"{ADMIN}/tests/departments/departments_mine", json=mine).status_code == 201
     assert [t["source"] for t in requests.get(ADMIN + "/tests").json()["tests"] if t["name"] == "departments_mine"] == ["custom"]
     assert requests.delete(f"{ADMIN}/tests/departments/departments_mine").status_code == 200
-    # A unit test expects a status and a message; composite tests belong to the admin panel
+    # A unit test expects a status and a message; scenarios belong to the admin panel
     assert requests.put(ADMIN + "/tests/ci_check/flow", json={"steps": ["a"]}).status_code == 400
     assert requests.put(ADMIN + "/tests/ci_check/rows", json={"GET /departments": None, "expect": {"count": 3}}).status_code == 400
     # The requests to the student's API count in the statistics
@@ -101,7 +101,7 @@ def try_tests():
 
 
 def try_panel_data():
-    """The admin panel saves its own data (e.g., its composite tests) in admin/data/"""
+    """The admin panel saves its own data (e.g., its scenarios) in admin/data/"""
     assert requests.get(ADMIN + "/panel-data/ci_check").json()["data"] is None
     saved = requests.put(ADMIN + "/panel-data/ci_check", json=[{"name": "flow", "steps": ["a", "b"]}]).json()
     assert saved["etag"]
