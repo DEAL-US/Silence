@@ -242,7 +242,10 @@ nombre si ya existía).
 
 **`POST /endpoints/generate`**, con `{"tables": [...]}` (opcional; todas por defecto): como
 `silence createapi`. `custom` son los que no se generan por estar personalizados; `removed`, los
-ficheros `auto_` de tablas que ya no existen.
+ficheros `auto_` de tablas que ya no existen. Todos son públicos (la sesión, los roles y el propietario se
+ponen al personalizarlos), y la tabla de usuarios enlazada solo recibe sus lecturas (`getAll` y
+`getById`, sin las contraseñas): sus filas se crean con el registro, y cambiarlas (contraseñas,
+roles) lo decide el alumno con un endpoint propio con sesión y roles.
 
 ```json
 {"tables": [{"table": "photos", "view": false, "generated": ["getAll", "getById", "create", "update"],
