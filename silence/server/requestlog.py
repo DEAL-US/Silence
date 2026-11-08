@@ -4,6 +4,7 @@ from datetime import datetime
 from urllib.parse import quote
 
 from silence.settings import settings
+from silence.project.files import write_text
 
 ###############################################################################
 # The log of the requests to the student's app (admin/logs/requests.log), as
@@ -58,8 +59,7 @@ def write(text):
             if _lines > MAX_LINES * 1.1:
                 with open(path, encoding="utf8", errors="replace") as f:
                     kept = f.readlines()[-MAX_LINES:]
-                with open(path, "w", encoding="utf8") as f:
-                    f.writelines(kept)
+                write_text(path, "".join(kept))
                 _lines = len(kept)
         except OSError:
             _lines = None  # E.g., a read-only folder: the app works without its log

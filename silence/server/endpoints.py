@@ -147,10 +147,15 @@ class Registry:
     def __init__(self):
         self.endpoints = []
         self.errors = []
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
 
     def load(self):
-        '''(Re)loads every endpoints/*.json'''
+        '''(Re)loads every endpoints/*.json. Under the lock: two loads at once (the watcher and an
+        admin API call) could otherwise end with the older one'''
+        with self.lock:
+            return self._load()
+
+    def _load(self):
         endpoints, errors = [], []
         folder = endpoints_dir()
         files = sorted(f for f in os.listdir(folder) if f.endswith(".json")) if os.path.isdir(folder) else []
@@ -197,9 +202,8 @@ class Registry:
                 dropped.update(id(e) for e in eps)
         endpoints = [e for e in endpoints if id(e) not in dropped]
 
-        with self.lock:
-            self.endpoints = endpoints
-            self.errors = errors
+        self.endpoints = endpoints
+        self.errors = errors
         return self
 
     def log_errors(self):
@@ -302,8 +306,9 @@ def column_is_optional(table, column):
 
 def run(ep, url_params):
     '''Runs an endpoint for the current request. Returns (result, status)'''
-    user = get_logged_user(required=ep.auth_required or bool(ep.owner))
-    if ep.auth_required or ep.owner:
+    owned = bool(ep.owner) and ep.op != "SELECT"  # An owner has no effect on a GET
+    user = get_logged_user(required=ep.auth_required or owned)
+    if ep.auth_required or owned:
         check_roles(user, ep.allowed_roles)
 
     params = dict(url_params)

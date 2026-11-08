@@ -103,16 +103,20 @@ def fetch(repo_spec, version=LATEST):
     '''A temporary folder with the repo ("owner/repo" or URL) at that version (the caller removes it)'''
     owner, repo = parse_repo(repo_spec)
     tmp = tempfile.mkdtemp(prefix="silence-")
-    local = local_source(repo)
-    if local:
-        logger.debug("Using the local copy of %s (%s) in %s", repo, version, local)
-        from_local(local, version, tmp)
+    try:
+        local = local_source(repo)
+        if local:
+            logger.debug("Using the local copy of %s (%s) in %s", repo, version, local)
+            from_local(local, version, tmp)
+            return tmp
+        with zipfile.ZipFile(io.BytesIO(download_zip(owner, repo, version))) as z:
+            z.extractall(tmp)
+        # Everything is inside one folder (<repo>-<ref> or <owner>-<repo>-<sha>): move it up
+        inner = next(Path(tmp).iterdir())
+        for elem in inner.iterdir():
+            shutil.move(str(elem), tmp)
+        inner.rmdir()
         return tmp
-    with zipfile.ZipFile(io.BytesIO(download_zip(owner, repo, version))) as z:
-        z.extractall(tmp)
-    # Everything is inside one folder (<repo>-<ref> or <owner>-<repo>-<sha>): move it up
-    inner = next(Path(tmp).iterdir())
-    for elem in inner.iterdir():
-        shutil.move(str(elem), tmp)
-    inner.rmdir()
-    return tmp
+    except BaseException:
+        shutil.rmtree(tmp, ignore_errors=True)  # Nothing is left behind if it cannot be fetched
+        raise

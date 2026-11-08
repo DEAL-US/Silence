@@ -5,6 +5,8 @@ import pprint
 from copy import deepcopy
 from secrets import token_urlsafe
 
+from silence.project.files import write_json
+
 ###############################################################################
 # Project settings, stored in the project's silence.json.
 #
@@ -285,9 +287,7 @@ class Settings:
             raise SystemExit(1)
 
     def save(self):
-        with open(self.PROJECT_PATH, "w", encoding="utf8") as f:
-            json.dump(self.project, f, indent=4, ensure_ascii=False)
-            f.write("\n")
+        write_json(self.PROJECT_PATH, self.project)
 
     def warn_unknown_settings(self):
         from silence.logging.default_logger import logger

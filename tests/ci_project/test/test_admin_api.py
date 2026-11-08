@@ -205,6 +205,10 @@ def try_response_schemas():
     test = requests.post(ADMIN + "/database/test", json={**conn, "name": db["name"]})
     check("database_test", test, 200)
     assert test.json()["ok"] and db["name"] in test.json()["databases"]
+    assert requests.post(ADMIN + "/database/test", json={**conn, "port": "x"}).status_code == 400
+    # A table with other capital letters is the same table
+    generated = requests.post(ADMIN + "/endpoints/generate", json={"tables": ["DEPARTMENTS"]}).json()
+    assert [t["table"] for t in generated["tables"]] == ["departments"] and generated["tables"][0]["generated"]
     wrong = requests.post(ADMIN + "/database/test", json={**conn, "name": "does_not_exist_db"})
     check("database_test", wrong, 200)
     assert not wrong.json()["ok"] and wrong.json()["databases"]

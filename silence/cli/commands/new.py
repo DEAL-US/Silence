@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 
+from silence.project.files import write_json
 from silence.settings import new_project_data, merge, PROJECT_FILE
 from silence.logging.default_logger import logger
 from silence.cli import template_downloader as tpl
@@ -78,9 +79,7 @@ def write_project_file(dest, admin):
         data["secret_key"] = new_project_data()["secret_key"]
         data["version"] = new_project_data()["version"]
     data["admin"] = admin
-    with open(path, "w", encoding="utf8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-        f.write("\n")
+    write_json(path, data)
 
 
 def handle(args):

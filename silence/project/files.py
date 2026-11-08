@@ -1,19 +1,28 @@
 import hashlib
 import json
 import os
+import tempfile
 
 ###############################################################################
-# The JSON files of the project (silence.json, endpoints/*.json, tests/*.json):
-# reading, writing and their version (etag), so that two clients (the admin
-# panel and an editor) do not overwrite each other's changes.
+# The files of the project (silence.json, endpoints/*.json, tests/*.json, the
+# log of requests): reading, writing them at once, and their version (etag), so
+# that two clients (the admin panel and an editor) do not overwrite each other's
+# changes.
 ###############################################################################
 
 def etag_of(path):
     '''Version of a file: a hash of its content ("" if it does not exist)'''
+    return read_with_etag(path)[1]
+
+
+def read_with_etag(path):
+    '''The text of a file and its version, read at once (so that they match): (None, "") if it
+    does not exist'''
     if not os.path.isfile(path):
-        return ""
+        return None, ""
     with open(path, "rb") as f:
-        return hashlib.sha1(f.read()).hexdigest()[:16]
+        raw = f.read()
+    return raw.decode("utf8", errors="replace"), hashlib.sha1(raw).hexdigest()[:16]
 
 
 def read_json(path):
@@ -23,25 +32,27 @@ def read_json(path):
         return json.load(f)
 
 
-def write_json(path, data):
-    '''Writes the file (or removes it if data is empty) and returns its new etag'''
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    if not data:
-        if os.path.isfile(path):
-            os.remove(path)
-        return ""
-    with open(path, "w", encoding="utf8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False, default=str)
-        f.write("\n")
+def write_text(path, text):
+    """Writes a file at once: in a temporary file next to it, which then replaces it, so that
+    whoever reads it (the watcher, the registry of endpoints, an editor) never sees it half
+    written. Returns its new etag"""
+    folder = os.path.dirname(path) or "."
+    os.makedirs(folder, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=folder, prefix=".", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf8") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
     return etag_of(path)
 
 
-def etags(folder):
-    '''Etags of the JSON files of a folder, by name without .json'''
-    if not os.path.isdir(folder):
-        return {}
-    return {f[:-5]: etag_of(os.path.join(folder, f))
-            for f in sorted(os.listdir(folder)) if f.endswith(".json")}
+def write_json(path, data):
+    """Writes a JSON file of the project (indented, UTF-8) at once. Returns its new etag"""
+    return write_text(path, json.dumps(data, indent=4, ensure_ascii=False, default=str) + "\n")
 
 
 def safe_name(name):

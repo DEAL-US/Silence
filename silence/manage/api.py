@@ -11,11 +11,11 @@ from silence.db import dal, schema as db_schema
 from silence.db.connector import test_connection
 from silence.db.errors import to_http_error
 from silence.exceptions import HTTPError, DatabaseError
-from silence.settings import settings, PROJECT_FILE
+from silence.settings import settings, PROJECT_FILE, DEFAULT_PROJECT, merge
 from silence.server import watcher
 from silence.server.endpoints import REGISTRY, AUTO_PREFIX, Endpoint
 from silence.server.session import get_field
-from silence.project.files import read_json, etag_of, safe_name
+from silence.project.files import write_json, etag_of, read_with_etag, safe_name
 from silence.testing import model as test_model
 from silence.manage import schemas
 
@@ -138,7 +138,11 @@ def status():
 ###############################################################################
 
 def connection_args(v):
-    return {"host": v.get("host"), "port": int(v.get("port") or 3306), "username": v.get("user"),
+    try:
+        port = int(v.get("port") or 3306)
+    except (TypeError, ValueError):
+        raise HTTPError(400, f"The port must be a number, not {v.get('port')!r}")
+    return {"host": v.get("host"), "port": port, "username": v.get("user"),
             "password": v.get("password"), "database": v.get("name") or None}
 
 
@@ -149,11 +153,13 @@ def database_test():
     try:
         conn = pymysql.connect(host=a["host"], port=a["port"], user=a["username"], password=a["password"],
                                connect_timeout=5)
-        with conn.cursor() as cur:
-            cur.execute("SHOW DATABASES")
-            names = [r[0] for r in cur.fetchall()
-                     if r[0] not in ("information_schema", "mysql", "performance_schema", "sys")]
-        conn.close()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SHOW DATABASES")
+                names = [r[0] for r in cur.fetchall()
+                         if r[0] not in ("information_schema", "mysql", "performance_schema", "sys")]
+        finally:
+            conn.close()
     except pymysql.MySQLError as exc:
         return jsonify({"ok": False, "error": exc.args[1] if len(exc.args) > 1 else str(exc), "databases": []})
     error = test_connection(a) if a["database"] else None
@@ -260,7 +266,12 @@ def user_session(user_id):
     from silence.server.auth_endpoints import session_for
     rel = users_rel()
     from silence.auth import users as users_table
-    rows = dal.query(f"{users_table.users_select()} WHERE u.`{rel.single_pk}` = %s", (user_id,))
+    try:
+        rows = dal.query(f"{users_table.users_select()} WHERE u.`{rel.single_pk}` = %s", (user_id,))
+    except users_table.UsersTableError as exc:
+        raise HTTPError(409, f"The users table is not well linked: {exc}")
+    except DatabaseError as exc:
+        raise to_http_error(exc)
     if not rows:
         raise HTTPError(404, "No such user")
     return jsonify(session_for(rows[0]))
@@ -376,6 +387,9 @@ def check_tests(path, data):
             raise HTTPError(400, f"{name}: {exc}")
     if not entries:
         return
+    if not db_ok():
+        raise HTTPError(409, "Without the database, the names of the generated tests (which a custom test "
+                             "cannot take) cannot be checked: connect to it first")
     generated = test_model.generated_names() & set(entries)
     if generated:
         raise HTTPError(409, f"'{sorted(generated)[0]}' is the name of a generated test: choose another one")
@@ -438,20 +452,18 @@ def list_files():
 def get_file(path):
     '''A file: its content (JSON, or the text of the log) and its version; null if it does not exist'''
     kind = file_kind(path)
-    where = full_path(path)
-    if kind == "config":
-        data = {k: v for k, v in settings.project.items() if k != "secret_key"}
-    elif not os.path.isfile(where):
-        data = None
-    elif kind == "log":
-        with open(where, encoding="utf8", errors="replace") as f:
-            data = f.read()
+    text, etag = read_with_etag(full_path(path))  # The content and its version, of the same reading
+    if text is None or kind == "log":
+        data = text
     else:
         try:
-            data = read_json(where)
+            data = json.loads(text)
         except ValueError as exc:
             raise HTTPError(409, f"{path} is not valid JSON: {exc}")
-    return jsonify({"path": path, "data": data, "etag": etag_of(where)})
+        if kind == "config":  # With the default values of what is missing, and never the secret key
+            data = {k: v for k, v in merge(DEFAULT_PROJECT, data).items() if k != "secret_key"} \
+                if isinstance(data, dict) else data
+    return jsonify({"path": path, "data": data, "etag": etag})
 
 
 @manage.route("/files/<path:path>", methods=["PUT"])
@@ -475,10 +487,7 @@ def put_file(path):
             check_endpoints(where, data)
         elif kind == "tests":
             check_tests(where, data)
-        os.makedirs(os.path.dirname(where), exist_ok=True)
-        with open(where, "w", encoding="utf8") as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-            f.write("\n")
+        write_json(where, data)
         if kind == "endpoints":
             REGISTRY.load()
     watcher.bump()

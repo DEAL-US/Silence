@@ -4,6 +4,7 @@ import re
 
 from silence.db.schema import get_schema
 from silence.settings import settings
+from silence.project.files import write_json
 from silence.server.endpoints import (REGISTRY, ENDPOINTS_DIR, AUTO_PREFIX, endpoints_dir,
                                       route_key, table_of_file)
 
@@ -16,13 +17,6 @@ from silence.server.endpoints import (REGISTRY, ENDPOINTS_DIR, AUTO_PREFIX, endp
 # passwords, and its writes store them encrypted in argon2 mode).
 ###############################################################################
 
-
-
-def write_json(path, data):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-        f.write("\n")
 
 
 def crud_endpoints(rel):
@@ -114,7 +108,7 @@ def generate(tables=None):
     customs = custom_keys()
     folder = endpoints_dir()
     os.makedirs(folder, exist_ok=True)
-    selected = [r for r in schema.relations.values() if tables is None or r.name in tables]
+    selected = list(schema.relations.values()) if tables is None else [schema.get(t) for t in dict.fromkeys(tables)]
     summary = []
 
     for rel in selected:
