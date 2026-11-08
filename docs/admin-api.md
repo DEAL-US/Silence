@@ -165,6 +165,12 @@ puede contar, por ejemplo una vista que ya no funciona).
 
 Sin tabla enlazada, todas responden 409.
 
+El identificador (`auth.identifier`) es una columna de la tabla de usuarios (`email`) o de una
+tabla a la que esta apunta con una clave ajena (`people.email`, cuando las credenciales están en
+su propia tabla: `credentials(person_id → people, password, role)`). En el segundo caso Silence
+lee los usuarios con un `JOIN` por esa clave ajena, el login recibe `email` y no hay registro (un
+usuario nuevo necesitaría antes su fila en `people`).
+
 **`GET /users`**: los usuarios, con el estado de su contraseña (`argon2`, `plain` o
 `unsupported`), nunca su valor. `role` y `active` son `null` si no hay esas columnas.
 

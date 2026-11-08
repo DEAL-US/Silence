@@ -8,15 +8,18 @@ from silence.settings import settings
 from silence.logging.default_logger import logger
 from silence.server.endpoints import request_body
 from silence.server.session import get_field
+from silence.auth import users as users_table
 
 ###############################################################################
 # The endpoints provided by Silence: /login and /register, on the users table
-# linked in the admin panel.
+# linked in the admin panel (the identifier may be in a referenced table: see
+# silence/auth/users.py).
 ###############################################################################
 
 def auth_fields():
+    '''The users table and its fields (the identifier, by its name in the rows of the users)'''
     a = settings.USER_AUTH_DATA
-    return a["table"], a["identifier"], a["password"], a["role"], a["active_status"]
+    return a["table"], users_table.identifier_field(), a["password"], a["role"], a["active_status"]
 
 
 def users_relation():
@@ -27,8 +30,11 @@ def users_relation():
 
 
 def find_user(identifier):
-    table, id_field, *_ = auth_fields()
-    rows = dal.query(f"SELECT * FROM {table} WHERE {id_field} = %s", (identifier,))
+    try:
+        sql = f"{users_table.users_select()} WHERE {users_table.identifier_sql()} = %s"
+    except users_table.UsersTableError as exc:
+        raise HTTPError(500, f"The users table is not well linked: {exc}")
+    rows = dal.query(sql, (identifier,))
     return rows[0] if rows else None
 
 
@@ -85,6 +91,9 @@ def register():
 
     if not identifier or not password:
         raise HTTPError(400, f"Both '{id_field}' and '{pwd_field}' are required")
+    if users_table.identifier_is_external():
+        raise HTTPError(409, f"The register is not available: the identifier ({settings.USER_AUTH_DATA['identifier']}) "
+                             f"is not in the users table ({table}), so a new user needs a row there first")
 
     # Only the columns of the users table, with their real names
     user = {}

@@ -231,13 +231,16 @@ def users_rel():
 @manage.route("/users")
 def list_users():
     '''The users, with the state of their password (never its value)'''
+    from silence.auth import users as users_table
     rel = users_rel()
     a = settings.USER_AUTH_DATA
     try:
-        rows = dal.query(f"SELECT * FROM {rel.name} ORDER BY {rel.single_pk} LIMIT 1000")
+        rows = dal.query(f"{users_table.users_select()} ORDER BY u.`{rel.single_pk}` LIMIT 1000")
+    except users_table.UsersTableError as exc:
+        raise HTTPError(409, f"The users table is not well linked: {exc}")
     except DatabaseError as exc:
         raise to_http_error(exc)
-    users = [{"id": r[rel.single_pk], "identifier": get_field(r, a["identifier"]),
+    users = [{"id": r[rel.single_pk], "identifier": get_field(r, users_table.identifier_field()),
               "role": get_field(r, a["role"]) if a["role"] else None,
               "active": get_field(r, a["active_status"]) if a["active_status"] else None,
               "password": password_status(get_field(r, a["password"]))} for r in rows]
@@ -270,7 +273,8 @@ def user_session(user_id):
     '''Opens a session for a user without its password'''
     from silence.server.auth_endpoints import session_for
     rel = users_rel()
-    rows = dal.query(f"SELECT * FROM {rel.name} WHERE {rel.single_pk} = %s", (user_id,))
+    from silence.auth import users as users_table
+    rows = dal.query(f"{users_table.users_select()} WHERE u.`{rel.single_pk}` = %s", (user_id,))
     if not rows:
         raise HTTPError(404, "No such user")
     return jsonify(session_for(rows[0]))

@@ -43,7 +43,8 @@ DEFAULT_PROJECT = {
         "scripts": [],
     },
     "auth": {
-        # Table and columns of the application's users (empty: not linked)
+        # Table and columns of the application's users (empty: not linked). The identifier may
+        # be a column of a table that the users table references: "people.email"
         "table": "",
         "identifier": "",
         "password": "",
