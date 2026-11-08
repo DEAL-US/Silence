@@ -3,7 +3,7 @@
 1. Copies the project to a temporary folder and sets its database from the
    environment (SILENCE_DB_HOST, SILENCE_DB_PORT, SILENCE_DB_USER,
    SILENCE_DB_PASSWORD, SILENCE_DB_NAME), by default the local one.
-2. Loads the database with the scripts of sql/ (Silence 3 does not run them).
+2. Creates the database with the scripts of database.scripts (silence createdb).
 3. Starts 'silence run' and runs the API tests of test/ (inherited from the
    Silence-CI-Project of Silence 2, adapted where Silence 3 changes on purpose).
 4. Reloads the database and runs the unit tests of tests/*.json through HTTP

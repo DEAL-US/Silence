@@ -100,7 +100,7 @@ def parse_unit(data, where):
 
 class Test:
     '''A unit test. filename: its file (for a generated one, the file where it would be saved
-    if it is customized); source: "auto" (generated) or "custom"'''
+    if the student writes one from it); source: "auto" (generated) or "custom"'''
     def __init__(self, name, data, filename, source="custom"):
         self.name = name
         self.file = os.path.basename(filename)

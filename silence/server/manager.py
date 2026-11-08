@@ -154,7 +154,7 @@ def register_admin_routes():
 
 
 ###############################################################################
-# Errors, logs and statistics
+# Errors and the log of requests
 ###############################################################################
 
 @APP.errorhandler(HTTPError)

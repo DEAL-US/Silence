@@ -9,7 +9,7 @@ from silence.project.files import write_text
 ###############################################################################
 # The log of the requests to the student's app (admin/logs/requests.log), as
 # the access log of any web server: one line per request, and nothing else.
-# The admin panel shows it in its console and sums it up in its statistics;
+# The admin panel shows it in Logs (its activity) and sums it up in its statistics;
 # deleting the file resets both. The panel's own requests (/admin and the
 # admin API) are not logged.
 #

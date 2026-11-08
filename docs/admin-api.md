@@ -36,9 +36,8 @@ test_admin_api.py` comprueba que una URL lo cumple.
   `""` si el fichero no existe). Una escritura con la cabecera `If-Match` que no coincide responde
   **412** y no escribe; sin `If-Match`, escribe siempre.
 - **Recarga**: el servidor vigila `silence.json`, `endpoints/` y `tests/`, y los recarga cuando
-  cambian, los cambie quien los cambie. `GET /status` incluye un contador `revision` que sube con
-  cada cambio (el panel no lo consulta periódicamente: lee el estado al cambiar de página y tras
-  cada acción).
+  cambian, los cambie quien los cambie (el panel no consulta el estado periódicamente: lo lee al
+  cambiar de página y tras cada acción).
 - **Especificación OpenAPI** en `GET /_silence/v1/openapi.json`, con los esquemas de las
   respuestas.
 
@@ -82,7 +81,7 @@ lleva `linked` y los valores de `auth` de `silence.json`; `endpoints.list`, los 
 están sirviendo (ver «Endpoints»); `errors` son los problemas de los ficheros, como texto.
 
 ```json
-{"revision": 7, "apiPrefix": "/api", "baseUrl": "http://127.0.0.1:8080",
+{"apiPrefix": "/api", "baseUrl": "http://127.0.0.1:8080",
  "database": {"name": "silence_gallery_db", "error": null},
  "auth": {"linked": true, "table": "users", "identifier": "email", "password": "password",
           "role": "", "active": "", "password_mode": "argon2", "login": true, "token_max_age": 86400},
@@ -156,8 +155,8 @@ leyó): lo valida y lo guarda. Responde `{"path", "etag"}`, con 201 si el ficher
 Un fichero vacío (`{}`) en `endpoints/` o en `tests/` vale; para quitarlo, `DELETE`.
 
 **`DELETE /files/{ruta}`** (con `If-Match`, si se quiere): lo borra y responde
-`{"deleted": true}`; 404 si no existe. Borrar el registro de peticiones pone a cero la consola y
-las estadísticas del panel.
+`{"deleted": true}`; 404 si no existe. Borrar el registro de peticiones pone a cero la actividad y
+las estadísticas del panel (Logs).
 
 Cambiar una entrada (un endpoint, un test) es leer su fichero, cambiarla y escribirlo; renombrarla,
 lo mismo con su nombre nuevo. Para moverla a otro fichero, se quita del antiguo y se añade al
@@ -295,8 +294,8 @@ id, "expect": 403}` o `"expect": {"status": 400, "message": "validSalary"}`) o l
   su tabla.
 - **propios** (`source: custom`): `tests/<tabla>.json`, del alumno (por ejemplo, para las reglas
   de negocio), que se leen y se escriben con la API de ficheros. No pueden llamarse como un
-  generado (409; uno así en un fichero sale como error en `errors.tests` de `GET /status` y no se
-  carga).
+  generado: la API de ficheros no lo guarda (409; sin BD, tampoco, porque no lo puede comprobar).
+  Si alguien lo escribe a mano en el fichero, vale el generado y el panel no usa el propio.
 
 Un test es una sola petición: no hay secuencias de tests. Un fichero `tests/auto_*.json` de una
 versión anterior no se carga: sale como error.
@@ -326,8 +325,8 @@ generan, personalizan ni exportan ficheros (`tests/generate`, `…/customize`, `
 ### Registro de peticiones
 
 Silence escribe en `admin/logs/requests.log` una línea por cada petición a la aplicación del
-alumno, como el registro de accesos de cualquier servidor web; el panel lo muestra en su consola
-y lo resume en sus estadísticas. No se apuntan las del panel (`/admin/` y esta API). Se guardan
+alumno, como el registro de accesos de cualquier servidor web; el panel lo muestra en Logs (su
+actividad) y lo resume en sus estadísticas. No se apuntan las del panel (`/admin/` y esta API). Se guardan
 las últimas 10 000 líneas; si se borra, Silence lo crea de nuevo con la siguiente. `silence new`
 lo pone en el `.gitignore`.
 

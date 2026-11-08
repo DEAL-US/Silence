@@ -348,7 +348,7 @@ def tests_for_endpoint(ep, ctx):
 
 def generated_tests():
     '''The tests of all the endpoints, computed now from the endpoints and the data (they are not
-    saved): a list of Test, each one with the file of its table (where it goes if it is customized)'''
+    saved): a list of Test, each one with the file of its table (where a test written from it goes)'''
     REGISTRY.load()
     ctx = Context()
     tests = []
