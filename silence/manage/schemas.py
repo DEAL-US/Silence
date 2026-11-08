@@ -113,7 +113,7 @@ COMPONENTS = {
     "PanelDataSaved": obj(["name", "etag"], name=STR, etag=STR),
     "Stats": obj(["since", "api", "silence", "web"], since=NUM,
                  api={**ref("ApiStats"), "description": "The student's endpoints"},
-                 silence={**ref("ApiStats"), "description": "Silence's API: login, register, summary and admin API"},
+                 silence={**ref("ApiStats"), "description": "What Silence gives to the student's app: login, register and the API summary"},
                  web=obj(["requests", "notFound", "bytes", "byKind", "files"], requests=INT, notFound=INT, bytes=INT,
                          byKind={"type": "object", "additionalProperties": INT},
                          files={"type": "array", "items": obj(["path", "kind", "requests", "notFound", "bytes"],

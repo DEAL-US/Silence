@@ -190,9 +190,6 @@ def count(response, group, path):
     if group == "web":
         size = response.content_length if response.content_length is not None else 0
         stats.record_web(path, code, size)
-    elif group == "admin":
-        rule = request.url_rule.rule if request.url_rule else path
-        stats.record_api("silence", request.method, f"{request.method} {rule}", code, elapsed)
     else:
         key = g.get("stats_key") or f"{request.method} {path}"
         stats.record_api(group, request.method, key, code, elapsed, matched=g.get("stats_matched", True))
@@ -204,8 +201,7 @@ def log_request(response):
     if path == "/admin" or path.startswith("/admin/"):
         return response  # The files of the admin panel: neither logged nor counted
     if path == "/_silence" or path.startswith("/_silence/"):
-        count(response, "admin", path)
-        return response  # The admin API is counted (Silence's API) but not logged
+        return response  # The admin API (the panel's traffic): neither logged nor counted
 
     group = g.get("log_group") or ("api" if is_api_path(path) else "web")
     count(response, group, path)

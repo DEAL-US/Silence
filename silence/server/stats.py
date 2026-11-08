@@ -5,10 +5,11 @@ import time
 # Request statistics, kept in memory (nothing is written in the project), in
 # three groups, as Silence of Rust (silence-dev4) shows them:
 #   "api":     the student's endpoints (endpoints/*.json), by endpoint
-#   "silence": Silence's own API: login, register, the API summary and the
-#              admin API (/_silence/v1, the admin panel's traffic)
+#   "silence": the endpoints that Silence gives to the student's app: login,
+#              register and the API summary (GET /api)
 #   "web":     the files of web/ (the app that the student develops), by file
-# The requests of the tests count too; the files of the admin panel do not.
+# The requests of the tests count too; the admin panel (its files and the admin
+# API, /_silence/v1) does not: only the traffic of the student's app.
 ###############################################################################
 
 _lock = threading.Lock()

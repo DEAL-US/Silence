@@ -107,6 +107,11 @@ def try_tests():
     before = requests.get(ADMIN + "/stats").json()["api"]["requests"]
     requests.get(BASE_URL + "/departments")
     assert requests.get(ADMIN + "/stats").json()["api"]["requests"] == before + 1
+    # Silence's group counts what Silence gives to the student's app (login...), not the admin API
+    before = requests.get(ADMIN + "/stats").json()["silence"]["requests"]
+    requests.get(ADMIN + "/status")
+    requests.post(BASE_URL + "/login", json={"email": "nobody@company.com", "password": "x"})
+    assert requests.get(ADMIN + "/stats").json()["silence"]["requests"] == before + 1
 
 
 def try_panel_data():

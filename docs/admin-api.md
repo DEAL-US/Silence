@@ -314,13 +314,13 @@ proyecto. Silence lo guarda sin saber qué es ni validarlo; versionarlo es decis
 
 - `api`: la API del alumno (sus endpoints), por endpoint (`GET /photos/$photo_id`, no la ruta
   pedida); las que no encuentran endpoint, en `unmatched`.
-- `silence`: la API de Silence: el login, el registro, el resumen y esta API de administración
-  (el tráfico del panel).
+- `silence`: lo que Silence da a la aplicación del alumno: el login, el registro y el resumen
+  (`GET /api`).
 - `web`: los ficheros de `web/` (la aplicación del alumno), por fichero y por tipo (`page`,
   `style`, `script`, `image`, `font`, `data`, `other`).
 
-Cuentan todas las peticiones a la API del alumno, también las de los tests; no cuentan los ficheros
-del panel (`/admin/`). Se guardan en memoria: se pierden al reiniciar.
+Cuentan todas las peticiones a la API del alumno, también las de los tests; no cuenta el panel (sus
+ficheros, `/admin/`, ni esta API de administración). Se guardan en memoria: se pierden al reiniciar.
 
 ```json
 {"since": 1794049274.44,
