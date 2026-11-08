@@ -26,6 +26,12 @@ def try_root_and_status():
     assert s["auth"]["linked"] is True
     assert s["errors"] == {"config": [], "endpoints": [], "tests": []}
     assert isinstance(s["revision"], int)
+    # Only through a local name (DNS rebinding) and, the changes, only from its own pages (CSRF)
+    assert requests.get(ADMIN + "/status", headers={"Host": "evil.com:8080"}).status_code == 403
+    evil = requests.post(ADMIN + "/database/test", json={}, headers={"Origin": "http://evil.com"})
+    assert evil.status_code == 403
+    own = requests.post(ADMIN + "/database/test", json={}, headers={"Origin": BASE_URL.split("/api")[0]})
+    assert own.status_code == 200
     # The endpoints that are being served, with their files
     names = {(e["file"], e["name"]) for e in s["endpoints"]["list"]}
     assert ("employees", "updateSalary") in names and len(names) == s["endpoints"]["count"]

@@ -13,7 +13,10 @@ test_admin_api.py` comprueba que una URL lo cumple.
   contrato. Un cambio incompatible es `/_silence/v2`; los compatibles (campos u operaciones
   nuevos) no cambian la versión. Los clientes ignoran los campos que no conocen.
 - **Solo desde el propio ordenador** (127.0.0.1); desde otro, 403. Sin CORS: el panel se sirve
-  desde el mismo origen (`/admin/`).
+  desde el mismo origen (`/admin/`). Además, la cabecera `Host` tiene que ser `localhost`,
+  `127.0.0.1` o `[::1]` (una página de otro sitio cuyo nombre apunte a 127.0.0.1, *DNS rebinding*,
+  recibe 403), y un `POST`, `PUT` o `DELETE` con un `Origin` que no sea el propio también (un
+  formulario de otra web que envíe aquí, CSRF).
 - **JSON** en peticiones y respuestas; UTF-8; nombres de campos en camelCase, salvo los de la
   definición de un endpoint, que son los de su fichero (`auth_required`…).
 - **Todo en inglés**: rutas, campos y mensajes.
@@ -47,7 +50,7 @@ alumno), con estos códigos:
 | Código | Cuándo |
 |---|---|
 | 400 | La petición no es válida (el motivo va en `message`): un valor de `silence.json` incorrecto o una conexión que no funciona, un endpoint o un test mal definido, un nombre no válido, un JSON mal formado |
-| 403 | La petición no viene del propio ordenador; o un fichero que no se puede tocar: fuera de los de la API de ficheros, un `auto_` (escribirlo o borrarlo), escribir el registro, borrar `silence.json` |
+| 403 | La petición no viene del propio ordenador (o de una página suya); o un fichero que no se puede tocar: fuera de los de la API de ficheros, un `auto_` (escribirlo o borrarlo), escribir el registro, borrar `silence.json` |
 | 404 | El recurso no existe (un usuario, un fichero que se borra) |
 | 409 | El estado no lo permite: la BD no está configurada o no responde, la tabla de usuarios no está enlazada, un endpoint con el método y la ruta de otro **personalizado** (o dos veces en el mismo fichero), un test con el nombre de uno generado o de uno de otro fichero |
 | 412 | El fichero ha cambiado desde que se leyó (`If-Match`) |

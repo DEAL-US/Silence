@@ -15,6 +15,9 @@ def try_register_no_user():
         "firstName": "Pepito",
         "lastName": "Pruebas",
         "salary": 1337.00,
+        # Never taken from the request: the role is auth.default_role (none here) and it is active
+        "position": "Boss",
+        "isActive": 0,
     }
     emps_before = get_all_employees()
     r = requests.post(BASE_URL + "/register", json=data)
@@ -30,6 +33,9 @@ def try_register_no_password():
         "firstName": "Pepito",
         "lastName": "Pruebas",
         "salary": 1337.00,
+        # Never taken from the request: the role is auth.default_role (none here) and it is active
+        "position": "Boss",
+        "isActive": 0,
     }
     emps_before = get_all_employees()
     r = requests.post(BASE_URL + "/register", json=data)
@@ -62,6 +68,9 @@ def try_register_ok():
         "firstName": "Pepito",
         "lastName": "Pruebas",
         "salary": 1337.00,
+        # Never taken from the request: the role is auth.default_role (none here) and it is active
+        "position": "Boss",
+        "isActive": 0,
     }
     emps_before = get_all_employees()
     r = requests.post(BASE_URL + "/register", json=data)
@@ -76,8 +85,9 @@ def try_register_ok():
 
     resp_user = resp_data["user"]
     for k in data:
-        if k != "password":
+        if k not in ("password", "position", "isActive"):
             assert data[k] == resp_user[k]
+    assert resp_user["position"] is None and resp_user["isActive"]
 
 def try_register_repeated():
     data = {

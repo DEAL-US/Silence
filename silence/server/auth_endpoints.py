@@ -95,18 +95,21 @@ def register():
         raise HTTPError(409, f"The register is not available: the identifier ({settings.USER_AUTH_DATA['identifier']}) "
                              f"is not in the users table ({table}), so a new user needs a row there first")
 
-    # Only the columns of the users table, with their real names
+    # Only the columns of the users table, with their real names. The role and whether the user is
+    # active never come from the request (anybody could register as an administrator): the role is
+    # auth.default_role (none if it is empty) and the new user is active
+    role_col = rel.column(role_field).name if role_field else None
+    active_col = rel.column(active_field).name if active_field else None
     user = {}
     for key, value in form.items():
         col = rel.column(key)
-        if col is not None and not col.auto_increment:
+        if col is not None and not col.auto_increment and col.name not in (role_col, active_col):
             user[col.name] = value
     user[rel.column(pwd_field).name] = hash_password(password)
-
-    if settings.DEFAULT_ROLE_REGISTER and role_field:
-        user[rel.column(role_field).name] = settings.DEFAULT_ROLE_REGISTER
-    if active_field and rel.column(active_field).name not in user:
-        user[rel.column(active_field).name] = settings.DEFAULT_ACTIVE_STATUS
+    if role_col:
+        user[role_col] = settings.DEFAULT_ROLE_REGISTER
+    if active_col:
+        user[active_col] = settings.DEFAULT_ACTIVE_STATUS
 
     try:
         if find_user(identifier) is not None:

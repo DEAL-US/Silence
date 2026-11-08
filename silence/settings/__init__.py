@@ -1,4 +1,5 @@
 import json
+import re
 import os
 import pprint
 from copy import deepcopy
@@ -131,8 +132,10 @@ def validate(p):
           "a URL prefix (e.g., \"/api\")")
     for key in ("open_browser", "log_bodies", "decimals_as_strings", "check_updates"):
         check("server", key, is_bool, "true or false")
-    for key in ("host", "user", "password", "name"):
+    for key in ("host", "user", "password"):
         check("database", key, is_str, "a text")
+    check("database", "name", lambda v: is_str(v) and re.fullmatch(r"[\w$]*", v) is not None,
+          "the name of a database (letters, digits, _ and $)")
     check("database", "port", is_port, "a port number (1-65535)")
     check("database", "scripts", lambda v: isinstance(v, list) and all(
         is_str(f) and f.endswith(".sql") and "/" not in f and "\\" not in f for f in v),

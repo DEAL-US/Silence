@@ -30,10 +30,31 @@ API_VERSION = 1
 PREFIX = f"/_silence/v{API_VERSION}"
 manage = Blueprint("manage", __name__, url_prefix=PREFIX)
 
+LOCAL_HOSTS = ("localhost", "127.0.0.1", "[::1]")
+
+
+def host_of(value):
+    '''The host of a Host header ("127.0.0.1:8080") or of an Origin ("http://localhost:8080"),
+    without the port'''
+    host = value.split("://", 1)[-1].split("/", 1)[0].lower()
+    if host.startswith("["):
+        return host[:host.index("]") + 1] if "]" in host else host
+    return host.split(":", 1)[0]
+
+
 @manage.before_request
 def only_local():
-    if request.remote_addr not in ("127.0.0.1", "::1", None):
+    '''Only from this computer, and only from its pages: the Host must be a local name (a page of
+    another site whose name resolves to 127.0.0.1, DNS rebinding, is rejected), and a change must
+    not come from a page of another site (a form of another site that posts here, CSRF)'''
+    if request.remote_addr not in ("127.0.0.1", "::1"):
         raise HTTPError(403, "The admin API can only be used from this computer")
+    if host_of(request.host) not in LOCAL_HOSTS:
+        raise HTTPError(403, "The admin API can only be used through localhost or 127.0.0.1")
+    origin = request.headers.get("Origin")
+    if request.method not in ("GET", "HEAD", "OPTIONS") and origin is not None \
+            and origin.rstrip("/") != request.host_url.rstrip("/"):
+        raise HTTPError(403, "The admin API only accepts changes from the admin panel of this project")
 
 
 def body():
