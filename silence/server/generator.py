@@ -86,7 +86,8 @@ def custom_keys():
                 try:
                     with open(os.path.join(folder, f), encoding="utf8") as fh:
                         for data in json.load(fh).values():
-                            keys.add(route_key(data.get("method", "GET"), data.get("route", "")))
+                            if not data.get("disabled"):
+                                keys.add(route_key(data.get("method", "GET"), data.get("route", "")))
                 except (ValueError, AttributeError):
                     pass
     return keys
