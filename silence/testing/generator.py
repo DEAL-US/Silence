@@ -13,8 +13,8 @@ from silence.testing.model import Test, short_unit
 #   positive: the request that should work (2xx);
 #   negative: no session (401), another role (403), another owner (403),
 #             a row that does not exist (404), a required param missing (400).
-# Silence does not run them: the admin panel does. A custom test with the name of
-# a generated one replaces it (see model.all_tests).
+# Silence does not run them: the admin panel does. They are not edited; the
+# custom tests (tests/<table>.json) cannot use their names.
 ###############################################################################
 
 TEST_PASSWORD = "Test-1234"

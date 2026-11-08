@@ -249,10 +249,11 @@ id, "expect": 403}` o `"expect": {"status": 400, "message": "validSalary"}`) o l
 `silence/testing/model.py`. Hay dos clases:
 
 - **generados** (`source: auto`): Silence los deduce de los endpoints y de los datos cada vez que
-  se piden; no se guardan, así que siempre siguen a los endpoints. `file` es el fichero de su
-  tabla, donde iría si se personaliza.
-- **propios** (`source: custom`): `tests/<tabla>.json`. Uno con el nombre de un generado lo
-  sustituye; al borrarlo, vuelve el generado.
+  se piden; no se guardan ni se editan, así que siempre siguen a los endpoints. `file` es el de
+  su tabla.
+- **propios** (`source: custom`): `tests/<tabla>.json`, del alumno (por ejemplo, para las reglas
+  de negocio). No pueden llamarse como un generado (409; uno así en un fichero sale como error y
+  no se carga).
 
 Los **tests compuestos** (secuencias de unitarios) no son de Silence: los guarda y los ejecuta el
 panel (ver «Datos del panel»). Un fichero `tests/auto_*.json` de una versión anterior no se
@@ -273,7 +274,7 @@ errores. `definition` va tal como está en el fichero (en los generados, en form
 ```
 
 **`GET`/`PUT`/`DELETE /tests/{file}/{name}`**: como los de los endpoints (`data` es el test), solo
-para los propios. Un test con `steps` (es un compuesto: va en los datos del panel) o con otra
+para los propios; `PUT` con el nombre de un generado, 409. Un test con `steps` (es un compuesto: va en los datos del panel) o con otra
 cosa esperada que no sea `status` y `message` no es válido (400).
 
 Silence no ejecuta los tests: no hay `tests/run`, `tests/try` ni `silence test`. Tampoco se

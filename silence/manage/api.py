@@ -310,6 +310,8 @@ def validate_endpoint(name, data, path):
 
 def validate_test(name, data, path):
     test_model.Test(name, data, path)
+    if name in test_model.generated_names():
+        raise HTTPError(409, f"'{name}' is the name of a generated test: choose another one")
     clash = next((t for t in test_model.load_tests().tests
                   if t.name == name and t.file != os.path.basename(path)), None)
     if clash:
@@ -442,8 +444,8 @@ def generate_endpoints_route():
 
 @manage.route("/tests")
 def list_tests():
-    '''All the tests (the generated ones, computed now, and the custom ones, which replace the
-    generated ones with their name), the versions of the custom files and the loading errors'''
+    '''All the tests (the generated ones, computed now, and the custom ones), the versions of the
+    custom files and the loading errors'''
     suite = test_model.all_tests() if db_ok() else test_model.load_tests()
     tests = []
     for t in suite.tests:
@@ -467,7 +469,7 @@ def put_test(file, name):
 
 @manage.route("/tests/<file>/<name>", methods=["DELETE"])
 def delete_test(file, name):
-    '''Deletes a custom test (if it replaced a generated one, the generated one is seen again)'''
+    '''Deletes a custom test'''
     return delete_entry(TESTS, file, name)
 
 

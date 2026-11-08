@@ -10,10 +10,10 @@ from silence.exceptions import TestDefinitionError
 #
 #   generated  computed by Silence from the endpoints and the data whenever they
 #              are asked for (silence/testing/generator.py): they are not files,
-#              so they always follow the endpoints.
-#   custom     tests/<table>.json, written by the student (from the admin panel).
-#              A custom test with the name of a generated one replaces it;
-#              deleting it brings the generated one back.
+#              so they always follow the endpoints, and they are not edited.
+#   custom     tests/<table>.json, written by the student (from the admin panel),
+#              e.g., for the business rules. Their names cannot be the names of
+#              generated tests.
 # The composite tests (sequences of unit tests) belong to the admin panel.
 #
 #   "employees_updateSalary_403": {
@@ -175,15 +175,28 @@ def load_tests():
     return Suite([t for t in tests if t.name not in duplicated], errors)
 
 
+def generated_names():
+    '''The names of the generated tests (empty if they cannot be generated)'''
+    try:
+        from silence.testing.generator import generated_tests
+        return {t.name for t in generated_tests()}
+    except Exception:
+        return set()
+
+
 def all_tests():
-    '''The generated tests (if the database is reachable) and the custom ones, which replace the
-    generated ones with their name'''
+    '''The generated tests (if the database is reachable) and the custom ones. A custom test with
+    the name of a generated one is not loaded (an error says so)'''
     suite = load_tests()
-    customs = {t.name for t in suite.tests}
     generated = []
     try:
         from silence.testing.generator import generated_tests
-        generated = [t for t in generated_tests() if t.name not in customs]
+        generated = generated_tests()
     except Exception as exc:  # E.g., the database is not reachable: only the custom ones
         suite.errors.append(f"the tests cannot be generated: {exc}")
-    return Suite(generated + suite.tests, suite.errors)
+    names = {t.name for t in generated}
+    for t in suite.tests:
+        if t.name in names:
+            suite.errors.append(f"'{t.name}' in {t.file} has the name of a generated test: rename it")
+    customs = [t for t in suite.tests if t.name not in names]
+    return Suite(generated + customs, suite.errors)

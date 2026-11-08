@@ -85,15 +85,12 @@ def try_tests():
     # Silence does not run tests nor generates, customizes or exports files of tests
     for path in ("/tests/run", "/tests/generate", "/tests/export", f"/tests/{generated[0]['file']}/{generated[0]['name']}/customize"):
         assert requests.post(ADMIN + path, json={}).status_code in (404, 405), path
-    # A custom test with the name of a generated one replaces it; deleting it brings it back
-    g = next(t for t in generated if t["name"] == "departments_getById_not_found")
+    # The generated tests are not edited: a custom test cannot take the name of one
     mine = {"description": "mine", "GET /departments/999999999": None, "expect": 404}
-    assert requests.put(f"{ADMIN}/tests/departments/{g['name']}", json=mine).status_code == 201
-    same = [t for t in requests.get(ADMIN + "/tests").json()["tests"] if t["name"] == g["name"]]
-    assert len(same) == 1 and same[0]["source"] == "custom" and same[0]["description"] == "mine"
-    assert requests.delete(f"{ADMIN}/tests/departments/{g['name']}").status_code == 200
-    back = [t for t in requests.get(ADMIN + "/tests").json()["tests"] if t["name"] == g["name"]]
-    assert len(back) == 1 and back[0]["source"] == "auto"
+    assert requests.put(f"{ADMIN}/tests/departments/departments_getById_not_found", json=mine).status_code == 409
+    assert requests.put(f"{ADMIN}/tests/departments/departments_mine", json=mine).status_code == 201
+    assert [t["source"] for t in requests.get(ADMIN + "/tests").json()["tests"] if t["name"] == "departments_mine"] == ["custom"]
+    assert requests.delete(f"{ADMIN}/tests/departments/departments_mine").status_code == 200
     # A unit test expects a status and a message; composite tests belong to the admin panel
     assert requests.put(ADMIN + "/tests/ci_check/flow", json={"steps": ["a"]}).status_code == 400
     assert requests.put(ADMIN + "/tests/ci_check/rows", json={"GET /departments": None, "expect": {"count": 3}}).status_code == 400
