@@ -6,16 +6,16 @@ import pymysql
 from flask import Blueprint, jsonify, request, current_app
 
 from silence import __version__
-from silence.auth.passwords import password_status, hash_password, is_argon2
+from silence.auth.passwords import password_status, hash_password
 from silence.db import dal, schema as db_schema
 from silence.db.connector import test_connection
 from silence.db.errors import to_http_error
 from silence.exceptions import HTTPError, DatabaseError
 from silence.settings import settings, PROJECT_FILE
-from silence.server import stats, watcher
-from silence.server.endpoints import REGISTRY, endpoints_dir, AUTO_PREFIX, route_key, Endpoint
+from silence.server import watcher
+from silence.server.endpoints import REGISTRY, AUTO_PREFIX, Endpoint
 from silence.server.session import get_field
-from silence.project.files import read_json, write_json, etag_of, etags, safe_name
+from silence.project.files import read_json, etag_of, safe_name
 from silence.testing import model as test_model
 from silence.manage import schemas
 
@@ -29,9 +29,6 @@ from silence.manage import schemas
 API_VERSION = 1
 PREFIX = f"/_silence/v{API_VERSION}"
 manage = Blueprint("manage", __name__, url_prefix=PREFIX)
-
-CONFIG_SECTIONS = ("server", "database", "auth", "js_api", "debug")
-
 
 @manage.before_request
 def only_local():
@@ -88,9 +85,16 @@ def scripts_missing():
     return [f"database.scripts: there is no sql/{s}" for s in absent]
 
 
+def endpoint_dict(e):
+    d = e.to_dict()
+    d["file"] = d["file"].removesuffix(".json")
+    return d
+
+
 @manage.route("/status")
 def status():
-    '''State of the project: database, users, endpoints, tests, errors and revision'''
+    '''State of the project: database, users, the endpoints that are being served, tests, errors and
+    revision'''
     db_error = test_connection(settings.DB_CONN) if settings.DB_CONN["database"] else "no database selected"
     suite = test_model.load_tests()  # The custom ones: generating the others takes a while
     return jsonify({
@@ -101,56 +105,11 @@ def status():
         "auth": {"linked": settings.AUTH_LINKED, **settings.project["auth"]},
         "endpoints": {"count": len(REGISTRY.endpoints),
                       "auto": sum(1 for e in REGISTRY.endpoints if e.source == "auto"),
-                      "custom": sum(1 for e in REGISTRY.endpoints if e.source == "custom")},
+                      "custom": sum(1 for e in REGISTRY.endpoints if e.source == "custom"),
+                      "list": [endpoint_dict(e) for e in REGISTRY.endpoints]},
         "tests": {"custom": len(suite.tests)},
         "errors": {"config": settings.errors + scripts_missing(), "endpoints": REGISTRY.errors, "tests": suite.errors},
     })
-
-
-###############################################################################
-# Configuration (silence.json)
-###############################################################################
-
-@manage.route("/config")
-def get_config():
-    '''silence.json, without the secret key'''
-    data = {k: v for k, v in settings.project.items() if k != "secret_key"}
-    return jsonify({"config": data, "etag": etag_of(settings.PROJECT_PATH)})
-
-
-@manage.route("/config/<section>", methods=["PATCH"])
-def patch_config(section):
-    '''Changes some values of a section (server, database, auth, js_api or debug)'''
-    if section not in CONFIG_SECTIONS:
-        raise HTTPError(404, f"Unknown section '{section}'")
-    check_if_match(settings.PROJECT_PATH)
-    values = request.get_json(silent=True)
-    if section == "debug":
-        if not isinstance(values, dict) or "debug" not in values:
-            raise HTTPError(400, "Send {\"debug\": true|false}")
-        values = bool(values["debug"])
-    elif not isinstance(values, dict):
-        raise HTTPError(400, "Send an object with the values to change")
-    if section == "database" and isinstance(values.get("scripts"), list):
-        from silence.db import scripts
-        absent = scripts.missing([s for s in values["scripts"] if isinstance(s, str)])
-        if absent:
-            raise HTTPError(400, f"Not saved: there is no {', '.join('sql/' + s for s in absent)} in the project")
-    if section == "database" and set(values) - {"scripts"}:
-        new = {**settings.project["database"], **values}
-        error = test_connection({"host": new["host"], "port": new["port"], "username": new["user"],
-                                 "password": new["password"], "database": new["name"]})
-        if error:
-            raise HTTPError(400, f"Cannot connect: {error}")
-    try:
-        settings.update(section, values)
-    except ValueError as exc:
-        raise HTTPError(400, f"Not saved: {exc}")
-    db_schema.invalidate()
-    REGISTRY.load()
-    watcher.bump()
-    restart = section == "server" and any(k in values for k in ("address", "port"))
-    return jsonify({"restartNeeded": restart, "etag": etag_of(settings.PROJECT_PATH)})
 
 
 ###############################################################################
@@ -286,251 +245,246 @@ def user_session(user_id):
     return jsonify(session_for(rows[0]))
 
 
-@manage.route("/hash", methods=["POST"])
-def hash_value():
-    '''The argon2 hash of a password (as silence hash)'''
-    from silence.auth.passwords import _hasher
-    password = body().get("password")
-    if not password:
-        raise HTTPError(400, "The password cannot be empty")
-    return jsonify({"hash": _hasher.hash(password)})
-
-
 ###############################################################################
-# Endpoints and tests: files as resources (/{kind}/{file}/{name})
+# Generation: the endpoints from the schema, and the tests from the
+# endpoints and the data (they are not files: computed when asked for)
 ###############################################################################
-
-class Kind:
-    '''What changes between endpoints and tests'''
-    def __init__(self, name, folder, validate, load, generate):
-        self.name, self.folder, self.validate, self.load, self.generate = name, folder, validate, load, generate
-
-    def path(self, file):
-        return os.path.join(self.folder(), f"{file}.json")
-
-
-def validate_endpoint(name, data, path):
-    ep = Endpoint(name, data, path)
-    # A custom endpoint may replace an autogenerated one, not another custom one
-    clash = next((e for e in REGISTRY.endpoints if e.key == ep.key and e.source == "custom"
-                  and not (e.file == os.path.basename(path) and e.name == name)), None)
-    if clash:
-        raise HTTPError(409, f"{ep.key} is already defined as '{clash.name}' in {clash.file}")
-
-
-def validate_test(name, data, path):
-    test_model.Test(name, data, path)
-    if name in test_model.generated_names():
-        raise HTTPError(409, f"'{name}' is the name of a generated test: choose another one")
-    clash = next((t for t in test_model.load_tests().tests
-                  if t.name == name and t.file != os.path.basename(path)), None)
-    if clash:
-        raise HTTPError(409, f"There is already a test '{name}' in {clash.file}")
-
-
-def generate_endpoints(tables):
-    from silence.server import generator
-    return generator.generate(tables)
-
-
-ENDPOINTS = Kind("endpoint", endpoints_dir, validate_endpoint, REGISTRY.load, generate_endpoints)
-TESTS = Kind("test", test_model.tests_dir, validate_test, lambda: None, None)
-
-
-def get_entry(kind, file, name):
-    file, name = name_or_400(file), name_or_400(name)
-    content = read_json(kind.path(file))
-    if name not in content:
-        raise HTTPError(404, f"There is no {kind.name} '{name}' in {file}.json")
-    return jsonify({"file": file, "name": name, "data": content[name], "etag": etag_of(kind.path(file))})
-
-
-def put_entry(kind, file, name):
-    file, name = name_or_400(file), name_or_400(name)
-    if file.startswith(AUTO_PREFIX):
-        raise HTTPError(400, f"Autogenerated {kind.name}s are not edited: customize it first")
-    path = kind.path(file)
-    check_if_match(path)
-    data = request.get_json(silent=True)
-    if not isinstance(data, dict):
-        raise HTTPError(400, f"Send the {kind.name} as an object")
-    try:
-        kind.validate(name, data, path)
-    except HTTPError:
-        raise
-    except Exception as exc:
-        raise HTTPError(400, str(exc))
-    content = read_json(path)
-    created = name not in content
-    content[name] = data
-    etag = write_json(path, content)
-    kind.load()
-    watcher.bump()
-    return jsonify({"file": file, "name": name, "etag": etag}), 201 if created else 200
-
-
-def delete_entry(kind, file, name):
-    file, name = name_or_400(file), name_or_400(name)
-    if file.startswith(AUTO_PREFIX):
-        raise HTTPError(400, f"Autogenerated {kind.name}s are removed by generating them again")
-    path = kind.path(file)
-    check_if_match(path)
-    content = read_json(path)
-    if content.pop(name, None) is None:
-        raise HTTPError(404, f"There is no {kind.name} '{name}' in {file}.json")
-    etag = write_json(path, content)
-    kind.load()
-    watcher.bump()
-    return jsonify({"deleted": True, "etag": etag})
-
-
-def customize_entry(kind, file, name):
-    file, name = name_or_400(file), name_or_400(name)
-    if not file.startswith(AUTO_PREFIX):
-        raise HTTPError(400, f"Only autogenerated {kind.name}s are customized")
-    auto_path = kind.path(file)
-    table = file[len(AUTO_PREFIX):]
-    custom_path = kind.path(table)
-    auto, custom = read_json(auto_path), read_json(custom_path)
-    if name not in auto:
-        raise HTTPError(404, f"There is no {kind.name} '{name}' in {file}.json")
-    new_name = name if name not in custom else f"{name}_custom"
-    custom[new_name] = auto.pop(name)
-    write_json(custom_path, custom)
-    write_json(auto_path, auto)
-    kind.load()
-    watcher.bump()
-    return jsonify({"file": table, "name": new_name})
-
-
-@manage.route("/endpoints")
-def list_endpoints():
-    '''All the endpoints, the files with their versions and the loading errors'''
-    REGISTRY.load()
-    eps = []
-    for e in REGISTRY.endpoints:
-        d = e.to_dict()
-        d["file"] = d["file"].removesuffix(".json")
-        eps.append(d)
-    return jsonify({"endpoints": eps, "files": etags(endpoints_dir()), "errors": REGISTRY.errors,
-                    "apiPrefix": settings.API_PREFIX})
-
-
-@manage.route("/endpoints/<file>/<name>")
-def get_endpoint(file, name):
-    '''An endpoint'''
-    return get_entry(ENDPOINTS, file, name)
-
-
-@manage.route("/endpoints/<file>/<name>", methods=["PUT"])
-def put_endpoint(file, name):
-    '''Creates or replaces a custom endpoint'''
-    return put_entry(ENDPOINTS, file, name)
-
-
-@manage.route("/endpoints/<file>/<name>", methods=["DELETE"])
-def delete_endpoint(file, name):
-    '''Deletes a custom endpoint'''
-    return delete_entry(ENDPOINTS, file, name)
-
-
-@manage.route("/endpoints/<file>/<name>/customize", methods=["POST"])
-def customize_endpoint(file, name):
-    '''Moves an autogenerated endpoint to the custom file of its table'''
-    return customize_entry(ENDPOINTS, file, name)
-
 
 @manage.route("/endpoints/generate", methods=["POST"])
-def generate_endpoints_route():
+def generate_endpoints():
     '''Generates the autogenerated endpoints and the JS API (as silence createapi)'''
+    from silence.server import generator
     require_db()
     try:
-        res = generate_endpoints(body().get("tables") or None)
+        res = generator.generate(body().get("tables") or None)
     except ValueError as exc:
         raise HTTPError(400, str(exc))
     watcher.bump()
     return jsonify(res)
 
 
-@manage.route("/tests")
-def list_tests():
-    '''All the tests (the generated ones, computed now, and the custom ones), the versions of the
-    custom files and the loading errors'''
-    suite = test_model.all_tests() if db_ok() else test_model.load_tests()
-    tests = []
-    for t in suite.tests:
+@manage.route("/tests/generated")
+def generated_tests():
+    '''The generated tests, computed now from the endpoints and the data of the database
+    (the custom ones are the files tests/*.json)'''
+    from silence.testing.generator import generated_tests as generate
+    require_db()
+    try:
+        tests = generate()
+    except DatabaseError as exc:
+        raise to_http_error(exc)
+    res = []
+    for t in tests:
         d = t.to_dict()
         d["file"] = d["file"].removesuffix(".json")
-        tests.append(d)
-    return jsonify({"tests": tests, "files": etags(test_model.tests_dir()), "errors": suite.errors})
-
-
-@manage.route("/tests/<file>/<name>")
-def get_test(file, name):
-    '''A test'''
-    return get_entry(TESTS, file, name)
-
-
-@manage.route("/tests/<file>/<name>", methods=["PUT"])
-def put_test(file, name):
-    '''Creates or replaces a custom test'''
-    return put_entry(TESTS, file, name)
-
-
-@manage.route("/tests/<file>/<name>", methods=["DELETE"])
-def delete_test(file, name):
-    '''Deletes a custom test'''
-    return delete_entry(TESTS, file, name)
+        res.append(d)
+    return jsonify({"tests": res})
 
 
 ###############################################################################
-# The admin panel's own data (e.g., its scenarios), in the project's
-# admin/data/<name>.json. Silence stores it without knowing what it is.
+# The files of the project: silence.json, endpoints/*.json, tests/*.json, the
+# admin panel's own data (admin/data/*.json, e.g., its scenarios) and the log
+# of requests (admin/logs/requests.log). Each one is checked as what it is
+# before saving it; the rest of the project is not reachable.
 ###############################################################################
 
-def panel_data_path(name):
-    return os.path.join(settings.PROJECT_DIR, "admin", "data", f"{name_or_400(name)}.json")
+NAME = r"[A-Za-z0-9_-]+"
+FILES = [  # (pattern, kind, folder that is listed)
+    (re.compile(r"silence\.json"), "config", None),
+    (re.compile(rf"endpoints/{NAME}\.json"), "endpoints", "endpoints"),
+    (re.compile(rf"tests/{NAME}\.json"), "tests", "tests"),
+    (re.compile(rf"admin/data/{NAME}\.json"), "panel", "admin/data"),
+    (re.compile(r"admin/logs/requests\.log"), "log", "admin/logs"),
+]
 
 
-@manage.route("/panel-data/<name>")
-def get_panel_data(name):
-    '''Data saved by the admin panel (null if there is none)'''
-    path = panel_data_path(name)
-    data = read_json(path) if os.path.isfile(path) else None
-    return jsonify({"name": name, "data": data, "etag": etag_of(path)})
+def file_kind(path):
+    for pattern, kind, _ in FILES:
+        if pattern.fullmatch(path):
+            return kind
+    raise HTTPError(403, f"'{path}' is not a file that can be managed: silence.json, endpoints/*.json, "
+                         "tests/*.json, admin/data/*.json or admin/logs/requests.log")
 
 
-@manage.route("/panel-data/<name>", methods=["PUT"])
-def put_panel_data(name):
-    '''Saves data of the admin panel (any JSON), in admin/data/<name>.json'''
-    path = panel_data_path(name)
-    check_if_match(path)
-    data = request.get_json(silent=True)
-    if data is None:
-        raise HTTPError(400, "Send the data as JSON")
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-        f.write("\n")
-    return jsonify({"name": name, "etag": etag_of(path)})
+def full_path(path):
+    return os.path.join(settings.PROJECT_DIR, *path.split("/"))
 
 
-###############################################################################
-# Statistics
-###############################################################################
-
-@manage.route("/stats")
-def get_stats():
-    '''Requests since Silence started: the student's API, Silence's API and the web app'''
-    return jsonify(stats.snapshot())
+def is_auto(path):
+    return os.path.basename(path).startswith(AUTO_PREFIX)
 
 
-@manage.route("/stats", methods=["DELETE"])
-def reset_stats():
-    '''Resets the statistics'''
-    stats.reset()
-    return jsonify({"reset": True})
+def json_body():
+    try:
+        return json.loads(request.get_data(as_text=True))
+    except ValueError:
+        raise HTTPError(400, "Send the content of the file as JSON")
 
+
+def entries_or_400(data, what):
+    if not isinstance(data, dict):
+        raise HTTPError(400, f"The file must contain an object with the {what} by name")
+    for name in data:
+        name_or_400(name)
+    return data
+
+
+def check_endpoints(path, data):
+    file = os.path.basename(path)
+    keys = {}
+    for name, definition in entries_or_400(data, "endpoints").items():
+        try:
+            ep = Endpoint(name, definition, path)
+        except Exception as exc:
+            raise HTTPError(400, f"{name}: {exc}")
+        if ep.key in keys:
+            raise HTTPError(409, f"{ep.key} is defined twice in {file}: '{keys[ep.key]}' and '{name}'")
+        keys[ep.key] = name
+        # A custom endpoint may replace an autogenerated one, not another custom one
+        clash = next((e for e in REGISTRY.endpoints if e.key == ep.key and e.source == "custom"
+                      and e.file != file), None)
+        if clash:
+            raise HTTPError(409, f"{ep.key} is already defined as '{clash.name}' in {clash.file}")
+
+
+def check_tests(path, data):
+    file = os.path.basename(path)
+    entries = entries_or_400(data, "tests")
+    for name, definition in entries.items():
+        try:
+            test_model.Test(name, definition, path)
+        except Exception as exc:
+            raise HTTPError(400, f"{name}: {exc}")
+    if not entries:
+        return
+    generated = test_model.generated_names() & set(entries)
+    if generated:
+        raise HTTPError(409, f"'{sorted(generated)[0]}' is the name of a generated test: choose another one")
+    clash = next((t for t in test_model.load_tests().tests if t.name in entries and t.file != file), None)
+    if clash:
+        raise HTTPError(409, f"There is already a test '{clash.name}' in {clash.file}")
+
+
+def save_config(data):
+    '''silence.json: checked, and its connection tried, before saving it; the secret key is kept'''
+    from silence.db import scripts
+    if not isinstance(data, dict):
+        raise HTTPError(400, "silence.json must contain an object")
+    db = data.get("database") if isinstance(data.get("database"), dict) else {}
+    listed = db.get("scripts")
+    if isinstance(listed, list):
+        absent = scripts.missing([s for s in listed if isinstance(s, str)])
+        if absent:
+            raise HTTPError(400, f"Not saved: there is no {', '.join('sql/' + s for s in absent)} in the project")
+    old = settings.project
+    conn = ("host", "port", "user", "password", "name")
+    if any(db.get(k, old["database"][k]) != old["database"][k] for k in conn) and db.get("name"):
+        new = {**old["database"], **db}
+        error = test_connection({"host": new["host"], "port": new["port"], "username": new["user"],
+                                 "password": new["password"], "database": new["name"]})
+        if error:
+            raise HTTPError(400, f"Not saved: cannot connect: {error}")
+    old_server = dict(old["server"])
+    try:
+        settings.replace(data)
+    except ValueError as exc:
+        raise HTTPError(400, f"Not saved: {exc}")
+    db_schema.invalidate()
+    REGISTRY.load()
+    server = settings.project["server"]
+    return {"restartNeeded": any(server[k] != old_server[k] for k in ("address", "port"))}
+
+
+@manage.route("/files")
+def list_files():
+    '''The files that can be managed, with their versions (only those of a folder with ?dir=)'''
+    folder = request.args.get("dir")
+    folders = [f for _, _, f in FILES if f]
+    if folder is not None and folder not in folders:
+        raise HTTPError(400, f"dir must be one of: {', '.join(folders)}")
+    res = []
+    if folder is None and os.path.isfile(settings.PROJECT_PATH):
+        res.append({"path": PROJECT_FILE, "etag": etag_of(settings.PROJECT_PATH)})
+    for f in [folder] if folder else folders:
+        where = full_path(f)
+        if os.path.isdir(where):
+            for name in sorted(os.listdir(where)):
+                rel = f"{f}/{name}"
+                if any(p.fullmatch(rel) for p, _, _ in FILES) and os.path.isfile(os.path.join(where, name)):
+                    res.append({"path": rel, "etag": etag_of(os.path.join(where, name))})
+    return jsonify({"files": res})
+
+
+@manage.route("/files/<path:path>")
+def get_file(path):
+    '''A file: its content (JSON, or the text of the log) and its version; null if it does not exist'''
+    kind = file_kind(path)
+    where = full_path(path)
+    if kind == "config":
+        data = {k: v for k, v in settings.project.items() if k != "secret_key"}
+    elif not os.path.isfile(where):
+        data = None
+    elif kind == "log":
+        with open(where, encoding="utf8", errors="replace") as f:
+            data = f.read()
+    else:
+        try:
+            data = read_json(where)
+        except ValueError as exc:
+            raise HTTPError(409, f"{path} is not valid JSON: {exc}")
+    return jsonify({"path": path, "data": data, "etag": etag_of(where)})
+
+
+@manage.route("/files/<path:path>", methods=["PUT"])
+def put_file(path):
+    '''Saves a file (all of it), after checking it as what it is'''
+    kind = file_kind(path)
+    where = full_path(path)
+    if kind == "log":
+        raise HTTPError(403, "The log is written by Silence: it can only be read or deleted")
+    if kind in ("endpoints", "tests") and is_auto(path):
+        raise HTTPError(403, f"{path} is autogenerated: write the custom file of the table, whose "
+                             "endpoints replace the autogenerated ones with the same method and route")
+    check_if_match(where)
+    data = json_body()
+    created = not os.path.isfile(where)
+    extra = {}
+    if kind == "config":
+        extra = save_config(data)
+    else:
+        if kind == "endpoints":
+            check_endpoints(where, data)
+        elif kind == "tests":
+            check_tests(where, data)
+        os.makedirs(os.path.dirname(where), exist_ok=True)
+        with open(where, "w", encoding="utf8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+            f.write("\n")
+        if kind == "endpoints":
+            REGISTRY.load()
+    if kind != "panel":
+        watcher.bump()
+    return jsonify({"path": path, "etag": etag_of(where), **extra}), 201 if created else 200
+
+
+@manage.route("/files/<path:path>", methods=["DELETE"])
+def delete_file(path):
+    '''Deletes a file (the log: resets the console and the statistics of the panel)'''
+    kind = file_kind(path)
+    where = full_path(path)
+    if kind == "config":
+        raise HTTPError(403, "silence.json cannot be deleted")
+    if kind in ("endpoints", "tests") and is_auto(path):
+        raise HTTPError(403, f"{path} is autogenerated: generate the endpoints again instead")
+    check_if_match(where)
+    if not os.path.isfile(where):
+        raise HTTPError(404, f"There is no {path}")
+    os.remove(where)
+    if kind == "endpoints":
+        REGISTRY.load()
+    if kind in ("endpoints", "tests"):
+        watcher.bump()
+    return jsonify({"deleted": True})
 
 ###############################################################################
 # OpenAPI, built from the routes of this blueprint and their docstrings
@@ -553,7 +507,7 @@ def openapi():
             response, request_body = schemas.OPERATIONS.get(op_id, (None, None))
             json_of = lambda schema: {"content": {"application/json": {"schema": schema}}}
             ok = {"description": "OK", **json_of(schemas.ref(response))} if response else {"description": "OK"}
-            status = "201" if op_id in ("put_endpoint", "put_test") else "200"
+            status = "201" if op_id == "put_file" else "200"
             op = {"summary": summary, "operationId": op_id,
                   "responses": {"200": ok, **({"201": ok} if status == "201" else {}),
                                 "default": {"description": "Error", **json_of(schemas.ref("Error"))}}}

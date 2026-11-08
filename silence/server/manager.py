@@ -14,7 +14,7 @@ from silence.exceptions import HTTPError
 from silence.logging.default_logger import logger
 from silence.logging.utils import COLORS, RESET
 from silence.utils.silence_json_encoder import SilenceJSONProvider
-from silence.server import stats
+from silence.server import requestlog
 from silence.server.endpoints import REGISTRY, run as run_endpoint
 from silence.server import auth_endpoints
 
@@ -44,7 +44,7 @@ def is_api_path(path):
 
 
 def is_admin_path(path):
-    '''The admin panel (/admin) and the admin API (/_silence): neither logged nor counted'''
+    '''The admin panel (/admin) and the admin API (/_silence): not logged'''
     return path in ("/admin", "/_silence") or path.startswith(("/admin/", "/_silence/"))
 
 
@@ -68,25 +68,25 @@ def dispatch(path):
     sub = "/" + path.strip("/") if path else ""
 
     if sub == "" and method == "GET":
-        g.log_group, g.stats_key = "silence", "GET /"
+        g.log_group, g.log_route = "silence", "/"
         return jsonify(api_summary()), 200
     if sub == "/login" and method == "POST" and settings.ENABLE_LOGIN:
-        g.log_group, g.stats_key = "silence", "POST /login"
+        g.log_group, g.log_route = "silence", "/login"
         res, status = auth_endpoints.login()
         return jsonify(res), status
     if sub == "/register" and method == "POST" and settings.ENABLE_REGISTER:
-        g.log_group, g.stats_key = "silence", "POST /register"
+        g.log_group, g.log_route = "silence", "/register"
         res, status = auth_endpoints.register()
         return jsonify(res), status
 
     ep, url_params = REGISTRY.match(method, sub)
     if ep is None:
-        g.log_group, g.stats_key, g.stats_matched = "api", f"{method} {sub}", False
+        g.log_group = "api"
         if REGISTRY.route_exists(sub):
             raise HTTPError(405, f"{method} is not allowed on {settings.API_PREFIX}{sub}")
         raise HTTPError(404, f"There is no endpoint {method} {settings.API_PREFIX}{sub}")
 
-    g.log_group, g.stats_key = "api", f"{ep.method} {ep.route}"
+    g.log_group, g.log_route = "api", ep.route
     res, status = run_endpoint(ep, url_params)
     return jsonify(res), status
 
@@ -183,38 +183,34 @@ def start_timer():
     g.start = time.perf_counter()
 
 
-def count(response, group, path):
-    '''Records the request in the statistics (stats.py)'''
+def write_log(response, group, message):
+    '''The line of the request in admin/logs/requests.log (requestlog.py)'''
     elapsed = (time.perf_counter() - g.get("start", time.perf_counter())) * 1000
-    code = response.status_code
-    if group == "web":
-        size = response.content_length if response.content_length is not None else 0
-        stats.record_web(path, code, size)
-    else:
-        key = g.get("stats_key") or f"{request.method} {path}"
-        stats.record_api(group, request.method, key, code, elapsed, matched=g.get("stats_matched", True))
+    size = response.content_length if response.content_length is not None else 0
+    query = request.query_string.decode("latin-1")
+    requestlog.write(requestlog.line(group, request.method, request.path, query, response.status_code,
+                                     elapsed, size, g.get("log_route"), message))
 
 
 @APP.after_request
 def log_request(response):
     path = request.path
     if path == "/admin" or path.startswith("/admin/"):
-        return response  # The files of the admin panel: neither logged nor counted
+        return response  # The files of the admin panel: not logged
     if path == "/_silence" or path.startswith("/_silence/"):
-        return response  # The admin API (the panel's traffic): neither logged nor counted
+        return response  # The admin API (the panel's traffic): not logged
 
     group = g.get("log_group") or ("api" if is_api_path(path) else "web")
-    count(response, group, path)
-
     code = response.status_code
+    msg = (response.get_json(silent=True) or {}).get("message") if code >= 400 and response.is_json else None
+    write_log(response, group, msg)
+
     code_color = COLORS["GREEN"] if code < 400 else COLORS["YELLOW"] if code < 500 else COLORS["RED"]
     kind, kind_color = ("[WEB]", COLORS["CYAN"]) if group == "web" else ("[API]", COLORS["MAGENTA"])
     date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     line = f"{date} | {kind_color}{kind}{RESET} {request.method} {request.full_path.rstrip('?')} - {code_color}{code}{RESET}"
-    if code >= 400 and response.is_json:
-        msg = (response.get_json(silent=True) or {}).get("message")
-        if msg:
-            line += f" {msg}"
+    if msg:
+        line += f" {msg}"
     logger.info(line)
     if settings.LOG_BODIES and request.method in ("POST", "PUT") and group != "web":
         body = logged_body()
@@ -248,7 +244,7 @@ def setup():
     APP.secret_key = settings.SECRET_KEY
     APP.config["SEND_FILE_MAX_AGE_DEFAULT"] = settings.HTTP_CACHE_TIME
 
-    # Werkzeug's own request log is replaced by ours (log_and_count)
+    # Werkzeug's own request log is replaced by ours (log_request)
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     REGISTRY.load().log_errors()

@@ -1,5 +1,5 @@
 """Runs the unit tests of a running Silence project (the generated ones and the custom ones of
-tests/*.json, as GET /_silence/v1/tests gives them) through HTTP, as the admin panel does:
+tests/*.json, read with the file API) through HTTP, as the admin panel does:
 Silence does not run tests. Used by the CI (run_ci.py); not part of Silence.
 
 The requests are real: they change the database. They run in the order GET, POST, PUT, DELETE
@@ -10,6 +10,8 @@ Usage: python run_units.py http://127.0.0.1:8080   (exit code 0 only if all pass
 import sys
 
 import requests
+
+from silence.testing.model import Test
 
 ORDER = {"GET": 0, "POST": 1, "PUT": 2, "DELETE": 3}
 
@@ -34,10 +36,15 @@ def main(base):
     info = requests.get(admin + "/").json()
     api = base + info["studentApi"]["prefix"]
     header = info["studentApi"]["sessionHeader"]
-    listing = requests.get(admin + "/tests").json()
-    for err in listing["errors"]:
+    tests = requests.get(admin + "/tests/generated").json()["tests"]
+    errors = requests.get(admin + "/status").json()["errors"]["tests"]
+    for err in errors:
         print("Test error:", err)
-    tests = sorted(listing["tests"], key=lambda t: ORDER.get(t["request"]["method"], 9))
+    for f in requests.get(admin + "/files", params={"dir": "tests"}).json()["files"]:
+        content = requests.get(f"{admin}/files/{f['path']}").json()["data"]
+        for name, definition in content.items():
+            tests.append(Test(name, definition, f["path"]).to_dict())
+    tests.sort(key=lambda t: ORDER.get(t["request"]["method"], 9))
     passed = 0
     for t in tests:
         req = t["request"]
@@ -56,7 +63,7 @@ def main(base):
         else:
             passed += 1
     print(f"{passed} of {len(tests)} tests passed")
-    return 0 if passed == len(tests) and not listing["errors"] else 1
+    return 0 if passed == len(tests) and not errors else 1
 
 
 if __name__ == "__main__":

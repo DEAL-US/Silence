@@ -17,7 +17,6 @@ BOOL = {"type": "boolean"}
 NUM = {"type": "number"}
 STR_OR_NULL = {"type": ["string", "null"]}
 LIST_STR = {"type": "array", "items": STR}
-ETAGS = {"type": "object", "additionalProperties": STR, "description": "Version (etag) of each file, by name without .json"}
 
 COMPONENTS = {
     "Error": obj(["message", "code"], message=STR, code=INT),
@@ -30,8 +29,10 @@ COMPONENTS = {
                   revision=INT, apiPrefix=STR, baseUrl=STR,
                   database=obj(["name", "error"], name=STR, error=STR_OR_NULL),
                   auth={"allOf": [ref("AuthSettings"), obj(["linked"], linked=BOOL)]},
-                  endpoints=obj(["count", "auto", "custom"], count=INT, auto=INT, custom=INT),
-                  tests=obj(["custom"], custom={**INT, "description": "The custom tests (the generated ones are in GET /tests)"}),
+                  endpoints=obj(["count", "auto", "custom", "list"], count=INT, auto=INT, custom=INT,
+                                list={"type": "array", "items": ref("Endpoint"),
+                                      "description": "The endpoints that are being served"}),
+                  tests=obj(["custom"], custom={**INT, "description": "The custom tests (the generated ones are in GET /tests/generated)"}),
                   errors=obj(["config", "endpoints", "tests"], config=LIST_STR, endpoints=LIST_STR, tests=LIST_STR)),
 
     "AuthSettings": obj(["table", "identifier", "password", "role", "active", "password_mode", "login",
@@ -40,7 +41,7 @@ COMPONENTS = {
                         password_mode={"enum": ["argon2", "plain"]}, login=BOOL, register=BOOL,
                         default_role=STR, token_max_age=INT),
 
-    "Config": obj(["config", "etag"], etag=STR, config=obj(
+    "SilenceJson": obj(
         ["version", "server", "database", "auth", "js_api", "admin", "debug"],
         version=INT,
         server=obj(["address", "port", "api_prefix", "open_browser", "log_bodies", "decimals_as_strings",
@@ -52,9 +53,8 @@ COMPONENTS = {
         js_api=obj(["enabled", "dir"], enabled=BOOL, dir=STR),
         admin={"oneOf": [{"type": "null"}, obj(["repo", "version"], repo=STR, version=STR)],
                "description": "The admin panel of the project (repo and version), or null"},
-        debug=BOOL)),
+        debug=BOOL),
 
-    "ConfigSaved": obj(["restartNeeded", "etag"], restartNeeded=BOOL, etag=STR),
     "ConnectionTest": obj(["ok", "error", "databases"], ok=BOOL, error=STR_OR_NULL, databases={
         **LIST_STR, "description": "The databases that the user sees (empty if it cannot connect)"}),
 
@@ -81,7 +81,6 @@ COMPONENTS = {
                      plainPassword={"type": ["string", "null"], "description": "The password, if it is stored as plain text in plain mode"})}),
     "Updated": obj(["updated"], updated=INT),
     "Session": obj(["sessionToken", "user"], sessionToken=STR, user={"type": "object"}),
-    "Hash": obj(["hash"], hash=STR),
 
     "EndpointDefinition": obj(["route", "method", "sql"],
                               route=STR, method={"enum": ["GET", "POST", "PUT", "DELETE"]}, sql=STR,
@@ -91,12 +90,6 @@ COMPONENTS = {
         ["file", "name", "table", "source", "fullRoute", "overrides", "warnings"],
         file=STR, name=STR, table=STR, source={"enum": ["auto", "custom"]}, fullRoute=STR,
         overrides=LIST_STR, warnings=LIST_STR)]},
-    "Endpoints": obj(["apiPrefix", "endpoints", "files", "errors"], apiPrefix=STR,
-                     endpoints={"type": "array", "items": ref("Endpoint")}, files=ETAGS, errors=LIST_STR),
-    "Entry": obj(["file", "name", "data", "etag"], file=STR, name=STR, data={"type": "object"}, etag=STR),
-    "Saved": obj(["file", "name", "etag"], file=STR, name=STR, etag=STR),
-    "Deleted": obj(["deleted", "etag"], deleted=BOOL, etag=STR),
-    "Moved": obj(["file", "name"], file=STR, name=STR),
     "EndpointsGenerated": obj(["tables", "removed"], removed=LIST_STR, tables={"type": "array", "items": obj(
         ["table", "view", "generated", "custom"], table=STR, view=BOOL, generated=LIST_STR, custom=LIST_STR)}),
 
@@ -105,58 +98,33 @@ COMPONENTS = {
                 definition={"type": "object", "description": "As in the file (short or long form)"},
                 request=obj(["method", "path", "body", "as"], method=STR, path=STR, body={}, **{"as": {}}),
                 expect=obj([], status=INT, message=STR)),
-    "Tests": obj(["tests", "files", "errors"], tests={"type": "array", "items": ref("Test")}, files=ETAGS,
-                 errors=LIST_STR),
+    "GeneratedTests": obj(["tests"], tests={"type": "array", "items": ref("Test")}),
 
-    "PanelData": obj(["name", "data", "etag"], name=STR, etag=STR,
-                     data={"description": "Whatever the panel saved (any JSON), or null"}),
-    "PanelDataSaved": obj(["name", "etag"], name=STR, etag=STR),
-    "Stats": obj(["since", "api", "silence", "web"], since=NUM,
-                 api={**ref("ApiStats"), "description": "The student's endpoints"},
-                 silence={**ref("ApiStats"), "description": "What Silence gives to the student's app: login, register and the API summary"},
-                 web=obj(["requests", "notFound", "bytes", "byKind", "files"], requests=INT, notFound=INT, bytes=INT,
-                         byKind={"type": "object", "additionalProperties": INT},
-                         files={"type": "array", "items": obj(["path", "kind", "requests", "notFound", "bytes"],
-                                                              path=STR, kind=STR, requests=INT, notFound=INT,
-                                                              bytes=INT)})),
-    "ApiStats": obj(["requests", "errors", "avgMs", "byMethod", "byStatus", "endpoints", "unmatched"],
-                    requests=INT, errors=INT, avgMs=NUM,
-                    byMethod={"type": "object", "additionalProperties": INT},
-                    byStatus={"type": "object", "additionalProperties": INT},
-                    unmatched={"type": "object", "additionalProperties": INT,
-                               "description": "Requests that matched no endpoint, by method and path"},
-                    endpoints={"type": "array", "items": obj(
-                        ["method", "route", "requests", "errors", "byStatus", "avgMs", "maxMs"],
-                        method=STR, route=STR, requests=INT, errors=INT,
-                        byStatus={"type": "object", "additionalProperties": INT}, avgMs=NUM, maxMs=NUM)}),
-    "Reset": obj(["reset"], reset=BOOL),
+    "Files": obj(["files"], files={"type": "array", "items": obj(["path", "etag"], path=STR, etag=STR)}),
+    "File": obj(["path", "data", "etag"], path=STR, etag=STR, data={
+        "description": "The content: silence.json (without its secret key, see SilenceJson), the endpoints or "
+                       "the tests of a file by name, any JSON of admin/data/, or the text of the log; null if "
+                       "the file does not exist"}),
+    "FileSaved": obj(["path", "etag"], path=STR, etag=STR,
+                     restartNeeded={**BOOL, "description": "Only for silence.json: the address or the port changed"}),
+    "Deleted": obj(["deleted"], deleted=BOOL),
+
 }
 
 # operationId -> (schema of the response, schema of the request body or None)
 OPERATIONS = {
     "root": ("Root", None),
     "status": ("Status", None),
-    "get_config": ("Config", None),
-    "patch_config": ("ConfigSaved", {"type": "object"}),
     "database_test": ("ConnectionTest", obj([], host=STR, port=INT, user=STR, password=STR, name=STR)),
     "database_reload": ("Reloaded", None),
     "get_schema": ("Schema", None),
     "list_users": ("Users", None),
     "set_password": ("Updated", obj(["password"], password=STR)),
     "user_session": ("Session", None),
-    "hash_value": ("Hash", obj(["password"], password=STR)),
-    "list_endpoints": ("Endpoints", None),
-    "get_endpoint": ("Entry", None),
-    "put_endpoint": ("Saved", ref("EndpointDefinition")),
-    "delete_endpoint": ("Deleted", None),
-    "customize_endpoint": ("Moved", None),
-    "generate_endpoints_route": ("EndpointsGenerated", obj([], tables=LIST_STR)),
-    "list_tests": ("Tests", None),
-    "get_test": ("Entry", None),
-    "put_test": ("Saved", {"type": "object", "description": "The unit test, in the short or the long form"}),
-    "delete_test": ("Deleted", None),
-    "get_panel_data": ("PanelData", None),
-    "put_panel_data": ("PanelDataSaved", {"description": "Any JSON"}),
-    "get_stats": ("Stats", None),
-    "reset_stats": ("Reset", None),
+    "generate_endpoints": ("EndpointsGenerated", obj([], tables=LIST_STR)),
+    "generated_tests": ("GeneratedTests", None),
+    "list_files": ("Files", None),
+    "get_file": ("File", None),
+    "put_file": ("FileSaved", {"description": "The content of the file (JSON)"}),
+    "delete_file": ("Deleted", None),
 }

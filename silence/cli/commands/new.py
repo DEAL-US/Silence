@@ -26,7 +26,9 @@ NOT_COPIED = {".git", ".github", "README.md", "LICENSE", ".gitkeep"}
 GITIGNORE = """# Silence
 __pycache__/
 .venv/
+admin/logs/
 """
+LOGS_IGNORED = "admin/logs/"  # The log of requests (requestlog.py), also if the template has its .gitignore
 
 
 def copy_template(src, dest):
@@ -131,6 +133,12 @@ def handle(args):
     if not os.path.isfile(gitignore):
         with open(gitignore, "w", encoding="utf8") as f:
             f.write(GITIGNORE)
+    else:
+        with open(gitignore, encoding="utf8") as f:
+            ignored = f.read()
+        if LOGS_IGNORED not in ignored.split():
+            with open(gitignore, "a", encoding="utf8") as f:
+                f.write(("" if ignored.endswith("\n") or not ignored else "\n") + LOGS_IGNORED + "\n")
 
     with_panel = f" and the admin panel {admin['repo']} {admin['version']}" if admin else ""
     logger.info("The Silence project '%s' has been created from %s%s.", name, source, with_panel)

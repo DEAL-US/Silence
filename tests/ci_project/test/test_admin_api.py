@@ -6,6 +6,16 @@ from silence.logging.default_logger import logger
 from utils import BASE_URL
 
 ADMIN = BASE_URL.replace("/api", "/_silence/v1")
+FILES = ADMIN + "/files/"
+
+
+def read(path):
+    return requests.get(FILES + path).json()
+
+
+def write(path, data, etag=None):
+    headers = {"If-Match": etag} if etag is not None else {}
+    return requests.put(FILES + path, json=data, headers=headers)
 
 
 def try_root_and_status():
@@ -16,22 +26,53 @@ def try_root_and_status():
     assert s["auth"]["linked"] is True
     assert s["errors"] == {"config": [], "endpoints": [], "tests": []}
     assert isinstance(s["revision"], int)
+    # The endpoints that are being served, with their files
+    names = {(e["file"], e["name"]) for e in s["endpoints"]["list"]}
+    assert ("employees", "updateSalary") in names and len(names) == s["endpoints"]["count"]
 
 
-def try_config_without_secret():
-    c = requests.get(ADMIN + "/config").json()
-    assert "secret_key" not in c["config"] and c["etag"]
-    r = requests.patch(ADMIN + "/config/database", json={"name": "does_not_exist_db"})
-    assert r.status_code == 400  # Tested before saving: nothing changes
-    r = requests.patch(ADMIN + "/config/nothing", json={})
-    assert r.status_code == 404
-    # Invalid values are not saved
-    r = requests.patch(ADMIN + "/config/auth", json={"password_mode": "whatever"})
+def try_config_file():
+    c = read("silence.json")
+    config, etag = c["data"], c["etag"]
+    assert "secret_key" not in config and etag
+    # Tested before saving: nothing changes
+    r = write("silence.json", {**config, "database": {**config["database"], "name": "does_not_exist_db"}})
+    assert r.status_code == 400 and "connect" in r.json()["message"]
+    # Invalid values and unknown keys are not saved
+    r = write("silence.json", {**config, "auth": {**config["auth"], "password_mode": "whatever"}})
     assert r.status_code == 400 and "password_mode" in r.json()["message"]
-    r = requests.patch(ADMIN + "/config/server", json={"port": "eight"})
-    assert r.status_code == 400
-    assert requests.get(ADMIN + "/config").json()["config"]["auth"]["password_mode"] == "argon2"
+    assert write("silence.json", {**config, "server": {**config["server"], "port": "eight"}}).status_code == 400
+    assert write("silence.json", {**config, "nothing": 1}).status_code == 400
+    assert write("silence.json", [1]).status_code == 400
+    assert read("silence.json")["etag"] == etag
+    # Saved (the secret key is kept: the sessions still work), with the version that was read
+    r = write("silence.json", {**config, "debug": True}, etag)
+    assert r.status_code == 200 and r.json()["restartNeeded"] is False
+    assert write("silence.json", config, etag).status_code == 412
+    assert write("silence.json", config, r.json()["etag"]).status_code == 200
+    assert read("silence.json")["data"] == config
     assert requests.get(ADMIN + "/status").json()["errors"]["config"] == []
+    assert requests.delete(FILES + "silence.json").status_code == 403
+
+
+def try_other_files():
+    # Only the files of the project that Silence manages
+    for path in ("sql/create_tables.sql", "../x.json", "endpoints/%2E%2E/silence.json", "web/index.html",
+                 "endpoints/a.b.json", "admin/js/main.js"):
+        assert requests.get(FILES + path).status_code in (403, 404), path
+    listing = requests.get(ADMIN + "/files").json()["files"]
+    paths = [f["path"] for f in listing]
+    assert "silence.json" in paths and "endpoints/auto_employees.json" in paths and "tests/employees.json" in paths
+    assert all(f["path"].startswith("tests/") for f in requests.get(ADMIN + "/files?dir=tests").json()["files"])
+    assert requests.get(ADMIN + "/files?dir=sql").status_code == 400
+    # The admin panel's own data (e.g., its scenarios): any JSON, in admin/data/
+    assert read("admin/data/ci_check.json") == {"path": "admin/data/ci_check.json", "data": None, "etag": ""}
+    r = write("admin/data/ci_check.json", [{"name": "flow", "steps": ["a", "b"]}], "")
+    assert r.status_code == 201 and r.json()["etag"]
+    assert read("admin/data/ci_check.json")["data"][0]["steps"] == ["a", "b"]
+    assert write("admin/data/ci_check.json", [], "old").status_code == 412
+    assert requests.delete(FILES + "admin/data/ci_check.json").status_code == 200
+    assert requests.delete(FILES + "admin/data/ci_check.json").status_code == 404
 
 
 def try_schema_and_users():
@@ -43,91 +84,97 @@ def try_schema_and_users():
     token = requests.post(f"{ADMIN}/users/{users[0]['id']}/session").json()["sessionToken"]
     r = requests.get(BASE_URL + "/employees/logged", headers={"Token": token})
     assert r.status_code == 200 and r.json()[0]["employeeId"] == users[0]["id"]
-    assert requests.post(ADMIN + "/hash", json={"password": "x"}).json()["hash"].startswith("$argon2")
+
+
+def endpoint(name):
+    return next((e for e in requests.get(ADMIN + "/status").json()["endpoints"]["list"] if e["name"] == name), None)
 
 
 def try_endpoint_files():
-    res = requests.get(ADMIN + "/endpoints").json()
-    files = res["files"]
-    assert "auto_employees" in files and "employees" in files
-    # A new custom endpoint, with the version of its file
-    data = {"route": "/departments/cities", "method": "GET", "sql": "SELECT DISTINCT city FROM departments"}
-    r = requests.put(ADMIN + "/endpoints/departments_extra/cities", json=data, headers={"If-Match": ""})
+    path = "endpoints/departments_extra.json"
+    cities = {"route": "/departments/cities", "method": "GET", "sql": "SELECT DISTINCT city FROM departments"}
+    r = write(path, {"cities": cities}, "")
     assert r.status_code == 201
     assert requests.get(BASE_URL + "/departments/cities").status_code == 200
-    # An old version of the file is rejected; the same route twice too
-    r = requests.put(ADMIN + "/endpoints/departments_extra/cities", json=data, headers={"If-Match": "old"})
-    assert r.status_code == 412
-    r = requests.put(ADMIN + "/endpoints/departments_extra/again", json=data)
-    assert r.status_code == 409
-    r = requests.put(ADMIN + "/endpoints/auto_departments/x", json=data)
-    assert r.status_code == 400
+    # An old version of the file is rejected; the same route twice too; a wrong endpoint too
+    assert write(path, {"cities": cities}, "old").status_code == 412
+    assert write(path, {"cities": cities, "again": cities}).status_code == 409
+    assert write(path, {"cities": {**cities, "method": "FETCH"}}).status_code == 400
+    assert write(path, {"bad name": cities}).status_code == 400
+    # The autogenerated files are only read: they are written by generating them
+    assert read("endpoints/auto_departments.json")["data"]
+    assert write("endpoints/auto_departments.json", {}).status_code == 403
+    assert requests.delete(FILES + "endpoints/auto_departments.json").status_code == 403
     # A custom endpoint prevails over the autogenerated one with the same method and route
     over = {"route": "/departments/$departmentId", "method": "GET",
             "sql": "SELECT name FROM departments WHERE departmentId = $departmentId"}
-    assert requests.put(ADMIN + "/endpoints/departments_extra/getOne", json=over).status_code == 201
+    assert write(path, {"cities": cities, "getOne": over}).status_code == 200
     assert list(requests.get(BASE_URL + "/departments/1").json()[0]) == ["name"]
-    ep = next(e for e in requests.get(ADMIN + "/endpoints").json()["endpoints"] if e["name"] == "getOne")
-    assert ep["overrides"] == ["auto_departments.json"]
+    assert endpoint("getOne")["overrides"] == ["auto_departments.json"]
     assert requests.get(ADMIN + "/status").json()["errors"]["endpoints"] == []
-    requests.delete(ADMIN + "/endpoints/departments_extra/getOne")
-    assert len(requests.get(BASE_URL + "/departments/1").json()[0]) > 1
     # The params of the query string that the SQL uses (filters of a collection)
     above = {"route": "/departments/above", "method": "GET", "query_params": ["minId"],
              "sql": "SELECT * FROM departments WHERE departmentId > $minId"}
-    assert requests.put(ADMIN + "/endpoints/departments_extra/above", json=above).status_code == 201
+    assert write(path, {"cities": cities, "above": above}).status_code == 200
+    assert len(requests.get(BASE_URL + "/departments/1").json()[0]) > 1
     rows = requests.get(BASE_URL + "/departments/above?minId=1").json()
     assert rows and all(r["departmentId"] > 1 for r in rows)
     r = requests.get(BASE_URL + "/departments/above")
     assert r.status_code == 400 and "minId" in r.json()["message"]
-    requests.delete(ADMIN + "/endpoints/departments_extra/above")
-    r = requests.delete(ADMIN + "/endpoints/departments_extra/cities")
-    assert r.status_code == 200
+    assert requests.delete(FILES + path).status_code == 200
     assert requests.get(BASE_URL + "/departments/cities").status_code in (404, 405)
+    assert endpoint("above") is None
 
 
 def try_tests():
-    tests = requests.get(ADMIN + "/tests").json()["tests"]
-    generated = [t for t in tests if t["source"] == "auto"]
+    generated = requests.get(ADMIN + "/tests/generated").json()["tests"]
     # The generated tests are computed (not saved), each one with the file of its table and a status
-    assert generated and all(t["expect"].get("status") and not t["file"].startswith("auto_") for t in generated)
+    assert generated and all(t["source"] == "auto" and t["expect"].get("status")
+                             and not t["file"].startswith("auto_") for t in generated)
     # Silence does not run tests nor generates, customizes or exports files of tests
-    for path in ("/tests/run", "/tests/generate", "/tests/export", f"/tests/{generated[0]['file']}/{generated[0]['name']}/customize"):
+    for path in ("/tests", "/tests/run", "/tests/generate", "/tests/export"):
         assert requests.post(ADMIN + path, json={}).status_code in (404, 405), path
     # The generated tests are not edited: a custom test cannot take the name of one
     mine = {"description": "mine", "GET /departments/999999999": None, "expect": 404}
-    assert requests.put(f"{ADMIN}/tests/departments/departments_getById_not_found", json=mine).status_code == 409
-    assert requests.put(f"{ADMIN}/tests/departments/departments_mine", json=mine).status_code == 201
-    assert [t["source"] for t in requests.get(ADMIN + "/tests").json()["tests"] if t["name"] == "departments_mine"] == ["custom"]
-    assert requests.delete(f"{ADMIN}/tests/departments/departments_mine").status_code == 200
+    assert write("tests/ci_check.json", {"departments_getById_not_found": mine}).status_code == 409
+    assert write("tests/ci_check.json", {"departments_mine": mine}).status_code == 201
+    # Nor the name of a custom test of another file
+    assert write("tests/ci_check2.json", {"departments_mine": mine}).status_code == 409
     # A unit test expects a status and a message; scenarios belong to the admin panel
-    assert requests.put(ADMIN + "/tests/ci_check/flow", json={"steps": ["a"]}).status_code == 400
-    assert requests.put(ADMIN + "/tests/ci_check/rows", json={"GET /departments": None, "expect": {"count": 3}}).status_code == 400
-    # The requests to the student's API count in the statistics
-    before = requests.get(ADMIN + "/stats").json()["api"]["requests"]
-    requests.get(BASE_URL + "/departments")
-    assert requests.get(ADMIN + "/stats").json()["api"]["requests"] == before + 1
-    # Silence's group counts what Silence gives to the student's app (login...), not the admin API
-    before = requests.get(ADMIN + "/stats").json()["silence"]["requests"]
-    requests.get(ADMIN + "/status")
+    assert write("tests/ci_check.json", {"flow": {"steps": ["a"]}}).status_code == 400
+    assert write("tests/ci_check.json", {"rows": {"GET /departments": None, "expect": {"count": 3}}}).status_code == 400
+    assert requests.delete(FILES + "tests/ci_check.json").status_code == 200
+
+
+def log_lines():
+    data = read("admin/logs/requests.log")["data"]
+    return data.splitlines() if data else []
+
+
+def try_request_log():
+    """The requests to the student's app, one line each, in admin/logs/requests.log"""
+    requests.delete(FILES + "admin/logs/requests.log")
+    requests.get(BASE_URL + "/departments/1?x=a%20b")
+    requests.get(BASE_URL + "/nothing")
     requests.post(BASE_URL + "/login", json={"email": "nobody@company.com", "password": "x"})
-    assert requests.get(ADMIN + "/stats").json()["silence"]["requests"] == before + 1
-
-
-def try_panel_data():
-    """The admin panel saves its own data (e.g., its scenarios) in admin/data/"""
-    assert requests.get(ADMIN + "/panel-data/ci_check").json()["data"] is None
-    saved = requests.put(ADMIN + "/panel-data/ci_check", json=[{"name": "flow", "steps": ["a", "b"]}]).json()
-    assert saved["etag"]
-    assert requests.get(ADMIN + "/panel-data/ci_check").json()["data"][0]["steps"] == ["a", "b"]
-    r = requests.put(ADMIN + "/panel-data/ci_check", json=[], headers={"If-Match": "old"})
-    assert r.status_code == 412
-    assert requests.put(ADMIN + "/panel-data/bad.name", json=[]).status_code == 400  # Only letters, digits, _ and -
+    requests.get(ADMIN + "/status")  # The admin API (the panel) is not logged
+    lines = log_lines()
+    assert len(lines) == 3, lines
+    fields = [line.split(" ", 8) for line in lines]
+    assert fields[0][1:5] == ["api", "GET", "/api/departments/1?x=a%20b", "200"]
+    assert fields[0][5].endswith("ms") and fields[0][6].endswith("B") and fields[0][7] == "/departments/$departmentId"
+    assert fields[1][1] == "api" and fields[1][4] == "404" and fields[1][7] == "-" and "nothing" in fields[1][8]
+    assert fields[2][1:4] == ["silence", "POST", "/api/login"] and fields[2][7] == "/login"
+    assert write("admin/logs/requests.log", "x").status_code == 403
+    assert requests.delete(FILES + "admin/logs/requests.log").status_code == 200
+    requests.get(BASE_URL + "/departments")
+    assert len(log_lines()) == 1  # Created again
 
 
 def try_openapi():
     spec = requests.get(ADMIN + "/openapi.json").json()
-    assert spec["openapi"].startswith("3.") and "/endpoints/{file}/{name}" in spec["paths"]
+    assert spec["openapi"].startswith("3.") and "/files/{path}" in spec["paths"]
+    assert len([op for ops in spec["paths"].values() for op in ops]) == 14  # And openapi.json
 
 
 def try_response_schemas():
@@ -145,13 +192,15 @@ def try_response_schemas():
         errors = list(Draft202012Validator(schema).iter_errors(response.json()))
         assert not errors, (op_id, [e.message for e in errors[:3]])
 
-    db = requests.get(ADMIN + "/config").json()["config"]["database"]
+    config = requests.get(FILES + "silence.json")
+    check("get_file", config, 200)
+    config, etag = config.json()["data"], config.json()["etag"]
+    db = config["database"]
     conn = {"host": db["host"], "port": db["port"], "user": db["user"], "password": db["password"]}
     check("root", requests.get(ADMIN + "/"), 200)
     check("status", requests.get(ADMIN + "/status"), 200)
-    check("get_config", requests.get(ADMIN + "/config"), 200)
-    check("patch_config", requests.patch(ADMIN + "/config/debug", json={"debug": False}), 200)
-    check("patch_config", requests.patch(ADMIN + "/config/auth", json={"password_mode": "x"}), 400)
+    check("put_file", write("silence.json", config, etag), 200)
+    check("put_file", write("silence.json", {**config, "debug": "x"}), 400)
     test = requests.post(ADMIN + "/database/test", json={**conn, "name": db["name"]})
     check("database_test", test, 200)
     assert test.json()["ok"] and db["name"] in test.json()["databases"]
@@ -163,26 +212,20 @@ def try_response_schemas():
     check("list_users", users, 200)
     uid = users.json()["users"][0]["id"]
     check("user_session", requests.post(f"{ADMIN}/users/{uid}/session"), 200)
-    check("hash_value", requests.post(ADMIN + "/hash", json={"password": "x"}), 200)
-    check("list_endpoints", requests.get(ADMIN + "/endpoints"), 200)
-    check("get_endpoint", requests.get(ADMIN + "/endpoints/employees/updateSalary"), 200)
-    check("get_endpoint", requests.get(ADMIN + "/endpoints/employees/nothing"), 404)
-    data = {"route": "/departments/names", "method": "GET", "sql": "SELECT name FROM departments"}
-    check("put_endpoint", requests.put(ADMIN + "/endpoints/schema_check/names", json=data), 201)
-    check("put_endpoint", requests.put(ADMIN + "/endpoints/schema_check/names", json=data), 200)
-    check("put_endpoint", requests.put(ADMIN + "/endpoints/schema_check/names", json=data,
-                                       headers={"If-Match": "old"}), 412)
-    check("delete_endpoint", requests.delete(ADMIN + "/endpoints/schema_check/names"), 200)
-    tests = requests.get(ADMIN + "/tests")
-    check("list_tests", tests, 200)
-    check("get_test", requests.get(ADMIN + "/tests/employees/employees_salary_ok"), 200)
-    check("put_panel_data", requests.put(ADMIN + "/panel-data/ci_schema", json={"a": 1}), 200)
-    check("get_panel_data", requests.get(ADMIN + "/panel-data/ci_schema"), 200)
-    check("get_stats", requests.get(ADMIN + "/stats"), 200)
+    check("list_files", requests.get(ADMIN + "/files"), 200)
+    check("get_file", requests.get(FILES + "endpoints/employees.json"), 200)
+    check("get_file", requests.get(FILES + "nothing.json"), 403)
+    data = {"names": {"route": "/departments/names", "method": "GET", "sql": "SELECT name FROM departments"}}
+    check("put_file", write("endpoints/schema_check.json", data), 201)
+    check("put_file", write("endpoints/schema_check.json", data), 200)
+    check("put_file", write("endpoints/schema_check.json", data, "old"), 412)
+    check("delete_file", requests.delete(FILES + "endpoints/schema_check.json"), 200)
+    check("generated_tests", requests.get(ADMIN + "/tests/generated"), 200)
     # The scripts must exist in sql/ (nothing is saved otherwise)
-    r = requests.patch(ADMIN + "/config/database", json={"scripts": ["create_tables.sql", "nope.sql"]})
+    scripts = {**config, "database": {**db, "scripts": ["create_tables.sql", "nope.sql"]}}
+    r = write("silence.json", scripts)
     assert r.status_code == 400 and "sql/nope.sql" in r.json()["message"]
-    assert requests.get(ADMIN + "/config").json()["config"]["database"]["scripts"][-1] == "populate_database.sql"
+    assert read("silence.json")["data"]["database"]["scripts"][-1] == "populate_database.sql"
     # The database created again with database.scripts, as silence createdb of Silence 2
     reloaded = requests.post(ADMIN + "/database/reload")
     check("database_reload", reloaded, 200)
@@ -193,9 +236,10 @@ def try_response_schemas():
 
 def run():
     print("Testing the admin API...")
-    for name, test in [("root and status", try_root_and_status), ("config", try_config_without_secret),
-                       ("schema and users", try_schema_and_users), ("endpoint files", try_endpoint_files),
-                       ("tests", try_tests), ("panel data", try_panel_data), ("openapi", try_openapi),
+    for name, test in [("root and status", try_root_and_status), ("silence.json", try_config_file),
+                       ("other files", try_other_files), ("schema and users", try_schema_and_users),
+                       ("endpoint files", try_endpoint_files), ("tests", try_tests),
+                       ("request log", try_request_log), ("openapi", try_openapi),
                        ("response schemas", try_response_schemas)]:
         logger.warning("testing the admin API: %s", name)
         test()

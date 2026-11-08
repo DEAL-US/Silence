@@ -257,6 +257,26 @@ class Settings:
         self.apply()
         self.save()
 
+    def replace(self, values):
+        '''Replaces all of silence.json with values (the secret key is kept) and saves it.
+        ValueError (with the problems) if it is not valid: nothing is saved'''
+        if not isinstance(values, dict):
+            raise ValueError(f"{PROJECT_FILE} must contain an object")
+        values = {k: v for k, v in values.items() if k != "secret_key"}
+        unknown = unknown_keys(DEFAULT_PROJECT, values)
+        if unknown:
+            raise ValueError("unknown keys: " + ", ".join(unknown))
+        new = merge(DEFAULT_PROJECT, values)
+        new["secret_key"] = self.project["secret_key"]
+        errors = validate(new)
+        if errors:
+            raise ValueError("; ".join(errors))
+        self.project = new
+        self.errors = []
+        self.unknown_settings = []
+        self.apply()
+        self.save()
+
     def require_valid(self):
         '''Stops the command if silence.json has errors'''
         if self.errors:
