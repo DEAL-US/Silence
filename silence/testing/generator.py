@@ -211,10 +211,10 @@ def free_combinations(rel, body):
                 candidates.append([r["v"] for r in refs])
             else:
                 value = body[params[c]]
-                variants = [value]
+                options = [value]
                 if value is not None:
-                    variants.append(json_value(unique_value(rel.column(c), value, 1)))
-                candidates.append(variants)
+                    options.append(json_value(unique_value(rel.column(c), value, 1)))
+                candidates.append(options)
         found = None
         def search(i, chosen):
             nonlocal found

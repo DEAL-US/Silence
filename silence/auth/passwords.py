@@ -28,6 +28,11 @@ def password_status(value):
         return "unsupported"
     return "plain"
 
+def argon2_hash(password):
+    '''The argon2 hash of a password (whatever the password mode of the project)'''
+    return _hasher.hash(password)
+
+
 def hash_password(password):
     '''The value to store for a password, according to the project's mode'''
     if settings.PASSWORD_MODE == "plain":

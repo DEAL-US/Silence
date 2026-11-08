@@ -21,11 +21,9 @@ import tempfile
 import time
 import urllib.request
 
-import pymysql
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJECT = os.path.join(HERE, "ci_project")
-SQL_SCRIPTS = ["create_tables.sql", "create_views.sql", "populate_database.sql"]
 # The silence of this Python environment (not another one in the PATH, e.g., the Rust one)
 SILENCE = os.path.join(os.path.dirname(sys.executable), "silence")
 if not os.path.isfile(SILENCE):
@@ -41,16 +39,10 @@ def db_settings():
             "name": env.get("SILENCE_DB_NAME", db["name"])}
 
 
-def load_database(db):
-    conn = pymysql.connect(host=db["host"], port=db["port"], user=db["user"], password=db["password"],
-                           database=db["name"], autocommit=True, charset="utf8mb4")
-    with conn.cursor() as cur:
-        for script in SQL_SCRIPTS:
-            with open(os.path.join(PROJECT, "sql", script), encoding="utf8") as f:
-                for statement in f.read().split(";"):
-                    if statement.strip() and not all(l.strip().startswith("--") for l in statement.strip().splitlines()):
-                        cur.execute(statement)
-    conn.close()
+def load_database(project):
+    '''The database created again with the scripts of database.scripts (silence createdb)'''
+    if subprocess.run([SILENCE, "createdb"], cwd=project).returncode != 0:
+        raise SystemExit("The database could not be created")
 
 
 def free_port():
@@ -84,7 +76,14 @@ def main():
     with open(path, "w", encoding="utf8") as f:
         json.dump(data, f, indent=4)
 
-    load_database(db)
+    try:
+        return run(project)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
+def run(project):
+    load_database(project)
     port = free_port()
     server = subprocess.Popen([SILENCE, "run", "--no-browser", "--port", str(port)], cwd=project)
     try:
@@ -94,14 +93,12 @@ def main():
         env = {**os.environ, "SILENCE_CI_BASE_URL": f"http://127.0.0.1:{port}/api"}
         api = subprocess.run([sys.executable, "run_tests.py"], cwd=os.path.join(project, "test"), env=env).returncode
         # The unit tests change the database: they start from the original data
-        load_database(db)
+        load_database(project)
         tests = subprocess.run([sys.executable, os.path.join(HERE, "run_units.py"),
                                 f"http://127.0.0.1:{port}"]).returncode
     finally:
         server.terminate()
         server.wait()
-
-    shutil.rmtree(work, ignore_errors=True)
     print(f"\nAPI tests: {'OK' if api == 0 else 'FAILED'}; unit tests: {'OK' if tests == 0 else 'FAILED'}")
     return 0 if api == 0 and tests == 0 else 1
 

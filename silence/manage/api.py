@@ -224,13 +224,13 @@ def list_users():
         raise to_http_error(exc)
     def user(r):
         stored = get_field(r, a["password"])
-        status = password_status(stored)
+        state = password_status(stored)
         return {"id": r[rel.single_pk], "identifier": get_field(r, users_table.identifier_field()),
                 "role": get_field(r, a["role"]) if a["role"] else None,
                 "active": get_field(r, a["active_status"]) if a["active_status"] else None,
-                "password": status,
+                "password": state,
                 # Stored as plain text (in plain mode, for practice databases): shown, to try the login
-                "plainPassword": stored if settings.PASSWORD_MODE == "plain" and status == "plain" else None}
+                "plainPassword": stored if settings.PASSWORD_MODE == "plain" and state == "plain" else None}
     users = [user(r) for r in rows]
     return jsonify({"pk": rel.single_pk, "passwordMode": settings.PASSWORD_MODE, "users": users})
 
@@ -512,10 +512,15 @@ def openapi():
             response, request_body = schemas.OPERATIONS.get(op_id, (None, None))
             json_of = lambda schema: {"content": {"application/json": {"schema": schema}}}
             ok = {"description": "OK", **json_of(schemas.ref(response))} if response else {"description": "OK"}
-            status = "201" if op_id == "put_file" else "200"
+            created = op_id == "put_file"
             op = {"summary": summary, "operationId": op_id,
-                  "responses": {"200": ok, **({"201": ok} if status == "201" else {}),
+                  "responses": {"200": ok, **({"201": ok} if created else {}),
+                                **({"400": {"description": "A script failed", **json_of(schemas.ref("ScriptError"))}}
+                                   if op_id == "database_reload" else {}),
                                 "default": {"description": "Error", **json_of(schemas.ref("Error"))}}}
+            if op_id == "list_files":
+                params = params + [{"name": "dir", "in": "query", "required": False, "schema": {"type": "string"},
+                                    "description": "Only the files of this folder: endpoints, tests or admin/logs"}]
             if params:
                 op["parameters"] = params
             if request_body is not None:

@@ -3,11 +3,12 @@ import sys
 from silence.settings import settings, PROJECT_FILE
 from silence.logging.default_logger import logger
 from silence.db.connector import connection_error
+from silence.auth.passwords import argon2_hash
 
 ###############################################################################
 # silence createapi [table...]: endpoints/auto_<table>.json and the JS API
 # silence hash <password>: the argon2 hash of a password
-# The same code as the admin API (POST /_silence/v1/endpoints/generate...).
+# createapi runs the same code as the admin API (POST /_silence/v1/endpoints/generate).
 ###############################################################################
 
 def require_project():
@@ -37,6 +38,5 @@ def createapi(args):
     REGISTRY.log_errors()
 
 
-def hash_password(args):
-    from silence.auth.passwords import _hasher
-    print(_hasher.hash(args.password))
+def hash_command(args):
+    print(argon2_hash(args.password))

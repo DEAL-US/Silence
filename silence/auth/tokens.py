@@ -1,3 +1,4 @@
+import secrets
 import threading
 import time
 
@@ -25,8 +26,10 @@ def _serializer():
     return Serializer(settings.SECRET_KEY, serializer=SilenceJSONSerializer)
 
 def create_token(data):
-    '''Creates and returns a new token containing the given user data'''
-    token = _serializer().dumps(data)
+    '''Creates and returns a new token containing the given user data. Each token has its own id,
+    so that two sessions of the same user opened in the same second are not the same (closing
+    one does not close the other)'''
+    token = _serializer().dumps({"user": data, "session": secrets.token_hex(8)})
     logger.debug("Created new token %s[...]%s", token[:6], token[-6:])
     return token
 
@@ -39,11 +42,14 @@ def check_token(token):
     if closed:
         raise TokenError("The session has been closed (logout)")
     try:
-        return _serializer().loads(token, max_age=settings.MAX_TOKEN_AGE)
+        payload = _serializer().loads(token, max_age=settings.MAX_TOKEN_AGE)
     except SignatureExpired:
         raise TokenError("The session token has expired")
     except BadSignature:
         raise TokenError("The session token is not valid")
+    if not isinstance(payload, dict) or not isinstance(payload.get("user"), dict):
+        raise TokenError("The session token is not valid")
+    return payload["user"]
 
 
 def revoke_token(token):

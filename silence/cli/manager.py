@@ -45,7 +45,7 @@ def run_from_command_line():
 
     p = subparsers.add_parser("hash", help="Prints the argon2 hash of a password")
     p.add_argument("password")
-    p.set_defaults(handler=generate.hash_password)
+    p.set_defaults(handler=generate.hash_command)
 
     p = subparsers.add_parser("admin", help="Admin panel of the project")
     p.add_argument("action", choices=["update"], help="update: installs or updates admin/")

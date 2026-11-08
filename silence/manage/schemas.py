@@ -41,20 +41,6 @@ COMPONENTS = {
                         password_mode={"enum": ["argon2", "plain"]}, login=BOOL,
                         token_max_age=INT),
 
-    "SilenceJson": obj(
-        ["version", "server", "database", "auth", "js_api", "admin", "debug"],
-        version=INT,
-        server=obj(["address", "port", "api_prefix", "open_browser", "log_bodies", "decimals_as_strings",
-                    "check_updates"], address=STR, port=INT, api_prefix=STR, open_browser=BOOL,
-                   log_bodies=BOOL, decimals_as_strings=BOOL, check_updates=BOOL),
-        database=obj(["host", "port", "user", "password", "name", "scripts"], host=STR, port=INT, user=STR,
-                     password=STR, name=STR, scripts=LIST_STR),
-        auth=ref("AuthSettings"),
-        js_api=obj(["enabled", "dir"], enabled=BOOL, dir=STR),
-        admin={"oneOf": [{"type": "null"}, obj(["repo", "version"], repo=STR, version=STR)],
-               "description": "The admin panel of the project (repo and version), or null"},
-        debug=BOOL),
-
     "ConnectionTest": obj(["ok", "error", "databases"], ok=BOOL, error=STR_OR_NULL, databases={
         **LIST_STR, "description": "The databases that the user sees (empty if it cannot connect)"}),
 
@@ -102,7 +88,7 @@ COMPONENTS = {
 
     "Files": obj(["files"], files={"type": "array", "items": obj(["path", "etag"], path=STR, etag=STR)}),
     "File": obj(["path", "data", "etag"], path=STR, etag=STR, data={
-        "description": "The content: silence.json (without its secret key, see SilenceJson), the endpoints or "
+        "description": "The content: silence.json (without its secret key; its keys in docs/admin-api.md), the endpoints or "
                        "the tests of a file by name, or the text of the log; null if "
                        "the file does not exist"}),
     "FileSaved": obj(["path", "etag"], path=STR, etag=STR,

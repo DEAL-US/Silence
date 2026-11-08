@@ -166,8 +166,6 @@ def handle_http_error(error):
 
 @APP.errorhandler(Exception)
 def handle_generic_error(exc):
-    if isinstance(exc, HTTPError):
-        return handle_http_error(exc)
     if isinstance(exc, HTTPException):
         return jsonify({"message": exc.description, "code": exc.code}), exc.code
 
