@@ -7,7 +7,7 @@ import webbrowser
 from silence.logging.default_logger import logger
 from silence.settings import settings, PROJECT_FILE
 from silence.utils.check_update import check_for_new_version
-from silence.db.connector import test_connection
+from silence.db.connector import connection_error
 from silence import __version__
 
 ###############################################################################
@@ -63,7 +63,7 @@ def handle(args):
     if new_ver:
         logger.warning("A new Silence version (v%s) is available.", new_ver)
 
-    db_error = test_connection(settings.DB_CONN) if settings.DB_CONN["database"] else "no database selected"
+    db_error = connection_error()
     server_manager.setup()
     has_panel = check_panel()
     if db_error:

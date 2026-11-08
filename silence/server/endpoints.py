@@ -13,6 +13,7 @@ from silence.settings import settings
 from silence.logging.default_logger import logger
 from silence.server import sqlshape
 from silence.server.session import get_logged_user, check_roles, user_id_of
+from silence.auth.users import is_users_table
 from silence.auth.passwords import prepare_for_storage
 from silence.utils.min_type import Min
 
@@ -113,7 +114,7 @@ class Endpoint:
             self.warnings.append("uses $loggedId without auth_required: it may be NULL")
 
         table = getattr(self.shape, "table", None)
-        if self.op in ("INSERT", "UPDATE", "DELETE") and table and is_auth_table(table) \
+        if self.op in ("INSERT", "UPDATE", "DELETE") and table and is_users_table(table) \
                 and not (self.auth_required or self.owner):
             self.warnings.append("anybody can change the users (also their roles and passwords): "
                                  "require authentication and a role")
@@ -290,10 +291,6 @@ def filter_query_results(data, args):
     return res[offset:top]
 
 
-def is_auth_table(table):
-    return settings.AUTH_LINKED and table.lower() == settings.USER_AUTH_DATA["table"].lower()
-
-
 def column_is_optional(table, column):
     rel = get_schema().get(table)
     col = rel.column(column) if rel else None
@@ -393,7 +390,7 @@ def prepare_statement(ep, params, values, user):
         raise HTTPError(400, f"Missing parameter '{still_missing[0]}' in the request body")
 
     # Passwords of the users table are stored hashed (in argon2 mode)
-    if pairs is not None and is_auth_table(shape.table):
+    if pairs is not None and is_users_table(shape.table):
         pwd_col = settings.USER_AUTH_DATA["password"].lower()
         for col, expr in pairs:
             p = sqlshape.only_param(expr)

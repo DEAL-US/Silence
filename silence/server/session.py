@@ -1,7 +1,7 @@
 from flask import request
 
 from silence.auth.tokens import check_token
-from silence.db.schema import get_schema
+from silence.auth.users import users_pk
 from silence.exceptions import HTTPError, TokenError
 from silence.settings import settings
 
@@ -41,11 +41,6 @@ def check_roles(user, allowed_roles):
     role = get_field(user, settings.USER_AUTH_DATA["role"])
     if role not in allowed_roles:
         raise HTTPError(403, "Your role does not allow you to access this resource")
-
-
-def users_pk():
-    rel = get_schema().get(settings.USER_AUTH_DATA["table"]) if settings.AUTH_LINKED else None
-    return rel.single_pk if rel else None
 
 
 def user_id_of(user):

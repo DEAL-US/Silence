@@ -2,6 +2,7 @@ import json
 import os
 
 from silence.settings import settings
+from silence.server.endpoints import AUTO_PREFIX, METHODS
 from silence.exceptions import TestDefinitionError
 
 ###############################################################################
@@ -35,8 +36,6 @@ from silence.exceptions import TestDefinitionError
 ###############################################################################
 
 TESTS_DIR = "tests"
-AUTO_PREFIX = "auto_"
-METHODS = ("GET", "POST", "PUT", "DELETE")
 EXPECT_KEYS = {"status", "message"}
 
 

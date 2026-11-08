@@ -216,13 +216,7 @@ class Settings:
         self.LOG_BODIES = bool(server["log_bodies"])
         self.DECIMALS_AS_STRINGS = bool(server["decimals_as_strings"])
         self.CHECK_FOR_UPDATES = bool(server["check_updates"])
-        self.DB_CONN = {
-            "host": db["host"],
-            "port": int(db["port"]),
-            "username": db["user"],
-            "password": db["password"],
-            "database": db["name"],
-        }
+        self.DB_CONN = db_conn_of(db)
         self.USER_AUTH_DATA = {
             "table": auth["table"],
             "identifier": auth["identifier"],
@@ -284,6 +278,16 @@ class Settings:
                 logger.error("    · %s", err)
             raise SystemExit(1)
 
+    def require_project(self, hint=""):
+        '''Stops the command if it is not run in the folder of a project, or if its silence.json
+        has errors'''
+        if not self.IS_PROJECT:
+            from silence.logging.default_logger import logger
+            logger.error("There is no %s here: run this command in the folder of a Silence project%s.",
+                         PROJECT_FILE, hint)
+            raise SystemExit(1)
+        self.require_valid()
+
     def save(self):
         write_json(self.PROJECT_PATH, self.project)
 
@@ -293,6 +297,14 @@ class Settings:
             logger.warning(f"The following keys in {PROJECT_FILE} are unknown and will be "
                            "ignored: " + ", ".join(self.unknown_settings))
 
+
+
+def db_conn_of(database):
+    '''The connection (as DB_CONN: host, port, username, password, database) of a "database"
+    section of silence.json'''
+    return {"host": database.get("host"), "port": int(database.get("port") or 3306),
+            "username": database.get("user"), "password": database.get("password"),
+            "database": database.get("name") or None}
 
 
 def new_project_data():

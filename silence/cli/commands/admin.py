@@ -15,10 +15,7 @@ from silence.cli.commands.new import install_admin_panel, panel_version
 ###############################################################################
 
 def handle(args):
-    if not settings.IS_PROJECT:
-        logger.error("There is no %s here: run this command in the folder of a Silence project.", PROJECT_FILE)
-        sys.exit(1)
-    settings.require_valid()
+    settings.require_project()
 
     admin = dict(settings.project.get("admin") or tpl.default_admin())
     if args.repo:

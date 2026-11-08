@@ -2,6 +2,7 @@ import os
 
 import pymysql
 
+from silence.db.connector import get_conn, error_message
 from silence.settings import settings
 
 ###############################################################################
@@ -91,10 +92,12 @@ def split(text):
 
 
 class ScriptError(Exception):
-    def __init__(self, file, line, statement, message):
+    '''A script that failed: where, the statement, the message and the scripts that did run'''
+    def __init__(self, file, line, statement, message, done=()):
         super().__init__(f"{file}, line {line}: {message}" if file and line else
                          f"{file}: {message}" if file else message)
         self.file, self.line, self.statement, self.message = file, line, statement, message
+        self.done = list(done)
 
 
 def reload():
@@ -102,13 +105,11 @@ def reload():
     Returns [{"file", "statements"}]; ScriptError (with the file, the line and the statement)
     at the first one that fails'''
     names = settings.project["database"].get("scripts") or []
-    c = settings.DB_CONN
-    db_name = c["database"]
-    for name in names:  # All of them exist before dropping anything
-        if not os.path.isfile(os.path.join(sql_dir(), name)):
-            raise ScriptError(name, 0, "", f"there is no {SQL_DIR}/{name}")
-    conn = pymysql.connect(host=c["host"], port=int(c["port"]), user=c["username"], password=c["password"],
-                           charset="utf8mb4", autocommit=True, connect_timeout=5)
+    db_name = settings.DB_CONN["database"]
+    absent = missing(names)  # All of them exist before dropping anything
+    if absent:
+        raise ScriptError(absent[0], 0, "", f"there is no {SQL_DIR}/{absent[0]}")
+    conn = get_conn(with_database=False, autocommit=True)
     done = []
     try:
         with conn.cursor() as cur:
@@ -116,8 +117,7 @@ def reload():
                 cur.execute(f"DROP DATABASE IF EXISTS `{db_name}`")
                 cur.execute(f"CREATE DATABASE `{db_name}`")
             except pymysql.MySQLError as exc:
-                msg = exc.args[1] if len(exc.args) > 1 else str(exc)
-                raise ScriptError("", 0, f"DROP/CREATE DATABASE `{db_name}`", msg)
+                raise ScriptError("", 0, f"DROP/CREATE DATABASE `{db_name}`", error_message(exc))
             for name in names:
                 cur.execute(f"USE `{db_name}`")
                 with open(os.path.join(sql_dir(), name), encoding="utf8") as f:
@@ -128,10 +128,7 @@ def reload():
                         while cur.nextset():
                             pass
                     except pymysql.MySQLError as exc:
-                        msg = exc.args[1] if len(exc.args) > 1 else str(exc)
-                        error = ScriptError(name, line, statement, msg)
-                        error.done = done  # The scripts that did run
-                        raise error
+                        raise ScriptError(name, line, statement, error_message(exc), done)
                 done.append({"file": name, "statements": len(statements)})
     finally:
         conn.close()

@@ -20,6 +20,22 @@ class UsersTableError(Exception):
     pass
 
 
+def is_users_table(name):
+    '''Whether a table is the linked users table'''
+    return settings.AUTH_LINKED and bool(name) and name.lower() == settings.USER_AUTH_DATA["table"].lower()
+
+
+def users_relation():
+    '''The linked users table in the schema (None if it is not linked or does not exist)'''
+    return get_schema().get(settings.USER_AUTH_DATA["table"]) if settings.AUTH_LINKED else None
+
+
+def users_pk():
+    '''The primary key of the users table (None if it has no single one)'''
+    rel = users_relation()
+    return rel.single_pk if rel else None
+
+
 def identifier_parts():
     '''(table, column) of the identifier; table is None if it is a column of the users table'''
     ident = settings.USER_AUTH_DATA["identifier"]

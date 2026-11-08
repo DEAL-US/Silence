@@ -2,7 +2,7 @@ import sys
 
 from silence.settings import settings, PROJECT_FILE
 from silence.logging.default_logger import logger
-from silence.db.connector import test_connection
+from silence.db.connector import connection_error
 
 ###############################################################################
 # silence createapi [table...]: endpoints/auto_<table>.json and the JS API
@@ -11,11 +11,8 @@ from silence.db.connector import test_connection
 ###############################################################################
 
 def require_project():
-    if not settings.IS_PROJECT:
-        logger.error("There is no %s here: run this command in the folder of a Silence project.", PROJECT_FILE)
-        sys.exit(1)
-    settings.require_valid()
-    error = test_connection(settings.DB_CONN) if settings.DB_CONN["database"] else "no database selected"
+    settings.require_project()
+    error = connection_error()
     if error:
         logger.error("Cannot connect to the database (%s): set it in %s or in the admin panel.", error, PROJECT_FILE)
         sys.exit(1)

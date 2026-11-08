@@ -8,14 +8,19 @@ from flask import Blueprint, jsonify, request, current_app
 from silence import __version__
 from silence.auth.passwords import password_status, hash_password
 from silence.db import dal, schema as db_schema
-from silence.db.connector import test_connection
+from silence.db.connector import get_conn, test_connection, connection_error, error_message
 from silence.db.errors import to_http_error
 from silence.exceptions import HTTPError, DatabaseError
-from silence.settings import settings, PROJECT_FILE, DEFAULT_PROJECT, merge
+from silence.settings import settings, PROJECT_FILE, DEFAULT_PROJECT, merge, db_conn_of
 from silence.server.endpoints import REGISTRY, AUTO_PREFIX, Endpoint
 from silence.server.session import get_field
+from silence.server.auth_endpoints import session_for
+from silence.auth import users as users_table
+from silence.db import scripts
 from silence.project.files import write_json, etag_of, read_with_etag, safe_name
 from silence.testing import model as test_model
+from silence.testing.generator import generated_tests as generate_tests
+from silence.server import generator
 from silence.manage import schemas
 
 ###############################################################################
@@ -62,7 +67,7 @@ def body():
 
 
 def db_ok():
-    return bool(settings.DB_CONN["database"]) and test_connection(settings.DB_CONN) is None
+    return connection_error() is None
 
 
 def require_db():
@@ -100,7 +105,6 @@ def root():
 
 def scripts_missing():
     '''database.scripts that are not in sql/ (e.g., silence.json edited by hand, or a script deleted)'''
-    from silence.db import scripts
     absent = scripts.missing(settings.project["database"].get("scripts") or [])
     return [f"database.scripts: there is no sql/{s}" for s in absent]
 
@@ -114,7 +118,7 @@ def endpoint_dict(e):
 @manage.route("/status")
 def status():
     '''State of the project: database, users, the endpoints that are being served, tests and errors'''
-    db_error = test_connection(settings.DB_CONN) if settings.DB_CONN["database"] else "no database selected"
+    db_error = connection_error()
     suite = test_model.load_tests()  # The custom ones: generating the others takes a while
     return jsonify({
         "apiPrefix": settings.API_PREFIX,
@@ -136,11 +140,9 @@ def status():
 
 def connection_args(v):
     try:
-        port = int(v.get("port") or 3306)
+        return db_conn_of(v)
     except (TypeError, ValueError):
         raise HTTPError(400, f"The port must be a number, not {v.get('port')!r}")
-    return {"host": v.get("host"), "port": port, "username": v.get("user"),
-            "password": v.get("password"), "database": v.get("name") or None}
 
 
 @manage.route("/database/test", methods=["POST"])
@@ -148,8 +150,7 @@ def database_test():
     '''Tries a connection without saving it; if the user can connect, also the databases it sees'''
     a = connection_args(body())
     try:
-        conn = pymysql.connect(host=a["host"], port=a["port"], user=a["username"], password=a["password"],
-                               connect_timeout=5)
+        conn = get_conn(a, with_database=False)
         try:
             with conn.cursor() as cur:
                 cur.execute("SHOW DATABASES")
@@ -158,7 +159,7 @@ def database_test():
         finally:
             conn.close()
     except pymysql.MySQLError as exc:
-        return jsonify({"ok": False, "error": exc.args[1] if len(exc.args) > 1 else str(exc), "databases": []})
+        return jsonify({"ok": False, "error": error_message(exc), "databases": []})
     error = test_connection(a) if a["database"] else None
     if error is None and a["database"] and a["database"] not in names:
         error = f"There is no database '{a['database']}' (or this user cannot see it)"
@@ -169,7 +170,6 @@ def database_test():
 def database_reload():
     '''Creates the database again with the scripts of database.scripts, in order, as silence createdb
     of Silence 2 (e.g., to run the tests again from the original data)'''
-    from silence.db import scripts
     require_db()
     if not settings.project["database"].get("scripts"):
         raise HTTPError(409, "Choose the scripts that reload the database first (database.scripts)")
@@ -205,7 +205,7 @@ def users_rel():
     if not settings.AUTH_LINKED:
         raise HTTPError(409, "The users table is not linked")
     require_db()
-    rel = db_schema.get_schema().get(settings.USER_AUTH_DATA["table"])
+    rel = users_table.users_relation()
     if rel is None or rel.single_pk is None:
         raise HTTPError(409, "The users table does not exist or has no single primary key")
     return rel
@@ -214,7 +214,6 @@ def users_rel():
 @manage.route("/users")
 def list_users():
     '''The users, with the state of their password (never its value)'''
-    from silence.auth import users as users_table
     rel = users_rel()
     a = settings.USER_AUTH_DATA
     try:
@@ -253,9 +252,7 @@ def set_password(user_id):
 @manage.route("/users/<user_id>/session", methods=["POST"])
 def user_session(user_id):
     '''Opens a session for a user without its password'''
-    from silence.server.auth_endpoints import session_for
     rel = users_rel()
-    from silence.auth import users as users_table
     try:
         rows = dal.query(f"{users_table.users_select()} WHERE u.`{rel.single_pk}` = %s", (user_id,))
     except users_table.UsersTableError as exc:
@@ -275,7 +272,6 @@ def user_session(user_id):
 @manage.route("/endpoints/generate", methods=["POST"])
 def generate_endpoints():
     '''Generates the autogenerated endpoints and the JS API (as silence createapi)'''
-    from silence.server import generator
     require_db()
     try:
         res = generator.generate(body().get("tables") or None)
@@ -288,10 +284,9 @@ def generate_endpoints():
 def generated_tests():
     '''The generated tests, computed now from the endpoints and the data of the database
     (the custom ones are the files tests/*.json)'''
-    from silence.testing.generator import generated_tests as generate
     require_db()
     try:
-        tests = generate()
+        tests = generate_tests()
     except DatabaseError as exc:
         raise to_http_error(exc)
     res = []
@@ -389,7 +384,6 @@ def check_tests(path, data):
 
 def save_config(data):
     '''silence.json: checked, and its connection tried, before saving it; the secret key is kept'''
-    from silence.db import scripts
     if not isinstance(data, dict):
         raise HTTPError(400, "silence.json must contain an object")
     db = data.get("database") if isinstance(data.get("database"), dict) else {}
@@ -401,9 +395,7 @@ def save_config(data):
     old = settings.project
     conn = ("host", "port", "user", "password", "name")
     if any(db.get(k, old["database"][k]) != old["database"][k] for k in conn) and db.get("name"):
-        new = {**old["database"], **db}
-        error = test_connection({"host": new["host"], "port": new["port"], "username": new["user"],
-                                 "password": new["password"], "database": new["name"]})
+        error = test_connection(db_conn_of({**old["database"], **db}))
         if error:
             raise HTTPError(400, f"Not saved: cannot connect: {error}")
     old_server = dict(old["server"])

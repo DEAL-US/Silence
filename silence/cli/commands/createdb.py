@@ -2,7 +2,9 @@ import sys
 
 from silence.settings import settings, PROJECT_FILE
 from silence.logging.default_logger import logger
-from silence.db.connector import test_connection
+import pymysql
+
+from silence.db.connector import get_conn, error_message
 
 ###############################################################################
 # silence createdb: creates the database again (DROP and CREATE) and runs the
@@ -12,10 +14,7 @@ from silence.db.connector import test_connection
 ###############################################################################
 
 def handle(args):
-    if not settings.IS_PROJECT:
-        logger.error("There is no %s here: run this command in the folder of a Silence project.", PROJECT_FILE)
-        sys.exit(1)
-    settings.require_valid()
+    settings.require_project()
     if not settings.DB_CONN["database"]:
         logger.error("There is no database in %s (database.name): set it there or in the admin panel.", PROJECT_FILE)
         sys.exit(1)
@@ -23,7 +22,11 @@ def handle(args):
         logger.error('List the scripts of sql/ in %s, in the order to run them: "database": {"scripts": '
                      '["create_tables.sql", "populate.sql"]} (or in the admin panel).', PROJECT_FILE)
         sys.exit(1)
-    error = test_connection({**settings.DB_CONN, "database": None})
+    try:
+        get_conn(with_database=False).close()
+        error = None
+    except pymysql.MySQLError as exc:
+        error = error_message(exc)
     if error:
         logger.error("Cannot connect to MariaDB (%s): check the database settings of %s.", error, PROJECT_FILE)
         sys.exit(1)
@@ -33,7 +36,7 @@ def handle(args):
     try:
         done = scripts.reload()
     except scripts.ScriptError as exc:
-        for d in getattr(exc, "done", []):
+        for d in exc.done:
             logger.info("    · %s: %d statements", d["file"], d["statements"])
         logger.error("%s", exc)
         if exc.statement:

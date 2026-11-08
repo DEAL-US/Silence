@@ -5,6 +5,7 @@ from silence.db.schema import get_schema
 from silence.settings import settings
 from silence.server.endpoints import REGISTRY
 from silence.server.session import get_field
+from silence.auth.users import is_users_table, users_pk
 from silence.testing.model import Test, short_unit
 
 ###############################################################################
@@ -41,12 +42,8 @@ class Context:
                 self.rows[table] = dal.query(f"SELECT * FROM {rel.name}{order} LIMIT {int(limit)}")
         return self.rows[table]
 
-    def user_pk(self):
-        rel = self.schema.get(self.auth["table"]) if settings.AUTH_LINKED else None
-        return rel.single_pk if rel else None
-
     def user_ref(self, user):
-        return get_field(user, self.user_pk()) if user else None
+        return get_field(user, users_pk()) if user else None
 
     def role(self, user):
         return get_field(user, self.auth["role"]) if self.auth["role"] else None
@@ -170,7 +167,7 @@ def body_from_row(ep, rel, row, ctx, mutate_uniques, n=1):
     body = {}
     uniques = rel.unique_columns() if rel else set()
     pwd = ctx.auth["password"].lower() if settings.AUTH_LINKED else None
-    is_users = settings.AUTH_LINKED and rel is not None and rel.name.lower() == ctx.auth["table"].lower()
+    is_users = rel is not None and is_users_table(rel.name)
     for p in ep.body_params:
         col = rel.column(p) if rel else None
         if ep.owner and col is not None and col.name.lower() == ep.owner.lower():

@@ -15,7 +15,7 @@ from silence.logging.default_logger import logger
 from silence.logging.utils import COLORS, RESET
 from silence.utils.silence_json_encoder import SilenceJSONProvider
 from silence.server import requestlog
-from silence.server.endpoints import REGISTRY, run as run_endpoint
+from silence.server.endpoints import REGISTRY, METHODS, run as run_endpoint
 from silence.server import auth_endpoints
 
 ###############################################################################
@@ -31,7 +31,7 @@ APP.json = SilenceJSONProvider(APP)
 # Manually set up the MIME type for .js files (wrong in some Windows registries)
 mimetypes.add_type("application/javascript", ".js", strict=True)
 
-API_METHODS = ["GET", "POST", "PUT", "DELETE"]
+API_METHODS = list(METHODS)
 
 
 def web_dir():
