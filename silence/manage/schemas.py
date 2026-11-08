@@ -21,11 +21,18 @@ LIST_STR = {"type": "array", "items": STR}
 COMPONENTS = {
     "Error": obj(["message", "code"], message=STR, code=INT),
 
-    "Root": obj(["silence", "api", "project", "projectDir", "studentApi"],
+    "Root": obj(["silence", "api", "versions", "project", "projectDir", "studentApi"],
                 silence=STR, api=INT, project=STR, projectDir=STR,
+                versions={"type": "object", "description": "The version of each piece: silence {version, adminApi}, "
+                          "panel {repo, version, installed, adminApi}, template {repo, version} and ezUi {repo, version} "
+                          "(null if the project does not have it or it is not known)"},
+                latest={"type": "object", "description": "Only with ?updates=true: the latest published version of "
+                        "each piece ({version} or {error}; null if it has no repo)"},
                 studentApi=obj(["prefix", "sessionHeader"], prefix=STR, sessionHeader=STR)),
 
-    "Status": obj(["apiPrefix", "baseUrl", "database", "auth", "endpoints", "tests", "errors"],
+    "Status": obj(["apiPrefix", "baseUrl", "database", "auth", "endpoints", "tests", "jsApi", "errors"],
+                  jsApi=obj(["dir", "notGenerated"], dir=STR, notGenerated={
+                      **STR_OR_NULL, "description": "Why the JS API is not generated (null if it is)"}),
                   apiPrefix=STR, baseUrl=STR,
                   database=obj(["name", "error"], name=STR, error=STR_OR_NULL),
                   auth={"allOf": [ref("AuthSettings"), obj(["linked"], linked=BOOL)]},
@@ -76,7 +83,9 @@ COMPONENTS = {
         ["file", "name", "table", "source", "fullRoute", "overrides", "warnings"],
         file=STR, name=STR, table=STR, source={"enum": ["auto", "custom"]}, fullRoute=STR,
         overrides=LIST_STR, warnings=LIST_STR)]},
-    "EndpointsGenerated": obj(["tables", "removed"], removed=LIST_STR, tables={"type": "array", "items": obj(
+    "EndpointsGenerated": obj(["tables", "removed", "jsApi"], removed=LIST_STR,
+                              jsApi=obj(["dir", "notGenerated"], dir=STR_OR_NULL, notGenerated={
+                                  **STR_OR_NULL, "description": "Why the JS API has not been generated (null if it has)"}), tables={"type": "array", "items": obj(
         ["table", "view", "generated", "custom"], table=STR, view=BOOL, generated=LIST_STR, custom=LIST_STR)}),
 
     "Test": obj(["file", "name", "table", "source", "description", "endpoint", "definition", "request", "expect"],

@@ -178,6 +178,19 @@ def try_request_log():
     assert len(log_lines()) == 1  # Created again
 
 
+def try_versions_and_js_api():
+    """The versions of each piece, and the JS API, which needs the molds of the template"""
+    root = requests.get(ADMIN + "/").json()
+    assert root["versions"]["silence"]["version"] == root["silence"]
+    status = requests.get(ADMIN + "/status").json()
+    assert "molds" in status["jsApi"]["notGenerated"]  # The CI project has no template
+    generated = requests.post(ADMIN + "/endpoints/generate", json={"tables": ["departments"]}).json()
+    assert generated["jsApi"]["dir"] is None and generated["jsApi"]["notGenerated"]
+    # The molds and the generated JS API are only read
+    assert requests.put(FILES + ".silence/js_api/table.js", json="x").status_code == 403
+    assert requests.get(FILES + ".silence/js_api/table.js").json()["data"] is None
+
+
 def try_openapi():
     spec = requests.get(ADMIN + "/openapi.json").json()
     assert spec["openapi"].startswith("3.") and "/files/{path}" in spec["paths"]
@@ -250,7 +263,8 @@ def run():
     for name, test in [("root and status", try_root_and_status), ("silence.json", try_config_file),
                        ("other files", try_other_files), ("schema and users", try_schema_and_users),
                        ("endpoint files", try_endpoint_files), ("tests", try_tests),
-                       ("request log", try_request_log), ("openapi", try_openapi),
+                       ("request log", try_request_log), ("versions and JS API", try_versions_and_js_api),
+                       ("openapi", try_openapi),
                        ("response schemas", try_response_schemas)]:
         logger.warning("testing the admin API: %s", name)
         test()

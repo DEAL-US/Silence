@@ -34,6 +34,11 @@ def createapi(args):
     for f in res["removed"]:
         logger.info("    · removed %s (its table no longer exists)", f)
     logger.info("Endpoints written in endpoints/auto_<table>.json.")
+    js = res["jsApi"]
+    if js["notGenerated"]:
+        logger.info("The JS API has not been generated: %s.", js["notGenerated"])
+    else:
+        logger.info("JS API written in %s/.", js["dir"])
     from silence.server.endpoints import REGISTRY
     REGISTRY.log_errors()
 

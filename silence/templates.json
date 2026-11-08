@@ -3,7 +3,7 @@
     "templates": {
         "ez-ui": {
             "repo": "IISSI-US/silence-template-v3-ez-ui",
-            "version": "v1.0.0",
+            "version": "v1.1.0",
             "default": true,
             "description": "Frontend with ez-ui: a first page (index.html) ready to grow"
         },

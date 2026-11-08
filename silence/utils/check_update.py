@@ -11,6 +11,11 @@ def release_tuple(version):
     match = re.match(r"\d+(?:\.\d+)*", version)
     return tuple(int(n) for n in match.group(0).split(".")) if match else ()
 
+def latest_version():
+    '''The latest version of Silence published in PyPI (an exception if it cannot be known)'''
+    return requests.get("https://pypi.org/pypi/Silence/json", timeout=5).json()["info"]["version"]
+
+
 def check_for_new_version():
     if not settings.CHECK_FOR_UPDATES: 
         return False
@@ -18,16 +23,15 @@ def check_for_new_version():
     logger.debug("Checking for new updates...")
 
     try:
-        data = requests.get("https://pypi.org/pypi/Silence/json", timeout=3).json()
-        latest_version = data["info"]["version"]
+        latest = latest_version()
     except Exception as exc:
         logger.debug("Exception occurred when checking for updates (muted):")
         logger.debug(str(exc))
         return False
 
-    if release_tuple(latest_version) > release_tuple(__version__):
+    if release_tuple(latest) > release_tuple(__version__):
         logger.debug("New version available")
-        return latest_version
+        return latest
     else:
         logger.debug("Running latest version")
         return False

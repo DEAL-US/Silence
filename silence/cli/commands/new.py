@@ -69,7 +69,7 @@ def panel_version(project_dir):
         return None
 
 
-def write_project_file(dest, admin):
+def write_project_file(dest, admin, template):
     '''silence.json: the template's values (if any) with a new secret key and the admin panel'''
     path = os.path.join(dest, PROJECT_FILE)
     data = new_project_data()
@@ -79,6 +79,7 @@ def write_project_file(dest, admin):
         data["secret_key"] = new_project_data()["secret_key"]
         data["version"] = new_project_data()["version"]
     data["admin"] = admin
+    data["template"] = template
     write_json(path, data)
 
 
@@ -125,7 +126,7 @@ def handle(args):
                            "Add it later with 'silence admin update'.", exc)
             admin = None
 
-    write_project_file(name, admin)
+    write_project_file(name, admin, {"repo": repo, "version": version})
     for folder in ("endpoints", "tests", "web"):
         os.makedirs(os.path.join(name, folder), exist_ok=True)
     gitignore = os.path.join(name, ".gitignore")

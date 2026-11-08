@@ -22,6 +22,9 @@ from silence.testing import model as test_model
 from silence.testing.generator import generated_tests as generate_tests
 from silence.server import generator
 from silence.manage import schemas
+from silence.cli import template_downloader as tpl
+from silence.project import molds
+from silence.cli.commands.new import panel_version
 
 ###############################################################################
 # Admin API (/_silence/v1): the operations to administer Silence itself.
@@ -94,13 +97,55 @@ def name_or_400(name):
 # Silence and the project
 ###############################################################################
 
+EZ_UI = {"repo": "IISSI-US/ez-ui", "file": "web/ez-ui/VERSION.txt"}
+
+
+def versions():
+    '''The version of each piece of the project: Silence, the admin panel (the one in silence.json and
+    the one installed in admin/), the template of the front-end and ez-ui (if the project has it)'''
+    panel = panel_version(settings.PROJECT_DIR) or {}
+    ez_text, _ = read_with_etag(full_path(EZ_UI["file"]))
+    return {
+        "silence": {"version": __version__, "adminApi": API_VERSION},
+        "panel": {**(settings.project.get("admin") or {}), "installed": panel.get("version"),
+                  "adminApi": panel.get("api")},
+        "template": settings.project.get("template"),
+        "ezUi": {"repo": EZ_UI["repo"], "version": ez_text.strip()} if ez_text else None,
+    }
+
+
+def latest_versions(current):
+    '''The latest published version of each piece, or why it cannot be known'''
+    from silence.utils.check_update import latest_version
+    res = {}
+    try:
+        res["silence"] = {"version": latest_version()}
+    except Exception as exc:
+        res["silence"] = {"error": f"Cannot read PyPI: {exc}"}
+    for key in ("panel", "template", "ezUi"):
+        repo = (current.get(key) or {}).get("repo")
+        if not repo:
+            res[key] = None
+            continue
+        try:
+            res[key] = {"version": tpl.latest_tag(repo)}
+        except tpl.DownloadError as exc:
+            res[key] = {"error": str(exc)}
+    return res
+
+
 @manage.route("/")
 def root():
-    '''Versions of Silence and of this API, the project, and how to call the student's API'''
-    return jsonify({"silence": __version__, "api": API_VERSION,
-                    "project": os.path.basename(settings.PROJECT_DIR), "projectDir": settings.PROJECT_DIR,
-                    # What a client (the admin panel) needs to call the student's API
-                    "studentApi": {"prefix": settings.API_PREFIX, "sessionHeader": "Token"}})
+    '''Versions of Silence, of this API and of each piece of the project, the project, and how to call
+    the student's API. With ?updates=true, also the latest published versions (it goes to the network)'''
+    current = versions()
+    res = {"silence": __version__, "api": API_VERSION, "versions": current,
+           "project": os.path.basename(settings.PROJECT_DIR), "projectDir": settings.PROJECT_DIR,
+           # What a client (the admin panel) needs to call the student's API
+           "studentApi": {"prefix": settings.API_PREFIX, "sessionHeader": "Token"}}
+    if request.args.get("updates") == "true":
+        res["latest"] = latest_versions(current)
+    return jsonify(res)
 
 
 def scripts_missing():
@@ -130,6 +175,8 @@ def status():
                       "custom": sum(1 for e in REGISTRY.endpoints if e.source == "custom"),
                       "list": [endpoint_dict(e) for e in REGISTRY.endpoints]},
         "tests": {"custom": len(suite.tests)},
+        # The JS API: where it is generated, or why it is not (it needs the molds of the template)
+        "jsApi": {"dir": settings.JS_API_DIR, "notGenerated": generator.js_api_state()},
         "errors": {"config": settings.errors + scripts_missing(), "endpoints": REGISTRY.errors, "tests": suite.errors},
     })
 
@@ -299,25 +346,37 @@ def generated_tests():
 
 ###############################################################################
 # The files of the project: silence.json, endpoints/*.json, tests/*.json and
-# the log of requests (admin/logs/requests.log). Each one is checked as what it
+# the log of requests (admin/logs/requests.log); and, only to read them, the
+# generated JS API (js_api.dir) and its molds (.silence/js_api/). Each one is checked as what it
 # is before saving it; the rest of the project is not reachable.
 ###############################################################################
 
 NAME = r"[A-Za-z0-9_-]+"
-FILES = [  # (pattern, kind, folder that is listed)
-    (re.compile(r"silence\.json"), "config", None),
-    (re.compile(rf"endpoints/{NAME}\.json"), "endpoints", "endpoints"),
-    (re.compile(rf"tests/{NAME}\.json"), "tests", "tests"),
-    (re.compile(r"admin/logs/requests\.log"), "log", "admin/logs"),
-]
+READ_ONLY = ("log", "js", "mold")  # Written by Silence (the log, the JS API) or by the template (the molds)
+TEXT = ("log", "js", "mold")       # Not JSON
+
+
+def files():
+    '''(pattern, kind, folder that is listed) of the files that can be managed'''
+    res = [
+        (re.compile(r"silence\.json"), "config", None),
+        (re.compile(rf"endpoints/{NAME}\.json"), "endpoints", "endpoints"),
+        (re.compile(rf"tests/{NAME}\.json"), "tests", "tests"),
+        (re.compile(r"admin/logs/requests\.log"), "log", "admin/logs"),
+        (re.compile(rf"{re.escape(molds.PROJECT_MOLDS)}/js_api/{NAME}\.js"), "mold", f"{molds.PROJECT_MOLDS}/js_api"),
+    ]
+    js_dir = settings.JS_API_DIR.strip("/")
+    if js_dir:
+        res.append((re.compile(rf"{re.escape(js_dir)}/{NAME}\.js"), "js", js_dir))
+    return res
 
 
 def file_kind(path):
-    for pattern, kind, _ in FILES:
+    for pattern, kind, _ in files():
         if pattern.fullmatch(path):
             return kind
     raise HTTPError(403, f"'{path}' is not a file that can be managed: silence.json, endpoints/*.json, "
-                         "tests/*.json or admin/logs/requests.log")
+                         "tests/*.json, admin/logs/requests.log, or (only to read them) the JS API and its molds")
 
 
 def full_path(path):
@@ -413,7 +472,7 @@ def save_config(data):
 def list_files():
     '''The files that can be managed, with their versions (only those of a folder with ?dir=)'''
     folder = request.args.get("dir")
-    folders = [f for _, _, f in FILES if f]
+    folders = [f for _, _, f in files() if f]
     if folder is not None and folder not in folders:
         raise HTTPError(400, f"dir must be one of: {', '.join(folders)}")
     res = []
@@ -424,7 +483,7 @@ def list_files():
         if os.path.isdir(where):
             for name in sorted(os.listdir(where)):
                 rel = f"{f}/{name}"
-                if any(p.fullmatch(rel) for p, _, _ in FILES) and os.path.isfile(os.path.join(where, name)):
+                if any(p.fullmatch(rel) for p, _, _ in files()) and os.path.isfile(os.path.join(where, name)):
                     res.append({"path": rel, "etag": etag_of(os.path.join(where, name))})
     return jsonify({"files": res})
 
@@ -434,7 +493,7 @@ def get_file(path):
     '''A file: its content (JSON, or the text of the log) and its version; null if it does not exist'''
     kind = file_kind(path)
     text, etag = read_with_etag(full_path(path))  # The content and its version, of the same reading
-    if text is None or kind == "log":
+    if text is None or kind in TEXT:
         data = text
     else:
         try:
@@ -452,8 +511,10 @@ def put_file(path):
     '''Saves a file (all of it), after checking it as what it is'''
     kind = file_kind(path)
     where = full_path(path)
-    if kind == "log":
-        raise HTTPError(403, "The log is written by Silence: it can only be read or deleted")
+    if kind in READ_ONLY:
+        raise HTTPError(403, "The log is written by Silence: it can only be read or deleted" if kind == "log"
+                        else f"{path} is only read here: the JS API is generated from its molds, which come "
+                             "with the template")
     if kind in ("endpoints", "tests") and is_auto(path):
         raise HTTPError(403, f"{path} is autogenerated: write the custom file of the table, whose "
                              "endpoints replace the autogenerated ones with the same method and route")
@@ -481,6 +542,8 @@ def delete_file(path):
     where = full_path(path)
     if kind == "config":
         raise HTTPError(403, "silence.json cannot be deleted")
+    if kind in ("js", "mold"):
+        raise HTTPError(403, f"{path} is only read here")
     if kind in ("endpoints", "tests") and is_auto(path):
         raise HTTPError(403, f"{path} is autogenerated: generate the endpoints again instead")
     check_if_match(where)
@@ -518,6 +581,9 @@ def openapi():
                                 **({"400": {"description": "A script failed", **json_of(schemas.ref("ScriptError"))}}
                                    if op_id == "database_reload" else {}),
                                 "default": {"description": "Error", **json_of(schemas.ref("Error"))}}}
+            if op_id == "root":
+                params = params + [{"name": "updates", "in": "query", "required": False, "schema": {"type": "string"},
+                                    "description": "true: also the latest published versions (it goes to the network)"}]
             if op_id == "list_files":
                 params = params + [{"name": "dir", "in": "query", "required": False, "schema": {"type": "string"},
                                     "description": "Only the files of this folder: endpoints, tests or admin/logs"}]

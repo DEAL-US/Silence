@@ -120,3 +120,34 @@ def fetch(repo_spec, version=LATEST):
     except BaseException:
         shutil.rmtree(tmp, ignore_errors=True)  # Nothing is left behind if it cannot be fetched
         raise
+
+
+def version_key(tag):
+    '''A tag ("v1.10.0") as a tuple that sorts by version'''
+    return tuple(int(n) for n in re.findall(r"\d+", tag)) or (0,)
+
+
+def latest_tag(repo_spec):
+    '''The latest version (git tag) of a repo: from its local copy (SILENCE_SOURCES) or from GitHub
+    (GITHUB_TOKEN for a private one). DownloadError if it cannot be known'''
+    owner, repo = parse_repo(repo_spec)
+    local = local_source(repo)
+    if local:
+        try:
+            tags = subprocess.run(["git", "-C", local, "tag"], check=True, capture_output=True, text=True).stdout.split()
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            raise DownloadError(f"The local copy {local} is not a git repo")
+    else:
+        token = os.environ.get("GITHUB_TOKEN")
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        try:
+            r = requests.get(f"https://api.github.com/repos/{owner}/{repo}/tags?per_page=100", headers=headers, timeout=10)
+        except requests.RequestException as exc:
+            raise DownloadError(f"Cannot reach GitHub: {exc}")
+        if r.status_code != 200:
+            hint = "" if token else "; if it is private, set GITHUB_TOKEN"
+            raise DownloadError(f"Cannot read the versions of {owner}/{repo} (HTTP {r.status_code}{hint})")
+        tags = [t["name"] for t in r.json()]
+    if not tags:
+        raise DownloadError(f"{owner}/{repo} has no versions (git tags) yet")
+    return max(tags, key=version_key)

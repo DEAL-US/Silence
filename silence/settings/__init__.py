@@ -66,6 +66,9 @@ DEFAULT_PROJECT = {
     # The admin panel of the project (admin/): {"repo": "owner/repo", "version": "v1.0.0"};
     # null if it has none or it is not known. silence admin update installs this one
     "admin": None,
+    # The template of the front-end it was created from: {"repo": "owner/repo", "version": "v1.1.0"};
+    # null if it is not known (written by silence new)
+    "template": None,
     "debug": False,
     "secret_key": "",
 }
@@ -151,11 +154,12 @@ def validate(p):
     check("js_api", "enabled", is_bool, "true or false")
     check("js_api", "dir", lambda v: is_str(v) and ".." not in v.split("/") and not v.startswith("/"),
           "a folder inside the project (e.g., \"web/js/api/_auto\")")
-    admin = p.get("admin")
-    if admin is not None and not (isinstance(admin, dict) and isinstance(admin.get("repo"), str)
-                                  and "/" in admin["repo"] and isinstance(admin.get("version"), str)):
-        errors.append('admin must be null or {"repo": "owner/repo", "version": "v1.0.0" or "latest"}, not '
-                      + json.dumps(admin, ensure_ascii=False))
+    for key in ("admin", "template"):
+        value = p.get(key)
+        if value is not None and not (isinstance(value, dict) and isinstance(value.get("repo"), str)
+                                      and "/" in value["repo"] and isinstance(value.get("version"), str)):
+            errors.append(f'{key} must be null or {{"repo": "owner/repo", "version": "v1.0.0" or "latest"}}, not '
+                          + json.dumps(value, ensure_ascii=False))
     check(None, "debug", is_bool, "true or false")
     check(None, "secret_key", lambda v: is_str(v) and v != "", "a text")
     return errors

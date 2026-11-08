@@ -69,16 +69,30 @@ probar un endpoint), y `GET /` lo dice:
 ### Silence y el proyecto
 
 **`GET /`**: lo primero que consulta un cliente, para comprobar la compatibilidad (`api` es la
-versión de este contrato).
+versión de este contrato). `versions` da la versión de cada pieza: Silence, el panel (el de
+`silence.json` y el instalado en `admin/`, con la versión de esta API que necesita), la plantilla
+del front-end (la que apuntó `silence new`) y ez-ui (`web/ez-ui/VERSION.txt`); `null` si el
+proyecto no la tiene o no se sabe. Con **`?updates=true`** añade `latest`, la última versión
+publicada de cada una (PyPI para Silence; las etiquetas de su repo, o de su copia local con
+`SILENCE_SOURCES`, para las demás; `GITHUB_TOKEN` si el repo es privado), o por qué no se sabe.
+Va a la red: solo cuando se pide.
 
 ```json
 {"silence": "3.0.0.dev0", "api": 1, "project": "galeria", "projectDir": "/home/druiz/galeria",
+ "versions": {"silence": {"version": "3.0.0.dev0", "adminApi": 1},
+              "panel": {"repo": "IISSI-US/silence-admin-panel", "version": "v1.0.0", "installed": "1.0.0", "adminApi": 1},
+              "template": {"repo": "IISSI-US/silence-template-v3-ez-ui", "version": "v1.1.0"},
+              "ezUi": {"repo": "IISSI-US/ez-ui", "version": "1.0.1"}},
+ "latest": {"silence": {"version": "2.2.0"}, "panel": {"version": "v1.0.0"},
+            "template": {"version": "v1.1.0"}, "ezUi": {"error": "Cannot read the versions of IISSI-US/ez-ui (HTTP 404; if it is private, set GITHUB_TOKEN)"}},
  "studentApi": {"prefix": "/api", "sessionHeader": "Token"}}
 ```
 
 **`GET /status`**: el estado del proyecto. `database.error` es `null` si hay conexión; `auth`
 lleva `linked` y los valores de `auth` de `silence.json`; `endpoints.list`, los endpoints que se
-están sirviendo (ver «Endpoints»); `errors` son los problemas de los ficheros, como texto.
+están sirviendo (ver «Endpoints»); `jsApi`, la carpeta de la API JS y, si no se genera, por qué
+(está desactivada o el proyecto no tiene sus moldes); `errors` son los problemas de los ficheros,
+como texto.
 
 ```json
 {"apiPrefix": "/api", "baseUrl": "http://127.0.0.1:8080",
@@ -87,6 +101,7 @@ están sirviendo (ver «Endpoints»); `errors` son los problemas de los ficheros
           "role": "", "active": "", "password_mode": "argon2", "login": true, "token_max_age": 86400},
  "endpoints": {"count": 40, "auto": 39, "custom": 1, "list": [ … ]},
  "tests": {"custom": 2},
+ "jsApi": {"dir": "web/js/api/_auto", "notGenerated": null},
  "errors": {"config": [], "endpoints": [], "tests": []}}
 ```
 
@@ -100,6 +115,8 @@ están sirviendo (ver «Endpoints»); `errors` son los problemas de los ficheros
 | `endpoints/<nombre>.json` | Endpoints (por nombre); `auto_<tabla>`, los generados | leer y escribir (los `auto_`, solo leer) |
 | `tests/<nombre>.json` | Tests propios (por nombre) | leer, escribir y borrar |
 | `admin/logs/requests.log` | El registro de peticiones (texto) | leer y borrar |
+| `<js_api.dir>/<tabla>.js` | La API JS generada (texto) | solo leer |
+| `.silence/js_api/<molde>.js` | Los moldes de la API JS, de la plantilla (texto; ver `docs/molds.md`) | solo leer |
 
 Los nombres, de letras, dígitos, `_` y `-`. Cualquier otra ruta, 403.
 
@@ -276,10 +293,15 @@ en modo argon2, sus lecturas no envían las contraseñas y sus escrituras las ci
 público que cambia la tabla de usuarios lleva un aviso (cualquiera podría cambiar usuarios, roles
 y contraseñas): el alumno le pone sesión y roles.
 
+Con los endpoints se genera la API JS (`js_api.dir`), rellenando los moldes que trae el proyecto
+de su plantilla (`.silence/js_api/`; ver `docs/molds.md`): Silence no tiene código del front-end
+propio. Sin moldes (o con `js_api.enabled` a `false`), no se genera, y `jsApi.notGenerated` dice
+por qué.
+
 ```json
 {"tables": [{"table": "photos", "view": false, "generated": ["getAll", "getById", "create", "update"],
              "custom": ["delete"]}],
- "removed": []}
+ "removed": [], "jsApi": {"dir": "web/js/api/_auto", "notGenerated": null}}
 ```
 
 ### Tests
