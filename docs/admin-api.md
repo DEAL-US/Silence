@@ -271,7 +271,8 @@ el propio lo sustituye.
 `silence createapi`. `custom` son los que no se generan por estar personalizados; `removed`, los
 ficheros `auto_` de tablas que ya no existen. Todos son públicos (la sesión, los roles y el propietario se
 ponen al personalizarlos), también los de la tabla de usuarios enlazada, que es una tabla más:
-sus lecturas nunca envían las contraseñas y sus escrituras las cifran en modo argon2. Un endpoint
+en modo argon2, sus lecturas no envían las contraseñas y sus escrituras las cifran; en modo `plain`
+(bases de datos de prácticas), las contraseñas se guardan y se ven tal cual. Un endpoint
 público que cambia la tabla de usuarios lleva un aviso (cualquiera podría cambiar usuarios, roles
 y contraseñas): el alumno le pone sesión y roles.
 

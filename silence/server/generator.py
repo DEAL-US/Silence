@@ -13,8 +13,9 @@ from silence.server.endpoints import (REGISTRY, AUTO_PREFIX, endpoints_dir,
 # (endpoints/auto_<table>.json) and of the JS API to call them
 # (web/js/api/_auto/<table>.js). They are all public (the student asks for
 # authentication, roles or an owner when customizing them), also those of the
-# users table, which is a table like the others (its reads never send the
-# passwords, and its writes store them encrypted in argon2 mode).
+# users table, which is a table like the others (in argon2 mode, its reads do
+# not send the passwords and its writes store them encrypted; in plain mode,
+# they are stored and sent as they are).
 ###############################################################################
 
 

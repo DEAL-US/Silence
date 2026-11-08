@@ -22,7 +22,7 @@ Assertions of `test/` that change on purpose:
 |---|---|---|
 | `POST` of `departments` and `employees` (`test_departments`, `test_employees`) | 200 | 201 |
 | A role that is not allowed (`test_roles`) | 401 | 403 (401 only without a session) |
-| Fields of the created or edited employee (`test_employees`) | include `password` | without `password`: it is never served |
+| Fields of the created or edited employee (`test_employees`) | include `password` | without `password`: it is not served in argon2 mode (in plain mode, it is) |
 | The testing user (`utils.get_token`, `test_login`) | created with `/register` | a user of the data: there is no register |
 
 New in Silence 3 (not in Silence 2):

@@ -247,9 +247,10 @@ def request_body():
 
 
 def strip_passwords(rows):
-    '''The password column of the users table is never sent to the client'''
+    '''The password column of the users table is not sent to the client when the passwords are
+    encrypted (argon2); as plain text (plain mode, for practice databases), it is'''
     col = settings.USER_AUTH_DATA["password"] if settings.AUTH_LINKED else None
-    if not col:
+    if not col or settings.PASSWORD_MODE == "plain":
         return rows
     for row in rows:
         for key in [k for k in row if k.lower() == col.lower()]:

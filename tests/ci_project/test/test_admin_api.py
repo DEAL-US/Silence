@@ -84,6 +84,13 @@ def try_schema_and_users():
     token = requests.post(f"{ADMIN}/users/{users[0]['id']}/session").json()["sessionToken"]
     r = requests.get(BASE_URL + "/employees/logged", headers={"Token": token})
     assert r.status_code == 200 and r.json()[0]["employeeId"] == users[0]["id"]
+    # The password column is only sent in plain mode (passwords as plain text, for practice)
+    assert "password" not in requests.get(BASE_URL + "/employees/1").json()[0]
+    config = read("silence.json")
+    plain = {**config["data"], "auth": {**config["data"]["auth"], "password_mode": "plain"}}
+    saved = write("silence.json", plain, config["etag"]).json()
+    assert "password" in requests.get(BASE_URL + "/employees/1").json()[0]
+    assert write("silence.json", config["data"], saved["etag"]).status_code == 200
 
 
 def endpoint(name):
