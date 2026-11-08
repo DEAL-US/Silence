@@ -80,7 +80,7 @@ ficheros, como texto.
           "role": "", "active": "", "password_mode": "argon2", "login": true, "register": true,
           "default_role": "", "token_max_age": 86400},
  "endpoints": {"count": 40, "auto": 39, "custom": 1},
- "tests": {"count": 107},
+ "tests": {"custom": 2},
  "errors": {"config": [], "endpoints": [], "tests": []}}
 ```
 

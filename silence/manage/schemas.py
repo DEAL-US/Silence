@@ -31,7 +31,7 @@ COMPONENTS = {
                   database=obj(["name", "error"], name=STR, error=STR_OR_NULL),
                   auth={"allOf": [ref("AuthSettings"), obj(["linked"], linked=BOOL)]},
                   endpoints=obj(["count", "auto", "custom"], count=INT, auto=INT, custom=INT),
-                  tests=obj(["count"], count=INT),
+                  tests=obj(["custom"], custom={**INT, "description": "The custom tests (the generated ones are in GET /tests)"}),
                   errors=obj(["config", "endpoints", "tests"], config=LIST_STR, endpoints=LIST_STR, tests=LIST_STR)),
 
     "AuthSettings": obj(["table", "identifier", "password", "role", "active", "password_mode", "login",

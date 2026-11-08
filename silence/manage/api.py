@@ -92,7 +92,7 @@ def scripts_missing():
 def status():
     '''State of the project: database, users, endpoints, tests, errors and revision'''
     db_error = test_connection(settings.DB_CONN) if settings.DB_CONN["database"] else "no database selected"
-    suite = test_model.all_tests() if db_error is None else test_model.load_tests()
+    suite = test_model.load_tests()  # The custom ones: generating the others takes a while
     return jsonify({
         "revision": watcher.revision(),
         "apiPrefix": settings.API_PREFIX,
@@ -102,7 +102,7 @@ def status():
         "endpoints": {"count": len(REGISTRY.endpoints),
                       "auto": sum(1 for e in REGISTRY.endpoints if e.source == "auto"),
                       "custom": sum(1 for e in REGISTRY.endpoints if e.source == "custom")},
-        "tests": {"count": len(suite.tests)},
+        "tests": {"custom": len(suite.tests)},
         "errors": {"config": settings.errors + scripts_missing(), "endpoints": REGISTRY.errors, "tests": suite.errors},
     })
 
