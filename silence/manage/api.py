@@ -240,10 +240,16 @@ def list_users():
         raise HTTPError(409, f"The users table is not well linked: {exc}")
     except DatabaseError as exc:
         raise to_http_error(exc)
-    users = [{"id": r[rel.single_pk], "identifier": get_field(r, users_table.identifier_field()),
-              "role": get_field(r, a["role"]) if a["role"] else None,
-              "active": get_field(r, a["active_status"]) if a["active_status"] else None,
-              "password": password_status(get_field(r, a["password"]))} for r in rows]
+    def user(r):
+        stored = get_field(r, a["password"])
+        status = password_status(stored)
+        return {"id": r[rel.single_pk], "identifier": get_field(r, users_table.identifier_field()),
+                "role": get_field(r, a["role"]) if a["role"] else None,
+                "active": get_field(r, a["active_status"]) if a["active_status"] else None,
+                "password": status,
+                # Stored as plain text (in plain mode, for practice databases): shown, to try the login
+                "plainPassword": stored if settings.PASSWORD_MODE == "plain" and status == "plain" else None}
+    users = [user(r) for r in rows]
     return jsonify({"pk": rel.single_pk, "passwordMode": settings.PASSWORD_MODE, "users": users})
 
 

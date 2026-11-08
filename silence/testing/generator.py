@@ -261,8 +261,8 @@ def tests_for_endpoint(ep, ctx):
     path = fill_route(ep.route, values) if values is not None else None
     missing_path = fill_route(ep.route, missing_values(ep, rel)) if rel else None
 
-    # Positive case
-    if can_run and path is not None:
+    # Positive case (not with params of the query string: their values cannot be guessed)
+    if can_run and path is not None and not ep.query_params:
         if ep.method == "GET":
             add("ok", "returns the current rows", unit("GET", path, as_user, expect={"status": 200}), True)
         elif ep.method == "POST" and row is not None:
@@ -275,7 +275,7 @@ def tests_for_endpoint(ep, ctx):
             add("ok", "deletes a row that no other row references", unit("DELETE", path, as_user, expect={"status": 200}), True)
 
     # A row that does not exist
-    if ep.url_params and ep.method in ("GET", "PUT", "DELETE") and can_run and rel is not None:
+    if ep.url_params and ep.method in ("GET", "PUT", "DELETE") and can_run and rel is not None and not ep.query_params:
         body = body_from_row(ep, rel, row, ctx, False) if ep.method == "PUT" and row else None
         add("not_found", "a row that does not exist is a 404", unit(ep.method, missing_path, as_user, body, {"status": 404}))
 
@@ -286,6 +286,12 @@ def tests_for_endpoint(ep, ctx):
             body = body_from_row(ep, rel, row, ctx, mutate_uniques=True)
             del body[p]
             add("missing_param", f"without '{p}' is a 400", unit("POST", path, as_user, body, {"status": 400, "message": p}))
+
+    # A param of the query string missing
+    if ep.query_params and can_run and path is not None:
+        p = ep.query_params[0]
+        add("missing_query", f"without '{p}' in the query string is a 400",
+            unit(ep.method, path, as_user, None, {"status": 400, "message": p}))
 
     # Sessions, roles and owners
     any_path = path or missing_path

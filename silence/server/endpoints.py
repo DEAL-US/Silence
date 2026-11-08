@@ -33,7 +33,7 @@ AUTO_PREFIX = "auto_"
 METHODS = ("GET", "POST", "PUT", "DELETE")
 EXPECTED_OP = {"GET": "SELECT", "POST": "INSERT", "PUT": "UPDATE", "DELETE": "DELETE"}
 KNOWN_KEYS = {"route", "method", "sql", "auth_required", "allowed_roles", "description",
-              "request_body_params", "owner"}
+              "request_body_params", "query_params", "owner"}
 
 
 def endpoints_dir():
@@ -76,6 +76,9 @@ class Endpoint:
         self.allowed_roles = data.get("allowed_roles", ["*"]) or ["*"]
         self.description = data.get("description", "")
         self.body_params = data.get("request_body_params", []) or []
+        # Params of the query string that the SQL uses (?minAverage=7 → $minAverage): filters
+        # of a collection, which in REST go in the query string, not in the route
+        self.query_params = data.get("query_params", []) or []
         self.owner = data.get("owner") or None
 
         self.op = sqlshape.sql_op(self.sql)
@@ -91,15 +94,15 @@ class Endpoint:
 
     def check(self):
         if self.op in ("SELECT", "DELETE"):
-            available = set(self.url_params)
+            available = set(self.url_params) | set(self.query_params)
         else:
-            available = set(self.url_params) | set(self.body_params)
+            available = set(self.url_params) | set(self.query_params) | set(self.body_params)
         if self.owner and isinstance(self.shape, sqlshape.Insert):
             # In a POST with owner, the owner's column comes from the session
             available |= {sqlshape.only_param(v) for c, v in self.shape.pairs if c.lower() == self.owner.lower()}
         missing =[p for p in self.sql_params if p not in available and p != "loggedId"]
         if missing:
-            where = "URL" if self.op in ("SELECT", "DELETE") else "URL or request_body_params"
+            where = "route or query_params" if self.op in ("SELECT", "DELETE") else "route, query_params or request_body_params"
             raise EndpointError(f"'{self.name}' in {self.file}: the SQL uses "
                                 f"{', '.join('$' + p for p in missing)}, which is not in the {where}")
 
@@ -126,7 +129,7 @@ class Endpoint:
                 "route": self.route, "fullRoute": settings.API_PREFIX + self.route,
                 "method": self.method, "sql": self.sql, "auth_required": self.auth_required,
                 "allowed_roles": self.allowed_roles, "description": self.description,
-                "request_body_params": self.body_params, "owner": self.owner,
+                "request_body_params": self.body_params, "query_params": self.query_params, "owner": self.owner,
                 "overrides": self.overrides, "warnings": self.warnings}
 
 
@@ -300,11 +303,17 @@ def run(ep, url_params):
     params = dict(url_params)
     if ep.uses_logged_id:
         params["loggedId"] = user_id_of(user)
+    for p in ep.query_params:
+        if p not in request.args:
+            raise HTTPError(400, f"Missing parameter '{p}' in the query string (?{p}=...)")
+        params[p] = request.args[p]
 
     try:
         if ep.op == "SELECT":
             rows = dal.query(sqlshape.to_pyformat(ep.sql), params)
-            rows = filter_query_results(strip_passwords(rows), request.args)
+            # The query string also filters and sorts (not with the params that the SQL uses)
+            args = {k: v for k, v in request.args.items() if k not in ep.query_params}
+            rows = filter_query_results(strip_passwords(rows), args)
             # In our teaching context, if the route ends with a param and there
             # are no results, the resource does not exist
             if ep.route.rstrip("/").split("/")[-1].startswith("$") and not rows:

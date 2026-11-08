@@ -172,11 +172,14 @@ lee los usuarios con un `JOIN` por esa clave ajena, el login recibe `email` y no
 usuario nuevo necesitaría antes su fila en `people`).
 
 **`GET /users`**: los usuarios, con el estado de su contraseña (`argon2`, `plain` o
-`unsupported`), nunca su valor. `role` y `active` son `null` si no hay esas columnas.
+`unsupported`). Su valor (`plainPassword`) solo si está en texto plano y el proyecto guarda así
+las contraseñas (`auth.password_mode: plain`, para las BD de prácticas): sirve para probar el
+login. `role` y `active` son `null` si no hay esas columnas.
 
 ```json
 {"pk": "user_id", "passwordMode": "argon2",
- "users": [{"id": 1, "identifier": "agu@gallery.com", "role": null, "active": null, "password": "argon2"}]}
+ "users": [{"id": 1, "identifier": "agu@gallery.com", "role": null, "active": null, "password": "argon2",
+            "plainPassword": null}]}
 ```
 
 **`PUT /users/{id}/password`**, con `{"password": "…"}`: la guarda cifrada o no, según
@@ -196,7 +199,10 @@ API del alumno; `user` es su fila sin la contraseña.
 **Definición de un endpoint** (la de su fichero): `route` (con `$param`), `method` (`GET`,
 `POST`, `PUT` o `DELETE`), `sql` (con `$param` y `$loggedId`), `auth_required`,
 `allowed_roles` (`["*"]`: cualquier usuario con sesión), `description`, `request_body_params`
-(los del cuerpo) y `owner` (la columna del dueño, o `null`).
+(los del cuerpo), `query_params` (los de la *query string* que usa el SQL, los filtros de una
+colección: `?minAverage=7` → `$minAverage`; si falta uno, 400) y `owner` (la columna del dueño,
+o `null`). El resto de la *query string* filtra y ordena el resultado de un `GET` (`?columna=valor`,
+`_sort`, `_order`, `_limit`, `_page`).
 
 **`GET /endpoints`**: los endpoints cargados, las versiones de los ficheros y los errores.
 

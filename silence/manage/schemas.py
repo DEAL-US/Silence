@@ -75,9 +75,10 @@ COMPONENTS = {
                        line=INT, statement=STR),
     "Users": obj(["pk", "passwordMode", "users"], pk=STR, passwordMode={"enum": ["argon2", "plain"]},
                  users={"type": "array", "items": obj(
-                     ["id", "identifier", "role", "active", "password"],
+                     ["id", "identifier", "role", "active", "password", "plainPassword"],
                      id={}, identifier={}, role={}, active={},
-                     password={"enum": ["argon2", "plain", "unsupported"]})}),
+                     password={"enum": ["argon2", "plain", "unsupported"]},
+                     plainPassword={"type": ["string", "null"], "description": "The password, if it is stored as plain text in plain mode"})}),
     "Updated": obj(["updated"], updated=INT),
     "Session": obj(["sessionToken", "user"], sessionToken=STR, user={"type": "object"}),
     "Hash": obj(["hash"], hash=STR),
@@ -85,7 +86,7 @@ COMPONENTS = {
     "EndpointDefinition": obj(["route", "method", "sql"],
                               route=STR, method={"enum": ["GET", "POST", "PUT", "DELETE"]}, sql=STR,
                               auth_required=BOOL, allowed_roles=LIST_STR, description=STR,
-                              request_body_params=LIST_STR, owner=STR_OR_NULL),
+                              request_body_params=LIST_STR, query_params=LIST_STR, owner=STR_OR_NULL),
     "Endpoint": {"allOf": [ref("EndpointDefinition"), obj(
         ["file", "name", "table", "source", "fullRoute", "overrides", "warnings"],
         file=STR, name=STR, table=STR, source={"enum": ["auto", "custom"]}, fullRoute=STR,

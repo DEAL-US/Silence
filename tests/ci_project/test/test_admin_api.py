@@ -39,7 +39,7 @@ def try_schema_and_users():
     assert {"departments", "employees", "topemployees"} <= set(relations)
     assert relations["departments"]["rows"] > 0
     users = requests.get(ADMIN + "/users").json()["users"]
-    assert users and all(u["password"] == "argon2" for u in users[:5])
+    assert users and all(u["password"] == "argon2" and u["plainPassword"] is None for u in users[:5])
     token = requests.post(f"{ADMIN}/users/{users[0]['id']}/session").json()["sessionToken"]
     r = requests.get(BASE_URL + "/employees/logged", headers={"Token": token})
     assert r.status_code == 200 and r.json()[0]["employeeId"] == users[0]["id"]
@@ -72,6 +72,15 @@ def try_endpoint_files():
     assert requests.get(ADMIN + "/status").json()["errors"]["endpoints"] == []
     requests.delete(ADMIN + "/endpoints/departments_extra/getOne")
     assert len(requests.get(BASE_URL + "/departments/1").json()[0]) > 1
+    # The params of the query string that the SQL uses (filters of a collection)
+    above = {"route": "/departments/above", "method": "GET", "query_params": ["minId"],
+             "sql": "SELECT * FROM departments WHERE departmentId > $minId"}
+    assert requests.put(ADMIN + "/endpoints/departments_extra/above", json=above).status_code == 201
+    rows = requests.get(BASE_URL + "/departments/above?minId=1").json()
+    assert rows and all(r["departmentId"] > 1 for r in rows)
+    r = requests.get(BASE_URL + "/departments/above")
+    assert r.status_code == 400 and "minId" in r.json()["message"]
+    requests.delete(ADMIN + "/endpoints/departments_extra/above")
     r = requests.delete(ADMIN + "/endpoints/departments_extra/cities")
     assert r.status_code == 200
     assert requests.get(BASE_URL + "/departments/cities").status_code in (404, 405)
