@@ -26,8 +26,7 @@ test_admin_api.py` comprueba que una URL lo cumple.
   guardarlos) y guarda los propios; los ejecuta el panel contra la API del alumno, sin
   transacciones: cambian la BD.
 - **Los ficheros del proyecto, con una sola API** (`/files/{ruta}`): `silence.json`,
-  `endpoints/*.json`, `tests/*.json`, los datos del panel (`admin/data/*.json`) y el registro de
-  peticiones (`admin/logs/requests.log`). Se leen y se escriben enteros; Silence valida cada uno
+  `endpoints/*.json`, `tests/*.json` y el registro de peticiones (`admin/logs/requests.log`). Se leen y se escriben enteros; Silence valida cada uno
   según lo que es antes de guardarlo. Los ficheros `endpoints/auto_<tabla>` los genera Silence (solo
   se leen); los demás son del usuario. Los tests generados no son ficheros.
 - **Concurrencia**: las lecturas devuelven la versión de cada fichero (`etag`, un texto opaco;
@@ -99,12 +98,11 @@ están sirviendo (ver «Endpoints»); `errors` son los problemas de los ficheros
 | `silence.json` | La configuración | leer y escribir |
 | `endpoints/<nombre>.json` | Endpoints (por nombre); `auto_<tabla>`, los generados | leer y escribir (los `auto_`, solo leer) |
 | `tests/<nombre>.json` | Tests propios (por nombre) | leer, escribir y borrar |
-| `admin/data/<nombre>.json` | Datos del panel (por ejemplo, sus escenarios, `scenarios.json`): cualquier JSON, que Silence no valida; versionarlo es decisión del alumno | leer, escribir y borrar |
 | `admin/logs/requests.log` | El registro de peticiones (texto) | leer y borrar |
 
 Los nombres, de letras, dígitos, `_` y `-`. Cualquier otra ruta, 403.
 
-**`GET /files`** (o **`GET /files?dir=endpoints`**, con `endpoints`, `tests`, `admin/data` o
+**`GET /files`** (o **`GET /files?dir=endpoints`**, con `endpoints`, `tests` o
 `admin/logs`): los ficheros que hay, con su versión.
 
 ```json
@@ -299,9 +297,8 @@ id, "expect": 403}` o `"expect": {"status": 400, "message": "validSalary"}`) o l
   generado (409; uno así en un fichero sale como error en `errors.tests` de `GET /status` y no se
   carga).
 
-Los **escenarios** (*scenarios*: secuencias de unitarios) no son de Silence: los guarda y los ejecuta el
-panel (en `admin/data/scenarios.json`). Un fichero `tests/auto_*.json` de una versión anterior no se
-carga: sale como error.
+Un test es una sola petición: no hay secuencias de tests. Un fichero `tests/auto_*.json` de una
+versión anterior no se carga: sale como error.
 
 **`GET /tests/generated`**: los tests generados, calculados en ese momento con los endpoints y los
 datos de la BD (para que los positivos usen valores que existen y los negativos, valores que no
@@ -317,8 +314,8 @@ y `expect`, ya interpretados.
             "expect": {"status": 404}}]}
 ```
 
-Un test con `steps` (es un escenario: va en los datos del panel) o con otra cosa esperada que no
-sea `status` y `message` no es válido (400 al guardarlo).
+Un test con `steps` (varias peticiones) o con otra cosa esperada que no sea `status` y `message`
+no es válido (400 al guardarlo).
 
 Silence no ejecuta los tests: no hay `tests/run`, `tests/try` ni `silence test`. Tampoco se
 generan, personalizan ni exportan ficheros (`tests/generate`, `…/customize`, `tests/export` y

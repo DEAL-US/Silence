@@ -65,14 +65,9 @@ def try_other_files():
     assert "silence.json" in paths and "endpoints/auto_employees.json" in paths and "tests/employees.json" in paths
     assert all(f["path"].startswith("tests/") for f in requests.get(ADMIN + "/files?dir=tests").json()["files"])
     assert requests.get(ADMIN + "/files?dir=sql").status_code == 400
-    # The admin panel's own data (e.g., its scenarios): any JSON, in admin/data/
-    assert read("admin/data/ci_check.json") == {"path": "admin/data/ci_check.json", "data": None, "etag": ""}
-    r = write("admin/data/ci_check.json", [{"name": "flow", "steps": ["a", "b"]}], "")
-    assert r.status_code == 201 and r.json()["etag"]
-    assert read("admin/data/ci_check.json")["data"][0]["steps"] == ["a", "b"]
-    assert write("admin/data/ci_check.json", [], "old").status_code == 412
-    assert requests.delete(FILES + "admin/data/ci_check.json").status_code == 200
-    assert requests.delete(FILES + "admin/data/ci_check.json").status_code == 404
+    # Nothing else of the project (e.g., the panel's own files)
+    assert requests.get(FILES + "admin/data/x.json").status_code == 403
+    assert write("admin/data/x.json", []).status_code == 403
 
 
 def try_schema_and_users():
@@ -140,7 +135,7 @@ def try_tests():
     assert write("tests/ci_check.json", {"departments_mine": mine}).status_code == 201
     # Nor the name of a custom test of another file
     assert write("tests/ci_check2.json", {"departments_mine": mine}).status_code == 409
-    # A unit test expects a status and a message; scenarios belong to the admin panel
+    # A test has one request, and expects a status and a message
     assert write("tests/ci_check.json", {"flow": {"steps": ["a"]}}).status_code == 400
     assert write("tests/ci_check.json", {"rows": {"GET /departments": None, "expect": {"count": 3}}}).status_code == 400
     assert requests.delete(FILES + "tests/ci_check.json").status_code == 200

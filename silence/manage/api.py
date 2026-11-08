@@ -282,10 +282,9 @@ def generated_tests():
 
 
 ###############################################################################
-# The files of the project: silence.json, endpoints/*.json, tests/*.json, the
-# admin panel's own data (admin/data/*.json, e.g., its scenarios) and the log
-# of requests (admin/logs/requests.log). Each one is checked as what it is
-# before saving it; the rest of the project is not reachable.
+# The files of the project: silence.json, endpoints/*.json, tests/*.json and
+# the log of requests (admin/logs/requests.log). Each one is checked as what it
+# is before saving it; the rest of the project is not reachable.
 ###############################################################################
 
 NAME = r"[A-Za-z0-9_-]+"
@@ -293,7 +292,6 @@ FILES = [  # (pattern, kind, folder that is listed)
     (re.compile(r"silence\.json"), "config", None),
     (re.compile(rf"endpoints/{NAME}\.json"), "endpoints", "endpoints"),
     (re.compile(rf"tests/{NAME}\.json"), "tests", "tests"),
-    (re.compile(rf"admin/data/{NAME}\.json"), "panel", "admin/data"),
     (re.compile(r"admin/logs/requests\.log"), "log", "admin/logs"),
 ]
 
@@ -303,7 +301,7 @@ def file_kind(path):
         if pattern.fullmatch(path):
             return kind
     raise HTTPError(403, f"'{path}' is not a file that can be managed: silence.json, endpoints/*.json, "
-                         "tests/*.json, admin/data/*.json or admin/logs/requests.log")
+                         "tests/*.json or admin/logs/requests.log")
 
 
 def full_path(path):
@@ -462,8 +460,7 @@ def put_file(path):
             f.write("\n")
         if kind == "endpoints":
             REGISTRY.load()
-    if kind != "panel":
-        watcher.bump()
+    watcher.bump()
     return jsonify({"path": path, "etag": etag_of(where), **extra}), 201 if created else 200
 
 

@@ -103,7 +103,7 @@ COMPONENTS = {
     "Files": obj(["files"], files={"type": "array", "items": obj(["path", "etag"], path=STR, etag=STR)}),
     "File": obj(["path", "data", "etag"], path=STR, etag=STR, data={
         "description": "The content: silence.json (without its secret key, see SilenceJson), the endpoints or "
-                       "the tests of a file by name, any JSON of admin/data/, or the text of the log; null if "
+                       "the tests of a file by name, or the text of the log; null if "
                        "the file does not exist"}),
     "FileSaved": obj(["path", "etag"], path=STR, etag=STR,
                      restartNeeded={**BOOL, "description": "Only for silence.json: the address or the port changed"}),
