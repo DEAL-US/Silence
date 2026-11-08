@@ -6,8 +6,6 @@ from silence.db.connector import test_connection
 
 ###############################################################################
 # silence createapi [table...]: endpoints/auto_<table>.json and the JS API
-# silence createtests [table...] [--http]: tests/auto_<table>.json (and the
-#     .http files for VS Code's REST Client)
 # silence hash <password>: the argon2 hash of a password
 # The same code as the admin API (POST /_silence/v1/endpoints/generate...).
 ###############################################################################
@@ -40,25 +38,6 @@ def createapi(args):
     logger.info("Endpoints written in endpoints/auto_<table>.json.")
     from silence.server.endpoints import REGISTRY
     REGISTRY.log_errors()
-
-
-def createtests(args):
-    require_project()
-    from silence.server import manager
-    from silence.testing import generator, http_export
-    manager.setup()
-    try:
-        res = generator.generate(args.tables or None)
-    except ValueError as exc:
-        logger.error(str(exc))
-        sys.exit(1)
-    for t in res["tables"]:
-        logger.info("    · %s: %d tests", t["table"], t["tests"])
-    logger.info("Tests written in tests/auto_<table>.json; run them from the admin panel, or export them with --http.")
-    if args.http:
-        for f in http_export.export(args.tables or None)["files"]:
-            logger.info("    · %s", f)
-        logger.info("Open them in VS Code with the REST Client extension. Sending them CHANGES the database.")
 
 
 def hash_password(args):

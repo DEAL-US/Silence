@@ -43,11 +43,6 @@ def run_from_command_line():
     p.add_argument("tables", nargs="*", help="Only these tables or views")
     p.set_defaults(handler=generate.createapi)
 
-    p = subparsers.add_parser("createtests", help="Generates the tests of the endpoints (tests/auto_<table>.json)")
-    p.add_argument("tables", nargs="*", help="Only the endpoints of these tables")
-    p.add_argument("--http", action="store_true", help="Also export them to .http files (VS Code's REST Client)")
-    p.set_defaults(handler=generate.createtests)
-
     p = subparsers.add_parser("hash", help="Prints the argon2 hash of a password")
     p.add_argument("password")
     p.set_defaults(handler=generate.hash_password)

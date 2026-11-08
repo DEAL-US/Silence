@@ -1,8 +1,0 @@
-{
-    "topemployees_getAll_ok": {
-        "description": "GET /topemployees: returns the current rows",
-        "endpoint": "GET /topemployees",
-        "GET /topemployees": null,
-        "expect": 200
-    }
-}

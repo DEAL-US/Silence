@@ -79,12 +79,24 @@ def try_endpoint_files():
 
 def try_tests():
     tests = requests.get(ADMIN + "/tests").json()["tests"]
-    assert tests and all(t["expect"].get("status") for t in tests if t["source"] == "auto")
-    # Silence does not run tests: the student runs them (the admin panel, the .http export)
-    assert requests.post(ADMIN + "/tests/run", json={}).status_code in (404, 405)
-    # The tests of tests/ are unit tests: the composite ones belong to the admin panel
-    bad = requests.put(ADMIN + "/tests/ci_check/flow", json={"steps": ["departments_getAll_ok"]})
-    assert bad.status_code == 400
+    generated = [t for t in tests if t["source"] == "auto"]
+    # The generated tests are computed (not saved), each one with the file of its table and a status
+    assert generated and all(t["expect"].get("status") and not t["file"].startswith("auto_") for t in generated)
+    # Silence does not run tests nor generates, customizes or exports files of tests
+    for path in ("/tests/run", "/tests/generate", "/tests/export", f"/tests/{generated[0]['file']}/{generated[0]['name']}/customize"):
+        assert requests.post(ADMIN + path, json={}).status_code in (404, 405), path
+    # A custom test with the name of a generated one replaces it; deleting it brings it back
+    g = next(t for t in generated if t["name"] == "departments_getById_not_found")
+    mine = {"description": "mine", "GET /departments/999999999": None, "expect": 404}
+    assert requests.put(f"{ADMIN}/tests/departments/{g['name']}", json=mine).status_code == 201
+    same = [t for t in requests.get(ADMIN + "/tests").json()["tests"] if t["name"] == g["name"]]
+    assert len(same) == 1 and same[0]["source"] == "custom" and same[0]["description"] == "mine"
+    assert requests.delete(f"{ADMIN}/tests/departments/{g['name']}").status_code == 200
+    back = [t for t in requests.get(ADMIN + "/tests").json()["tests"] if t["name"] == g["name"]]
+    assert len(back) == 1 and back[0]["source"] == "auto"
+    # A unit test expects a status and a message; composite tests belong to the admin panel
+    assert requests.put(ADMIN + "/tests/ci_check/flow", json={"steps": ["a"]}).status_code == 400
+    assert requests.put(ADMIN + "/tests/ci_check/rows", json={"GET /departments": None, "expect": {"count": 3}}).status_code == 400
     # The requests to the student's API count in the statistics
     before = requests.get(ADMIN + "/stats").json()["api"]["requests"]
     requests.get(BASE_URL + "/departments")

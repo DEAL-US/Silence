@@ -1,5 +1,6 @@
-"""Runs the unit tests of a running Silence project (tests/*.json) through HTTP, as the admin
-panel does: Silence does not run tests. Used by the CI (run_ci.py); not part of Silence.
+"""Runs the unit tests of a running Silence project (the generated ones and the custom ones of
+tests/*.json, as GET /_silence/v1/tests gives them) through HTTP, as the admin panel does:
+Silence does not run tests. Used by the CI (run_ci.py); not part of Silence.
 
 The requests are real: they change the database. They run in the order GET, POST, PUT, DELETE
 (as the admin panel does), so that the reads see the original data and the deletions go last.
@@ -13,32 +14,14 @@ import requests
 ORDER = {"GET": 0, "POST": 1, "PUT": 2, "DELETE": 3}
 
 
-def same(expected, actual):
-    if isinstance(expected, (int, float)) and isinstance(actual, (int, float)):
-        return float(expected) == float(actual)
-    return expected == actual
-
-
 def check(expect, status, data):
-    '''The failures of a response against what a test expects (without expect, a 2xx)'''
+    '''The failures of a response against what a test expects (without status, a 2xx)'''
     failures = []
     if "status" in expect:
         if expect["status"] != status:
             failures.append(f"expected status {expect['status']}, got {status}")
     elif not 200 <= status < 300:
         failures.append(f"expected a 2xx status, got {status}")
-    if "count" in expect:
-        n = len(data) if isinstance(data, list) else None
-        if n != expect["count"]:
-            failures.append(f"expected {expect['count']} rows, got {n}")
-    if "row" in expect:
-        row = data[0] if isinstance(data, list) and data else data
-        if not isinstance(row, dict):
-            failures.append("expected a row, got none")
-        else:
-            for k, v in expect["row"].items():
-                if not same(v, row.get(k)):
-                    failures.append(f"expected {k} = {v!r}, got {row.get(k)!r}")
     if "message" in expect:
         msg = data.get("message", "") if isinstance(data, dict) else ""
         if expect["message"] not in (msg or ""):

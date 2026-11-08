@@ -17,12 +17,14 @@ test_admin_api.py` comprueba que una URL lo cumple.
   definición de un endpoint, que son los de su fichero (`auth_required`…).
 - **Todo en inglés**: rutas, campos y mensajes.
 - **Una operación por cada acción de la CLI o del panel**, con el mismo código detrás:
-  `silence createapi` es `POST /endpoints/generate`, y `silence createtests`, `POST /tests/generate`.
-- **Silence no ejecuta tests**: los define, los genera y los exporta; los ejecuta el alumno
-  contra su API (desde el panel o con la exportación `.http`), sin transacciones: cambian la BD.
+  `silence createapi` es `POST /endpoints/generate`, y `silence createdb`, `POST /database/reload`.
+- **Silence no ejecuta tests**: genera los que se deducen de los endpoints (al pedirlos, sin
+  guardarlos) y guarda los propios; los ejecuta el panel contra la API del alumno, sin
+  transacciones: cambian la BD.
 - **Ficheros del proyecto como recursos**: un endpoint o un test se identifica por su fichero
   (sin `.json`) y su nombre: `/endpoints/photos/delete` es `delete` en `endpoints/photos.json`.
-  Los ficheros `auto_<tabla>` los genera Silence; los demás son del usuario.
+  Los ficheros `endpoints/auto_<tabla>` los genera Silence; los demás son del usuario. Los tests
+  generados no son ficheros.
 - **Concurrencia**: las lecturas devuelven la versión de cada fichero (`etag`, un texto opaco;
   `""` si el fichero no existe). Una escritura con la cabecera `If-Match` que no coincide responde
   **412** y no escribe; sin `If-Match`, escribe siempre.
@@ -240,14 +242,25 @@ Renombrar un endpoint es `PUT` del nombre nuevo y `DELETE` del antiguo.
 
 ### Tests
 
-**Un test** (de `tests/`) es siempre **unitario**: una petición y lo que se espera, en forma
-corta (`{"MÉTODO /ruta": cuerpo, "as": id, "expect": …}`) o larga (`{"request": {"method",
-"path", "body", "as"}, "expect"}`); ver la cabecera de `silence/testing/model.py`. Los **tests
-compuestos** (secuencias de unitarios) no son de Silence: los guarda y los ejecuta el panel
-(ver «Datos del panel»).
+**Un test** es siempre **unitario**: una petición y lo que se espera (un código de estado y,
+si acaso, un fragmento del mensaje de error), en forma corta (`{"MÉTODO /ruta": cuerpo, "as":
+id, "expect": 403}` o `"expect": {"status": 400, "message": "validSalary"}`) o larga
+(`{"request": {"method", "path", "body", "as"}, "expect"}`); ver la cabecera de
+`silence/testing/model.py`. Hay dos clases:
 
-**`GET /tests`**: los tests, las versiones de los ficheros y los errores. `definition` va tal
-como está en el fichero; `request` y `expect`, ya interpretados.
+- **generados** (`source: auto`): Silence los deduce de los endpoints y de los datos cada vez que
+  se piden; no se guardan, así que siempre siguen a los endpoints. `file` es el fichero de su
+  tabla, donde iría si se personaliza.
+- **propios** (`source: custom`): `tests/<tabla>.json`. Uno con el nombre de un generado lo
+  sustituye; al borrarlo, vuelve el generado.
+
+Los **tests compuestos** (secuencias de unitarios) no son de Silence: los guarda y los ejecuta el
+panel (ver «Datos del panel»). Un fichero `tests/auto_*.json` de una versión anterior no se
+carga: sale como error.
+
+**`GET /tests`**: los tests (generados y propios), las versiones de los ficheros propios y los
+errores. `definition` va tal como está en el fichero (en los generados, en forma corta);
+`request` y `expect`, ya interpretados.
 
 ```json
 {"tests": [{"file": "employees", "name": "employees_salary_ok", "table": "employees", "source": "custom",
@@ -255,24 +268,18 @@ como está en el fichero; `request` y `expect`, ya interpretados.
             "definition": {"PUT /employees/4/salary": {"salary": 1500}, "as": 2, "expect": 200},
             "request": {"method": "PUT", "path": "/employees/4/salary", "body": {"salary": 1500}, "as": 2},
             "expect": {"status": 200}}],
- "files": {"auto_employees": "67c343e20cd053aa", "employees": "dc6da4e7e8b50d6a"},
+ "files": {"employees": "dc6da4e7e8b50d6a"},
  "errors": []}
 ```
 
-**`GET`/`PUT`/`DELETE /tests/{file}/{name}`** y **`POST /tests/{file}/{name}/customize`**: como
-los de los endpoints (`data` es el test). Un test con `steps` no es válido (400): es un
-compuesto, y va en los datos del panel.
+**`GET`/`PUT`/`DELETE /tests/{file}/{name}`**: como los de los endpoints (`data` es el test), solo
+para los propios. Un test con `steps` (es un compuesto: va en los datos del panel) o con otra
+cosa esperada que no sea `status` y `message` no es válido (400).
 
-**`POST /tests/generate`**, con `{"tables": [...]}` opcional: como `silence createtests`.
-Responde `{"tables": [{"table": "photos", "tests": 14}]}`.
-
-Los tests generados solo esperan un código de estado. Silence no los ejecuta: no hay
-`tests/run` ni `tests/try` ni `silence test`. El panel los ejecuta contra la API del alumno en el
-orden `GET`, `POST`, `PUT`, `DELETE` (para que las lecturas vean los datos originales y los
-borrados vayan al final), abriendo la sesión de cada `as` con `POST /users/{id}/session`.
-
-**`POST /tests/export`**, con `{"format": "http", "tables": [...]}`: como `silence createtests
---http`. Responde `{"files": ["tests/http/photos.http"]}`.
+Silence no ejecuta los tests: no hay `tests/run`, `tests/try` ni `silence test`. Tampoco se
+generan, personalizan ni exportan ficheros (`tests/generate`, `…/customize`, `tests/export` y
+`silence createtests` ya no existen). El panel los ejecuta contra la API del alumno en el orden
+`GET`, `POST`, `PUT`, `DELETE`, abriendo la sesión de cada `as` con `POST /users/{id}/session`.
 
 ### Datos del panel
 

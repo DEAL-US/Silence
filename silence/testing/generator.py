@@ -1,22 +1,20 @@
 import json
-import os
 
 from silence.db import dal
 from silence.db.schema import get_schema
 from silence.settings import settings
 from silence.server.endpoints import REGISTRY
 from silence.server.session import get_field
-from silence.testing.model import load_tests, tests_dir, AUTO_PREFIX, short_unit
+from silence.testing.model import Test, short_unit
 
 ###############################################################################
-# Generation of tests from the endpoints (on demand, from the admin panel),
-# into tests/auto_<table>.json. For each endpoint, with the status expected:
+# Generation of tests from the endpoints, computed whenever they are asked for
+# (they are not saved). For each endpoint, with the status expected:
 #   positive: the request that should work (2xx);
 #   negative: no session (401), another role (403), another owner (403),
 #             a row that does not exist (404), a required param missing (400).
-# Silence does not run them: the student runs them (from the admin panel, or
-# with the .http export). The tests whose name is in a custom file are not
-# generated again.
+# Silence does not run them: the admin panel does. A custom test with the name of
+# a generated one replaces it (see model.all_tests).
 ###############################################################################
 
 TEST_PASSWORD = "Test-1234"
@@ -309,37 +307,15 @@ def tests_for_endpoint(ep, ctx):
     return tests
 
 
-def generate(tables=None):
-    '''Writes tests/auto_<table>.json for the endpoints of the given tables (all by default)'''
+def generated_tests():
+    '''The tests of all the endpoints, computed now from the endpoints and the data (they are not
+    saved): a list of Test, each one with the file of its table (where it goes if it is customized)'''
     REGISTRY.load()
     ctx = Context()
-    from silence.server.generator import check_tables
-    check_tables(ctx.schema, tables)
-    customs = {t.name for t in load_tests().tests if t.source == "custom"}
-    by_table = {}
-    for ep in REGISTRY.endpoints:
-        if tables is None or ep.table in tables:
-            by_table.setdefault(ep.table, []).append(ep)
-
-    folder = tests_dir()
-    os.makedirs(folder, exist_ok=True)
-    summary = []
-    for table, eps in sorted(by_table.items()):
-        tests = {}
-        for ep in eps:
-            tests.update(tests_for_endpoint(ep, ctx))
-        tests = {n: t for n, t in tests.items() if n not in customs}
-        for t in tests.values():
+    tests = []
+    for ep in sorted(REGISTRY.endpoints, key=lambda e: (e.table, e.route, e.method)):
+        for name, t in tests_for_endpoint(ep, ctx).items():
             t.pop("positive", None)
-
-        path = os.path.join(folder, f"{AUTO_PREFIX}{table}.json")
-        if tests:
-            # The unit tests in the short form, which is also the example for the students' own tests
-            tests = {n: short_unit(t) for n, t in tests.items()}
-            with open(path, "w", encoding="utf8") as f:
-                json.dump(tests, f, indent=4, ensure_ascii=False, default=str)
-                f.write("\n")
-        elif os.path.isfile(path):
-            os.remove(path)
-        summary.append({"table": table, "tests": len(tests)})
-    return {"tables": summary}
+            # The short form, the same as the custom tests (and so the example for them)
+            tests.append(Test(name, short_unit(t), f"{ep.table}.json", source="auto"))
+    return tests
