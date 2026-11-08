@@ -271,9 +271,10 @@ el propio lo sustituye.
 **`POST /endpoints/generate`**, con `{"tables": [...]}` (opcional; todas por defecto): como
 `silence createapi`. `custom` son los que no se generan por estar personalizados; `removed`, los
 ficheros `auto_` de tablas que ya no existen. Todos son públicos (la sesión, los roles y el propietario se
-ponen al personalizarlos), y la tabla de usuarios enlazada solo recibe sus lecturas (`getAll` y
-`getById`, sin las contraseñas): sus filas se crean con el registro, y cambiarlas (contraseñas,
-roles) lo decide el alumno con un endpoint propio con sesión y roles.
+ponen al personalizarlos), también los de la tabla de usuarios enlazada, que es una tabla más:
+sus lecturas nunca envían las contraseñas y sus escrituras las cifran en modo argon2. Un endpoint
+público que cambia la tabla de usuarios lleva un aviso (cualquiera podría cambiar usuarios, roles
+y contraseñas): el alumno le pone sesión y roles.
 
 ```json
 {"tables": [{"table": "photos", "view": false, "generated": ["getAll", "getById", "create", "update"],
