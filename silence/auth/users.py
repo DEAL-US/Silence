@@ -34,10 +34,6 @@ def identifier_field():
     return identifier_parts()[1]
 
 
-def identifier_is_external():
-    return identifier_parts()[0] is not None
-
-
 def join_of(users_rel, table):
     '''The foreign key of the users table to another table: (column, referenced column)'''
     for fk in users_rel.fks:

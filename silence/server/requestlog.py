@@ -15,7 +15,7 @@ from silence.settings import settings
 #   2026-11-08T08:01:12 api GET /api/employees/3 200 4ms 312B /employees/$employeeId
 #   2026-11-08T08:01:13 web GET /css/main.css 404 1ms 0B - Not found
 #
-# Fields: time, group (api: the student's endpoints; silence: login, register
+# Fields: time, group (api: the student's endpoints; silence: login, logout
 # and GET <prefix>; web: the files of web/), method, path (with the query
 # string), status, time taken, bytes sent, the route of the endpoint that
 # answered ("-" if none) and, in errors, the message.

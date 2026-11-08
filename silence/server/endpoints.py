@@ -113,6 +113,12 @@ class Endpoint:
         if self.uses_logged_id and not self.auth_required:
             self.warnings.append("uses $loggedId without auth_required: it may be NULL")
 
+        table = getattr(self.shape, "table", None)
+        if self.op in ("INSERT", "UPDATE", "DELETE") and table and is_auth_table(table) \
+                and not (self.auth_required or self.owner):
+            self.warnings.append("anybody can change the users (also their roles and passwords): "
+                                 "require authentication and a role")
+
         if self.owner:
             if not settings.AUTH_LINKED:
                 raise EndpointError(f"'{self.name}' in {self.file}: owner needs the users table "

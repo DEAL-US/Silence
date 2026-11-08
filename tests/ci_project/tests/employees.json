@@ -23,11 +23,11 @@
         "as": 2,
         "expect": 404
     },
-    "employees_register": {
-        "description": "A new user registers",
-        "POST /register": {"email": "flow@company.com", "password": "flow", "firstName": "Flow",
-                           "lastName": "Test", "salary": 1000, "departmentId": 1},
-        "expect": 200
+    "employees_create_no_session": {
+        "description": "The users are created like any other row, but only with a session",
+        "POST /employees": {"email": "flow@company.com", "password": "flow", "firstName": "Flow",
+                            "lastName": "Test", "salary": 1000, "departmentId": 1, "isActive": 1},
+        "expect": 401
     },
     "employees_login": {
         "description": "A user logs in with the password of the sample data",

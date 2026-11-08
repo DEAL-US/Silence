@@ -3,7 +3,6 @@ from silence.logging.default_logger import logger
 from traceback import print_exc
 
 import test_summary
-import test_register
 import test_login
 import test_roles
 import test_banned
@@ -15,7 +14,6 @@ import test_admin_api
 # Order is important!
 tests = [
     test_summary,
-    test_register,
     test_login,
     test_roles,
     test_banned,

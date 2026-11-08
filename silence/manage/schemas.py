@@ -36,10 +36,10 @@ COMPONENTS = {
                   errors=obj(["config", "endpoints", "tests"], config=LIST_STR, endpoints=LIST_STR, tests=LIST_STR)),
 
     "AuthSettings": obj(["table", "identifier", "password", "role", "active", "password_mode", "login",
-                         "register", "default_role", "token_max_age"],
+                         "token_max_age"],
                         table=STR, identifier=STR, password=STR, role=STR, active=STR,
-                        password_mode={"enum": ["argon2", "plain"]}, login=BOOL, register=BOOL,
-                        default_role=STR, token_max_age=INT),
+                        password_mode={"enum": ["argon2", "plain"]}, login=BOOL,
+                        token_max_age=INT),
 
     "SilenceJson": obj(
         ["version", "server", "database", "auth", "js_api", "admin", "debug"],

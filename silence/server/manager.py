@@ -58,8 +58,8 @@ def api_summary():
            for e in REGISTRY.endpoints]
     if settings.ENABLE_LOGIN:
         eps.append({"route": settings.API_PREFIX + "/login", "method": "POST", "description": "Logs in"})
-    if settings.ENABLE_REGISTER:
-        eps.append({"route": settings.API_PREFIX + "/register", "method": "POST", "description": "Registers a user"})
+    if settings.ENABLE_LOGIN:
+        eps.append({"route": settings.API_PREFIX + "/logout", "method": "POST", "description": "Logs out"})
     return eps
 
 
@@ -74,9 +74,9 @@ def dispatch(path):
         g.log_group, g.log_route = "silence", "/login"
         res, status = auth_endpoints.login()
         return jsonify(res), status
-    if sub == "/register" and method == "POST" and settings.ENABLE_REGISTER:
-        g.log_group, g.log_route = "silence", "/register"
-        res, status = auth_endpoints.register()
+    if sub == "/logout" and method == "POST" and settings.ENABLE_LOGIN:
+        g.log_group, g.log_route = "silence", "/logout"
+        res, status = auth_endpoints.logout()
         return jsonify(res), status
 
     ep, url_params = REGISTRY.match(method, sub)

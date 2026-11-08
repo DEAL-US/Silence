@@ -54,8 +54,6 @@ DEFAULT_PROJECT = {
         # "argon2": passwords are stored as argon2 hashes; "plain": as text
         "password_mode": "argon2",
         "login": True,
-        "register": True,
-        "default_role": "",
         "token_max_age": 86400,
     },
     # The JS modules that call the endpoints, generated with them (each template
@@ -140,11 +138,10 @@ def validate(p):
     check("database", "scripts", lambda v: isinstance(v, list) and all(
         is_str(f) and f.endswith(".sql") and "/" not in f and "\\" not in f for f in v),
         'a list of files of sql/ (e.g., ["create_tables.sql", "populate.sql"])')
-    for key in ("table", "identifier", "password", "role", "active", "default_role"):
+    for key in ("table", "identifier", "password", "role", "active"):
         check("auth", key, is_str, "a text (\"\" if not used)")
     check("auth", "password_mode", lambda v: v in PASSWORD_MODES, " or ".join(f'"{m}"' for m in PASSWORD_MODES))
     check("auth", "login", is_bool, "true or false")
-    check("auth", "register", is_bool, "true or false")
     check("auth", "token_max_age", lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0,
           "a number of seconds")
     a = p["auth"]
@@ -236,8 +233,6 @@ class Settings:
         self.PASSWORD_MODE = auth["password_mode"]
         self.ALLOW_CLEAR_PASSWORDS = auth["password_mode"] == "plain"
         self.ENABLE_LOGIN = bool(auth["login"]) and self.AUTH_LINKED
-        self.ENABLE_REGISTER = bool(auth["register"]) and self.AUTH_LINKED
-        self.DEFAULT_ROLE_REGISTER = auth["default_role"] or None
         self.MAX_TOKEN_AGE = int(auth["token_max_age"])
         self.JS_API_ENABLED = bool(p["js_api"]["enabled"])
         self.JS_API_DIR = p["js_api"]["dir"]

@@ -85,8 +85,7 @@ están sirviendo (ver «Endpoints»); `errors` son los problemas de los ficheros
 {"revision": 7, "apiPrefix": "/api", "baseUrl": "http://127.0.0.1:8080",
  "database": {"name": "silence_gallery_db", "error": null},
  "auth": {"linked": true, "table": "users", "identifier": "email", "password": "password",
-          "role": "", "active": "", "password_mode": "argon2", "login": true, "register": true,
-          "default_role": "", "token_max_age": 86400},
+          "role": "", "active": "", "password_mode": "argon2", "login": true, "token_max_age": 86400},
  "endpoints": {"count": 40, "auto": 39, "custom": 1, "list": [ … ]},
  "tests": {"custom": 2},
  "errors": {"config": [], "endpoints": [], "tests": []}}
@@ -134,8 +133,7 @@ su texto), o `null` si no existe (con `etag` `""`).
           "database": {"host": "127.0.0.1", "port": 3306, "user": "iissi_user", "password": "iissi$user",
                        "name": "silence_gallery_db", "scripts": ["create_tables.sql", "populate.sql"]},
           "auth": {"table": "users", "identifier": "email", "password": "password", "role": "",
-                   "active": "", "password_mode": "argon2", "login": true, "register": true,
-                   "default_role": "", "token_max_age": 86400},
+                   "active": "", "password_mode": "argon2", "login": true, "token_max_age": 86400},
           "js_api": {"enabled": true, "dir": "web/js/api/_auto"},
           "admin": {"repo": "IISSI-US/silence-admin-panel", "version": "v1.0.0"},
           "debug": false}}
@@ -217,8 +215,7 @@ Sin tabla enlazada, todas responden 409.
 El identificador (`auth.identifier`) es una columna de la tabla de usuarios (`email`) o de una
 tabla a la que esta apunta con una clave ajena (`people.email`, cuando las credenciales están en
 su propia tabla: `credentials(person_id → people, password, role)`). En el segundo caso Silence
-lee los usuarios con un `JOIN` por esa clave ajena, el login recibe `email` y no hay registro (un
-usuario nuevo necesitaría antes su fila en `people`).
+lee los usuarios con un `JOIN` por esa clave ajena y el login recibe `email`.
 
 **`GET /users`**: los usuarios, con el estado de su contraseña (`argon2`, `plain` o
 `unsupported`). Su valor (`plainPassword`) solo si está en texto plano y el proyecto guarda así
@@ -335,7 +332,7 @@ lo pone en el `.gitignore`.
 
 ```text
 2026-11-08T08:01:12 api GET /api/employees/3 200 4ms 312B /employees/$employeeId
-2026-11-08T08:01:13 silence POST /api/login 401 9ms 60B /login Wrong password
+2026-11-08T08:01:13 silence POST /api/login 400 9ms 60B /login The user or the password are not correct
 2026-11-08T08:01:14 web GET /css/main.css 404 1ms 0B - Not found
 ```
 
@@ -345,7 +342,7 @@ endpoint que respondió (`-` si ninguno) y, en los errores, el mensaje (hasta el
 línea). Los grupos, como en Silence de Rust:
 
 - `api`: la API del alumno (sus endpoints); las que no encuentran endpoint llevan `-`.
-- `silence`: lo que Silence da a la aplicación del alumno: el login, el registro y el resumen
+- `silence`: lo que Silence da a la aplicación del alumno: el login, el logout y el resumen
   (`GET /api`).
 - `web`: los ficheros de `web/` (la aplicación del alumno).
 

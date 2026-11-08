@@ -6,8 +6,9 @@ import requests
 BASE_URL = os.environ.get("SILENCE_CI_BASE_URL", "http://127.0.0.1:8080/api")
 
 def get_token():
-    # We assume that the testing user exists, as created by the register test
-    data = {"email": "pruebas@company.com", "password": "pruebas"}
+    # A user of the data (populate_database.sql), whose password is the first part of its email
+    # (not the first one, which test_employees changes)
+    data = {"email": "jimenez@company.com", "password": "jimenez"}
     r = requests.post(f"{BASE_URL}/login", data=data)
     assert r.status_code == 200
     resp = r.json()
