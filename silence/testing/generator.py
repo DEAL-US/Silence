@@ -116,18 +116,48 @@ def missing_values(ep, rel):
     return values
 
 
-def unique_value(col, value, n):
-    '''A variant of a value of a UNIQUE column that does not collide'''
+def variants(value, n):
+    '''Variants of a value that keep its format (so as not to break a CHECK on it, e.g., the
+    format of a DNI): the last group of digits changed (00001A → 00002A, 00003A...), or, without
+    digits, a prefix in the local part of an email (t1.druiz@us.es) or a suffix (-t1)'''
+    import re
+    text = str(value)
+    digits = list(re.finditer(r"\d+", text))
+    if digits:
+        m = digits[-1]
+        width = len(m.group())
+        for i in range(1, 1000):
+            number = str(int(m.group()) + n * i).zfill(width)[-width:]
+            yield text[:m.start()] + number + text[m.end():]
+    if "@" in text:
+        for i in range(n, n + 50):
+            yield f"t{i}.{text}"
+    for i in range(n, n + 50):
+        yield f"{text}-t{i}"
+
+
+def unique_value(col, value, n, rel=None):
+    '''A variant of a value of a UNIQUE column that does not collide (checked in the table)'''
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         return value + 100000 + n
-    text = str(value)
-    if "@" in text:
-        candidate = f"t{n}.{text}"
-    else:
-        candidate = f"{text}-t{n}"
-    if col.max_length and len(candidate) > col.max_length:
-        candidate = candidate[-col.max_length:]
-    return candidate
+    for candidate in variants(value, n):
+        if col.max_length and len(candidate) > col.max_length:
+            continue
+        if rel is None or not dal.query(f"SELECT 1 FROM {rel.name} WHERE {col.name} = %s LIMIT 1", (candidate,)):
+            return candidate
+    return f"{value}-t{n}"[-(col.max_length or 0):]
+
+
+def free_reference(rel, col):
+    '''For a primary key that is also a foreign key (a subclass of an inheritance, with the id of
+    its superclass): a value of the referenced table that the table does not use yet, or None'''
+    fk = next((f for f in rel.fks if f["column"] == col.name), None)
+    if fk is None:
+        return None
+    rows = dal.query(f"SELECT r.{fk['refColumn']} AS v FROM {fk['refTable']} r WHERE r.{fk['refColumn']} "
+                     f"NOT IN (SELECT {col.name} FROM {rel.name} WHERE {col.name} IS NOT NULL) "
+                     f"ORDER BY r.{fk['refColumn']} LIMIT 1")
+    return rows[0]["v"] if rows else None
 
 
 def json_value(value):
@@ -150,7 +180,12 @@ def body_from_row(ep, rel, row, ctx, mutate_uniques, n=1):
             continue
         value = row.get(col.name) if (col is not None and row) else None
         if value is not None and mutate_uniques and col.name in uniques:
-            value = unique_value(col, value, n)
+            if col.name in rel.pk and any(f["column"] == col.name for f in rel.fks):
+                value = free_reference(rel, col)  # The id of a superclass row that is not one of these yet
+                if value is None:
+                    return None  # Every row of the superclass is already one: no positive POST
+            else:
+                value = unique_value(col, value, n, rel)
         body[p] = json_value(value)
     if mutate_uniques and rel is not None:
         free_combinations(ep, rel, body, ctx)
@@ -267,7 +302,8 @@ def tests_for_endpoint(ep, ctx):
             add("ok", "returns the current rows", unit("GET", path, as_user, expect={"status": 200}), True)
         elif ep.method == "POST" and row is not None:
             body = body_from_row(ep, rel, row, ctx, mutate_uniques=True)
-            add("ok", "creates a row", unit("POST", path, as_user, body, {"status": 201}), True)
+            if body is not None:
+                add("ok", "creates a row", unit("POST", path, as_user, body, {"status": 201}), True)
         elif ep.method == "PUT" and positive_row is not None:
             body = body_from_row(ep, rel, row, ctx, mutate_uniques=False)
             add("ok", "updates a row (with its current values)", unit("PUT", path, as_user, body, {"status": 200}), True)
@@ -283,8 +319,8 @@ def tests_for_endpoint(ep, ctx):
     if ep.method == "POST" and can_run and row is not None and path is not None:
         p = required_param(ep, rel)
         if p:
-            body = body_from_row(ep, rel, row, ctx, mutate_uniques=True)
-            del body[p]
+            body = body_from_row(ep, rel, row, ctx, mutate_uniques=True) or body_from_row(ep, rel, row, ctx, False)
+            body.pop(p, None)
             add("missing_param", f"without '{p}' is a 400", unit("POST", path, as_user, body, {"status": 400, "message": p}))
 
     # A param of the query string missing
@@ -296,7 +332,8 @@ def tests_for_endpoint(ep, ctx):
     # Sessions, roles and owners
     any_path = path or missing_path
     if needs_user and any_path is not None:
-        body = body_from_row(ep, rel, row, ctx, True) if ep.method in ("POST", "PUT") and row else None
+        body = (body_from_row(ep, rel, row, ctx, True) or body_from_row(ep, rel, row, ctx, False)) \
+            if ep.method in ("POST", "PUT") and row else None
         add("no_session", "without a session is a 401", unit(ep.method, any_path, None, body, {"status": 401}))
 
         other = ctx.other_role_user(ep.allowed_roles)
