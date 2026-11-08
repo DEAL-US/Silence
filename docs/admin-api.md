@@ -260,12 +260,13 @@ API del alumno; `user` es su fila sin la contraseña.
 `POST`, `PUT` o `DELETE`), `sql` (con `$param` y `$loggedId`), `auth_required`,
 `allowed_roles` (`["*"]`: cualquier usuario con sesión), `description`, `request_body_params`
 (los del cuerpo), `query_params` (los de la *query string* que usa el SQL, los filtros de una
-colección: `?minAverage=7` → `$minAverage`; si falta uno, 400) y `owner` (la columna del dueño,
-o `null`). El resto de la *query string* filtra y ordena el resultado de un `GET` (`?columna=valor`,
+colección: `?minAverage=7` → `$minAverage`; si falta uno, 400), `owner` (la columna del dueño,
+o `null`) y `disabled` (solo en uno propio: `true`, no se publica). El resto de la *query string* filtra y ordena el resultado de un `GET` (`?columna=valor`,
 `_sort`, `_order`, `_limit`, `_page`).
 
-**Los endpoints que se sirven** están en `endpoints.list` de `GET /status`: los generados y los
-propios, con su fichero y nombre.
+**Los endpoints** están en `endpoints.list` de `GET /status`: los generados y los propios, con su
+fichero y nombre, y también los desactivados (`"disabled": true`), que no se sirven. `endpoints.count`
+cuenta los que se sirven y `endpoints.disabled`, los desactivados.
 
 ```json
 [{"file": "photos", "name": "delete", "table": "photos", "source": "custom",
@@ -273,7 +274,7 @@ propios, con su fichero y nombre.
   "sql": "DELETE FROM photos WHERE photo_id = $photo_id", "auth_required": true,
   "allowed_roles": ["*"], "description": "Deletes a photo (only its owner)",
   "request_body_params": [], "owner": "user_id",
-  "overrides": ["auto_photos.json"], "warnings": []}]
+  "overrides": ["auto_photos.json"], "warnings": [], "disabled": false}]
 ```
 
 `source` es `auto` (fichero `auto_<tabla>`) o `custom`; `overrides`, los ficheros autogenerados
@@ -282,7 +283,9 @@ Los errores de los ficheros (lo que no se ha podido cargar) están en `errors.en
 
 Los endpoints se leen y se escriben con la API de ficheros (`endpoints/<nombre>.json`).
 Personalizar uno generado es escribir en el fichero propio de su tabla uno con su método y ruta:
-el propio lo sustituye.
+el propio lo sustituye. **Desactivarlo** (que no se publique) es lo mismo, con `"disabled": true`:
+no se sirve (404, o 405 si la ruta tiene otros métodos), ni sale en el resumen de la API, ni en la
+API JS, ni en los tests generados; el generado sigue en su fichero, y vuelve al borrar la copia.
 
 **`POST /endpoints/generate`**, con `{"tables": [...]}` (opcional; todas por defecto): como
 `silence createapi`. `custom` son los que no se generan por estar personalizados; `removed`, los
