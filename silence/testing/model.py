@@ -131,9 +131,6 @@ class Suite:
         self.tests = tests
         self.errors = errors
 
-    def get(self, name):
-        return next((t for t in self.tests if t.name == name), None)
-
 
 def load_tests():
     '''The custom tests (tests/<table>.json) and the errors of their files'''
@@ -179,21 +176,3 @@ def generated_names():
         return {t.name for t in generated_tests()}
     except Exception:
         return set()
-
-
-def all_tests():
-    '''The generated tests (if the database is reachable) and the custom ones. A custom test with
-    the name of a generated one is not loaded (an error says so)'''
-    suite = load_tests()
-    generated = []
-    try:
-        from silence.testing.generator import generated_tests
-        generated = generated_tests()
-    except Exception as exc:  # E.g., the database is not reachable: only the custom ones
-        suite.errors.append(f"the tests cannot be generated: {exc}")
-    names = {t.name for t in generated}
-    for t in suite.tests:
-        if t.name in names:
-            suite.errors.append(f"'{t.name}' in {t.file} has the name of a generated test: rename it")
-    customs = [t for t in suite.tests if t.name not in names]
-    return Suite(generated + customs, suite.errors)

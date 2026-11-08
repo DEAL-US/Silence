@@ -195,10 +195,8 @@ def write_log(response, group, message):
 @APP.after_request
 def log_request(response):
     path = request.path
-    if path == "/admin" or path.startswith("/admin/"):
-        return response  # The files of the admin panel: not logged
-    if path == "/_silence" or path.startswith("/_silence/"):
-        return response  # The admin API (the panel's traffic): not logged
+    if is_admin_path(path):
+        return response  # The admin panel and its API (the panel's traffic): not logged
 
     group = g.get("log_group") or ("api" if is_api_path(path) else "web")
     code = response.status_code

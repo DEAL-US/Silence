@@ -12,7 +12,6 @@ from silence.db.connector import test_connection
 from silence.db.errors import to_http_error
 from silence.exceptions import HTTPError, DatabaseError
 from silence.settings import settings, PROJECT_FILE, DEFAULT_PROJECT, merge
-from silence.server import watcher
 from silence.server.endpoints import REGISTRY, AUTO_PREFIX, Endpoint
 from silence.server.session import get_field
 from silence.project.files import write_json, etag_of, read_with_etag, safe_name
@@ -114,12 +113,10 @@ def endpoint_dict(e):
 
 @manage.route("/status")
 def status():
-    '''State of the project: database, users, the endpoints that are being served, tests, errors and
-    revision'''
+    '''State of the project: database, users, the endpoints that are being served, tests and errors'''
     db_error = test_connection(settings.DB_CONN) if settings.DB_CONN["database"] else "no database selected"
     suite = test_model.load_tests()  # The custom ones: generating the others takes a while
     return jsonify({
-        "revision": watcher.revision(),
         "apiPrefix": settings.API_PREFIX,
         "baseUrl": f"http://{settings.LISTEN_ADDRESS}:{settings.HTTP_PORT}",
         "database": {"name": settings.DB_CONN["database"], "error": db_error},
@@ -239,15 +236,6 @@ def list_users():
     return jsonify({"pk": rel.single_pk, "passwordMode": settings.PASSWORD_MODE, "users": users})
 
 
-def store_password(rel, password, user_id=None):
-    col = rel.column(settings.USER_AUTH_DATA["password"]).name
-    where, params = (f" WHERE {rel.single_pk} = %s", (user_id,)) if user_id is not None else ("", ())
-    ids = [r[rel.single_pk] for r in dal.query(f"SELECT {rel.single_pk} FROM {rel.name}{where}", params)]
-    for uid in ids:  # One hash per user (each one with its own salt)
-        dal.update(f"UPDATE {rel.name} SET {col} = %s WHERE {rel.single_pk} = %s", (hash_password(password), uid))
-    return len(ids)
-
-
 @manage.route("/users/<user_id>/password", methods=["PUT"])
 def set_password(user_id):
     '''Sets the password of a user (encrypted or not, as the project says)'''
@@ -255,8 +243,10 @@ def set_password(user_id):
     password = body().get("password")
     if not password:
         raise HTTPError(400, "The password cannot be empty")
-    if store_password(rel, password, user_id) == 0:
+    if not dal.query(f"SELECT 1 FROM `{rel.name}` WHERE `{rel.single_pk}` = %s", (user_id,)):
         raise HTTPError(404, "No such user")
+    col = rel.column(settings.USER_AUTH_DATA["password"]).name
+    dal.update(f"UPDATE `{rel.name}` SET `{col}` = %s WHERE `{rel.single_pk}` = %s", (hash_password(password), user_id))
     return jsonify({"updated": 1})
 
 
@@ -291,7 +281,6 @@ def generate_endpoints():
         res = generator.generate(body().get("tables") or None)
     except ValueError as exc:
         raise HTTPError(400, str(exc))
-    watcher.bump()
     return jsonify(res)
 
 
@@ -490,13 +479,12 @@ def put_file(path):
         write_json(where, data)
         if kind == "endpoints":
             REGISTRY.load()
-    watcher.bump()
     return jsonify({"path": path, "etag": etag_of(where), **extra}), 201 if created else 200
 
 
 @manage.route("/files/<path:path>", methods=["DELETE"])
 def delete_file(path):
-    '''Deletes a file (the log: resets the console and the statistics of the panel)'''
+    '''Deletes a file (the log: resets the activity and the statistics of the panel)'''
     kind = file_kind(path)
     where = full_path(path)
     if kind == "config":
@@ -509,8 +497,6 @@ def delete_file(path):
     os.remove(where)
     if kind == "endpoints":
         REGISTRY.load()
-    if kind in ("endpoints", "tests"):
-        watcher.bump()
     return jsonify({"deleted": True})
 
 ###############################################################################

@@ -45,7 +45,7 @@ def session_for(user):
 
 
 def login():
-    table, id_field, pwd_field, role_field, active_field = auth_fields()
+    _, id_field, pwd_field, _, active_field = auth_fields()
     form = request_body()
     identifier = form.get(id_field)
     password = form.get(pwd_field)

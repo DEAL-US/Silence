@@ -8,24 +8,10 @@ from silence.logging.default_logger import logger
 ###############################################################################
 # Watches the files of the project (silence.json, endpoints/*.json and
 # tests/*.json) and reloads them when they change, whoever changes them (the
-# admin panel, an editor, git...). Every reload increases the revision, which
-# clients read in GET /_silence/v1/status to know that something changed.
+# admin panel, an editor, git...).
 ###############################################################################
 
-_lock = threading.Lock()
-_revision = 0
 _snapshot = {}
-
-
-def revision():
-    return _revision
-
-
-def bump():
-    global _revision
-    with _lock:
-        _revision += 1
-    return _revision
 
 
 def watched_files():
@@ -61,10 +47,9 @@ def reload(changed):
             for err in settings.errors:
                 logger.error("    · %s", err)
         schema.invalidate()
-    if any(os.path.basename(os.path.dirname(p)) in ("endpoints",) for p in changed) or \
+    if any(os.path.basename(os.path.dirname(p)) == "endpoints" for p in changed) or \
             any(os.path.basename(p) == PROJECT_FILE for p in changed):
         REGISTRY.load().log_errors()
-    bump()
     if settings.errors and rel == [PROJECT_FILE]:
         return  # Already reported: nothing has been reloaded
     logger.info("Reloaded %s", ", ".join(rel))

@@ -25,8 +25,8 @@ COMPONENTS = {
                 silence=STR, api=INT, project=STR, projectDir=STR,
                 studentApi=obj(["prefix", "sessionHeader"], prefix=STR, sessionHeader=STR)),
 
-    "Status": obj(["revision", "apiPrefix", "baseUrl", "database", "auth", "endpoints", "tests", "errors"],
-                  revision=INT, apiPrefix=STR, baseUrl=STR,
+    "Status": obj(["apiPrefix", "baseUrl", "database", "auth", "endpoints", "tests", "errors"],
+                  apiPrefix=STR, baseUrl=STR,
                   database=obj(["name", "error"], name=STR, error=STR_OR_NULL),
                   auth={"allOf": [ref("AuthSettings"), obj(["linked"], linked=BOOL)]},
                   endpoints=obj(["count", "auto", "custom", "list"], count=INT, auto=INT, custom=INT,

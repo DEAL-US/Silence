@@ -188,11 +188,11 @@ def body_from_row(ep, rel, row, ctx, mutate_uniques, n=1):
                 value = unique_value(col, value, n, rel)
         body[p] = json_value(value)
     if mutate_uniques and rel is not None:
-        free_combinations(ep, rel, body, ctx)
+        free_combinations(rel, body)
     return body
 
 
-def free_combinations(ep, rel, body, ctx):
+def free_combinations(rel, body):
     '''For the UNIQUE indexes of several columns (e.g., the pair of FKs of an
     N:M table), looks for a combination of referenced values that is not used'''
     params = {(rel.column(p).name if rel.column(p) else p): p for p in body}
@@ -259,9 +259,8 @@ def tests_for_endpoint(ep, ctx):
     label = f"{ep.method} {ep.route}"
     tests = {}
 
-    def add(case, description, test, positive=False):
-        tests[f"{base}_{case}"] = {"description": f"{label}: {description}", "endpoint": label,
-                                   "positive": positive, **test}
+    def add(case, description, test):
+        tests[f"{base}_{case}"] = {"description": f"{label}: {description}", "endpoint": label, **test}
 
     # The row used by the positive case, and its user
     row, user = None, None
@@ -299,16 +298,16 @@ def tests_for_endpoint(ep, ctx):
     # Positive case (not with params of the query string: their values cannot be guessed)
     if can_run and path is not None and not ep.query_params:
         if ep.method == "GET":
-            add("ok", "returns the current rows", unit("GET", path, as_user, expect={"status": 200}), True)
+            add("ok", "returns the current rows", unit("GET", path, as_user, expect={"status": 200}))
         elif ep.method == "POST" and row is not None:
             body = body_from_row(ep, rel, row, ctx, mutate_uniques=True)
             if body is not None:
-                add("ok", "creates a row", unit("POST", path, as_user, body, {"status": 201}), True)
+                add("ok", "creates a row", unit("POST", path, as_user, body, {"status": 201}))
         elif ep.method == "PUT" and positive_row is not None:
             body = body_from_row(ep, rel, row, ctx, mutate_uniques=False)
-            add("ok", "updates a row (with its current values)", unit("PUT", path, as_user, body, {"status": 200}), True)
+            add("ok", "updates a row (with its current values)", unit("PUT", path, as_user, body, {"status": 200}))
         elif ep.method == "DELETE" and positive_row is not None:
-            add("ok", "deletes a row that no other row references", unit("DELETE", path, as_user, expect={"status": 200}), True)
+            add("ok", "deletes a row that no other row references", unit("DELETE", path, as_user, expect={"status": 200}))
 
     # A row that does not exist
     if ep.url_params and ep.method in ("GET", "PUT", "DELETE") and can_run and rel is not None and not ep.query_params:
@@ -358,7 +357,6 @@ def generated_tests():
     tests = []
     for ep in sorted(REGISTRY.endpoints, key=lambda e: (e.table, e.route, e.method)):
         for name, t in tests_for_endpoint(ep, ctx).items():
-            t.pop("positive", None)
             # The short form, the same as the custom tests (and so the example for them)
             tests.append(Test(name, short_unit(t), f"{ep.table}.json", source="auto"))
     return tests

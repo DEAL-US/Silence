@@ -1,7 +1,6 @@
 import json
-import re
 import os
-import pprint
+import re
 from copy import deepcopy
 from secrets import token_urlsafe
 
@@ -233,7 +232,6 @@ class Settings:
         }
         self.AUTH_LINKED = bool(auth["table"] and auth["identifier"] and auth["password"])
         self.PASSWORD_MODE = auth["password_mode"]
-        self.ALLOW_CLEAR_PASSWORDS = auth["password_mode"] == "plain"
         self.ENABLE_LOGIN = bool(auth["login"]) and self.AUTH_LINKED
         self.MAX_TOKEN_AGE = int(auth["token_max_age"])
         self.JS_API_ENABLED = bool(p["js_api"]["enabled"])
@@ -295,8 +293,6 @@ class Settings:
             logger.warning(f"The following keys in {PROJECT_FILE} are unknown and will be "
                            "ignored: " + ", ".join(self.unknown_settings))
 
-    def __str__(self):
-        return pprint.pformat(self.project)
 
 
 def new_project_data():

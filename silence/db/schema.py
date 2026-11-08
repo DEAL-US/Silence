@@ -26,7 +26,6 @@ class Column:
         self.auto_increment = "auto_increment" in extra
         self.generated = "generated" in extra
         self.max_length = row["CHARACTER_MAXIMUM_LENGTH"]
-        self.position = row["ORDINAL_POSITION"]
 
     @property
     def optional(self):
@@ -82,10 +81,6 @@ class Schema:
     @property
     def tables(self):
         return {n: r for n, r in self.relations.items() if not r.is_view}
-
-    @property
-    def views(self):
-        return {n: r for n, r in self.relations.items() if r.is_view}
 
     def get(self, name):
         '''Case-insensitive lookup of a table or view'''
