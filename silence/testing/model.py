@@ -9,9 +9,11 @@ from silence.exceptions import TestDefinitionError
 # Tests: unit tests (one request and what is expected). Silence does not run
 # them: the admin panel does, against the student's API.
 #
-#   generated  computed by Silence from the endpoints and the data whenever they
-#              are asked for (silence/testing/generator.py): they are not files,
-#              so they always follow the endpoints, and they are not edited.
+#   generated  tests/auto_<table>.json, written by Silence from the endpoints and
+#              the data (silence/testing/generator.py) whenever the endpoints
+#              change (generated, written or deleted) and when the database is
+#              created again: they always follow the endpoints, and they are not
+#              edited (as endpoints/auto_<table>.json).
 #   custom     tests/<table>.json, written by the student (from the admin panel),
 #              e.g., for the business rules. Their names cannot be the names of
 #              generated tests.
@@ -139,9 +141,7 @@ def load_tests():
     for filename in files:
         path = os.path.join(folder, filename)
         if filename.startswith(AUTO_PREFIX):
-            errors.append(f"{filename}: the generated tests are not saved any more (Silence computes them): "
-                          "delete this file (copy first the tests that you changed to tests/<table>.json)")
-            continue
+            continue  # The generated ones: load_generated()
         if os.path.getsize(path) == 0:
             continue  # Just created by an editor: as if it did not exist yet
         try:
@@ -168,10 +168,24 @@ def load_tests():
     return Suite([t for t in tests if t.name not in duplicated], errors)
 
 
+def load_generated():
+    '''The generated tests (tests/auto_<table>.json), each one with the file of its table (where a
+    custom test written from it goes)'''
+    tests = []
+    folder = tests_dir()
+    files = sorted(f for f in os.listdir(folder) if f.startswith(AUTO_PREFIX) and f.endswith(".json")) \
+        if os.path.isdir(folder) else []
+    for filename in files:
+        try:
+            with open(os.path.join(folder, filename), encoding="utf8") as f:
+                content = json.load(f)
+            table = filename[len(AUTO_PREFIX):]
+            tests.extend(Test(name, data, table, source="auto") for name, data in content.items())
+        except (OSError, ValueError, AttributeError, TestDefinitionError):
+            continue  # Silence writes them: a broken one is written again with the endpoints
+    return tests
+
+
 def generated_names():
-    '''The names of the generated tests (empty if they cannot be generated)'''
-    try:
-        from silence.testing.generator import generated_tests
-        return {t.name for t in generated_tests()}
-    except Exception:
-        return set()
+    '''The names of the generated tests'''
+    return {t.name for t in load_generated()}

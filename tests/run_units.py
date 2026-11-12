@@ -41,6 +41,8 @@ def main(base):
     for err in errors:
         print("Test error:", err)
     for f in requests.get(admin + "/files", params={"dir": "tests"}).json()["files"]:
+        if f["path"].startswith("tests/auto_"):
+            continue  # The generated ones, already in /tests/generated
         content = requests.get(f"{admin}/files/{f['path']}").json()["data"]
         for name, definition in content.items():
             tests.append(Test(name, definition, f["path"]).to_dict())

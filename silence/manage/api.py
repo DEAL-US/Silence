@@ -19,7 +19,7 @@ from silence.auth import users as users_table
 from silence.db import scripts
 from silence.project.files import write_json, etag_of, read_with_etag, safe_name
 from silence.testing import model as test_model
-from silence.testing.generator import generated_tests as generate_tests
+from silence.testing.generator import write_generated_tests
 from silence.server import generator
 from silence.manage import schemas
 from silence.cli import template_downloader as tpl
@@ -240,6 +240,7 @@ def database_reload():
                         "statement": exc.statement[:2000]}), 400
     db_schema.invalidate()
     REGISTRY.load()
+    write_generated_tests()  # From the original data, which the tests will find
     return jsonify({"scripts": done})
 
 
@@ -341,15 +342,14 @@ def generate_endpoints():
 
 @manage.route("/tests/generated")
 def generated_tests():
-    '''The generated tests, computed now from the endpoints and the data of the database
-    (the custom ones are the files tests/*.json)'''
+    '''The generated tests: those of tests/auto_<table>.json, which Silence writes again whenever the
+    endpoints change and when the database is created again (the custom ones are the files
+    tests/<table>.json)'''
     require_db()
-    try:
-        tests = generate_tests()
-    except DatabaseError as exc:
-        raise to_http_error(exc)
+    if not test_model.load_generated():
+        write_generated_tests()  # The first time (e.g., a project of a previous version)
     res = []
-    for t in tests:
+    for t in test_model.load_generated():
         d = t.to_dict()
         d["file"] = d["file"].removesuffix(".json")
         res.append(d)
@@ -545,6 +545,7 @@ def put_file(path):
         write_json(where, data)
         if kind == "endpoints":
             REGISTRY.load()
+            write_generated_tests()
     return jsonify({"path": path, "etag": etag_of(where), **extra}), 201 if created else 200
 
 
@@ -565,6 +566,7 @@ def delete_file(path):
     os.remove(where)
     if kind == "endpoints":
         REGISTRY.load()
+        write_generated_tests()
     return jsonify({"deleted": True})
 
 ###############################################################################

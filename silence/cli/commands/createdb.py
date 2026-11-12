@@ -44,4 +44,9 @@ def handle(args):
         sys.exit(1)
     for d in done:
         logger.info("    · %s: %d statements", d["file"], d["statements"])
+    # The generated tests, from the original data (which they will find when they are run)
+    from silence.server.endpoints import REGISTRY
+    from silence.testing.generator import write_generated_tests
+    REGISTRY.load()
+    write_generated_tests()
     logger.info("Done!")

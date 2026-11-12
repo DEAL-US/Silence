@@ -50,6 +50,8 @@ def reload(changed):
     if any(os.path.basename(os.path.dirname(p)) == "endpoints" for p in changed) or \
             any(os.path.basename(p) == PROJECT_FILE for p in changed):
         REGISTRY.load().log_errors()
+        from silence.testing.generator import write_generated_tests
+        write_generated_tests()  # The tests follow the endpoints
     if settings.errors and rel == [PROJECT_FILE]:
         return  # Already reported: nothing has been reloaded
     logger.info("Reloaded %s", ", ".join(rel))

@@ -1,9 +1,12 @@
 import json
+import os
 
 from silence.db import dal
 from silence.db.schema import get_schema
 from silence.settings import settings
-from silence.server.endpoints import REGISTRY
+from silence.server.endpoints import REGISTRY, AUTO_PREFIX
+from silence.project.files import write_json
+from silence.logging.default_logger import logger
 from silence.server.session import get_field
 from silence.auth.users import is_users_table, users_pk
 from silence.testing.model import Test, short_unit
@@ -356,8 +359,9 @@ def tests_for_endpoint(ep, ctx):
 
 
 def generated_tests():
-    '''The tests of all the endpoints, computed now from the endpoints and the data (they are not
-    saved): a list of Test, each one with the file of its table (where a test written from it goes)'''
+    '''The tests of all the endpoints, computed now from the endpoints and the data (written in
+    tests/auto_<table>.json by write_generated_tests): a list of Test, each one with the file of its
+    table (where a test written from it goes)'''
     REGISTRY.load()
     ctx = Context()
     tests = []
@@ -366,3 +370,34 @@ def generated_tests():
             # The short form, the same as the custom tests (and so the example for them)
             tests.append(Test(name, short_unit(t), f"{ep.table}.json", source="auto"))
     return tests
+
+
+def write_generated_tests():
+    '''tests/auto_<table>.json: the generated tests of each table, written again when the endpoints
+    change (generated, written or deleted) and when the database is created again; those of the
+    tables without endpoints are removed. Only the files that change are written. Without a
+    database, nothing changes. Returns the number of tests (None if they cannot be generated)'''
+    from silence.testing.model import tests_dir
+    try:
+        tests = generated_tests()
+    except Exception as exc:
+        logger.debug("The generated tests are not written again: %s", exc)
+        return None
+    by_table = {}
+    for t in tests:
+        by_table.setdefault(t.table, {})[t.name] = t.data
+    folder = tests_dir()
+    os.makedirs(folder, exist_ok=True)
+    for table, content in by_table.items():
+        path = os.path.join(folder, f"{AUTO_PREFIX}{table}.json")
+        try:
+            with open(path, encoding="utf8") as f:
+                if json.load(f) == content:
+                    continue
+        except (OSError, ValueError):
+            pass
+        write_json(path, content)
+    for f in os.listdir(folder):
+        if f.startswith(AUTO_PREFIX) and f.endswith(".json") and f[len(AUTO_PREFIX):-len(".json")] not in by_table:
+            os.remove(os.path.join(folder, f))
+    return len(tests)

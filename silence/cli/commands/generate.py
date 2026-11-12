@@ -6,7 +6,8 @@ from silence.db.connector import connection_error
 from silence.auth.passwords import argon2_hash
 
 ###############################################################################
-# silence createapi [table...]: endpoints/auto_<table>.json and the JS API
+# silence createapi [table...]: endpoints/auto_<table>.json, their tests (tests/auto_<table>.json)
+# and the JS API
 # silence hash <password>: the argon2 hash of a password
 # createapi runs the same code as the admin API (POST /_silence/v1/endpoints/generate).
 ###############################################################################
@@ -33,7 +34,7 @@ def createapi(args):
         logger.info("    · %s %s: %s%s", kind, t["table"], ", ".join(t["generated"]) or "—", custom)
     for f in res["removed"]:
         logger.info("    · removed %s (its table no longer exists)", f)
-    logger.info("Endpoints written in endpoints/auto_<table>.json.")
+    logger.info("Endpoints written in endpoints/auto_<table>.json, and their tests in tests/auto_<table>.json.")
     js = res["jsApi"]
     if js["notGenerated"]:
         logger.info("The JS API has not been generated: %s.", js["notGenerated"])

@@ -39,7 +39,7 @@ def run_from_command_line():
     p = subparsers.add_parser("createdb", help="Creates the database again with the scripts of sql/ (database.scripts)")
     p.set_defaults(handler=createdb.handle)
 
-    p = subparsers.add_parser("createapi", help="Generates the endpoints of the tables (endpoints/auto_<table>.json)")
+    p = subparsers.add_parser("createapi", help="Generates the endpoints of the tables (endpoints/auto_<table>.json), their tests (tests/auto_<table>.json) and the JS API")
     p.add_argument("tables", nargs="*", help="Only these tables or views")
     p.set_defaults(handler=generate.createapi)
 

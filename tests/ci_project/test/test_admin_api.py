@@ -151,12 +151,29 @@ def try_endpoint_files():
 
 def try_tests():
     generated = requests.get(ADMIN + "/tests/generated").json()["tests"]
-    # The generated tests are computed (not saved), each one with the file of its table and a status
+    # The generated tests, each one with the file of its table and a status, are those of the files
+    # tests/auto_<table>.json, which only Silence writes
     assert generated and all(t["source"] == "auto" and t["expect"].get("status")
                              and not t["file"].startswith("auto_") for t in generated)
-    # Silence does not run tests nor generates, customizes or exports files of tests
-    for path in ("/tests", "/tests/run", "/tests/generate", "/tests/export"):
-        assert requests.post(ADMIN + path, json={}).status_code in (404, 405), path
+    auto_files = [f["path"] for f in requests.get(ADMIN + "/files?dir=tests").json()["files"]
+                  if f["path"].startswith("tests/auto_")]
+    assert "tests/auto_departments.json" in auto_files
+    in_files = {name for path in auto_files for name in read(path)["data"]}
+    assert in_files == {t["name"] for t in generated}
+    assert write("tests/auto_departments.json", {}).status_code == 403
+    assert requests.delete(FILES + "tests/auto_departments.json").status_code == 403
+    # They follow the endpoints: a custom endpoint that replaces a generated one changes its tests
+    before = read("tests/auto_departments.json")["data"]
+    path = "endpoints/departments_tests_check.json"
+    write(path, {"getOne": {"route": "/departments/$departmentId", "method": "GET", "auth_required": True,
+                            "sql": "SELECT * FROM departments WHERE departmentId = $departmentId"}}, "")
+    after = read("tests/auto_departments.json")["data"]
+    assert after != before and any(name.endswith("_no_session") and "/departments/" in str(t) for name, t in after.items())
+    assert requests.delete(FILES + path).status_code == 200
+    assert read("tests/auto_departments.json")["data"] == before
+    # Silence does not run tests nor customizes or exports them
+    for p in ("/tests", "/tests/run", "/tests/generate", "/tests/export"):
+        assert requests.post(ADMIN + p, json={}).status_code in (404, 405), p
     # The generated tests are not edited: a custom test cannot take the name of one
     mine = {"description": "mine", "GET /departments/999999999": None, "expect": 404}
     assert write("tests/ci_check.json", {"departments_getById_not_found": mine}).status_code == 409

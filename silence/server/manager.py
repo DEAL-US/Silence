@@ -244,6 +244,8 @@ def setup():
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     REGISTRY.load().log_errors()
+    from silence.testing.generator import write_generated_tests
+    write_generated_tests()  # The tests follow the endpoints (also if they changed while it was stopped)
 
     if not _routes_registered:
         register_admin_routes()

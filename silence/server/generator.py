@@ -142,6 +142,9 @@ def generate(tables=None):
 
     write_js_common()
     REGISTRY.load()
+    # Their tests, too (tests/auto_<table>.json)
+    from silence.testing.generator import write_generated_tests
+    write_generated_tests()
     js_state = js_api_state()
     return {"tables": summary, "removed": removed,
             "jsApi": {"dir": settings.JS_API_DIR if js_state is None else None, "notGenerated": js_state}}
