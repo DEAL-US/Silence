@@ -1,127 +1,126 @@
-# API de administración de Silence 3
+# Silence 3 admin API
 
-Contrato entre Silence y cualquier cliente que lo administre: el panel
-(`silence-v3-admin-panel-uikit`), la CLI, el CI o un script. Aprobado el 06/11/2026 y completado con los
-formatos el 07/11/2026; simplificado el 08/11/2026 (de 26 operaciones a 15: los ficheros del
-proyecto con una sola API, y las estadísticas en el panel, con el registro de peticiones). Es la única pieza que comparten Silence y el panel: otro backend (por
-ejemplo, Silence de Rust) que lo cumpla sirve con el mismo panel. `tests/ci_project/test/
-test_admin_api.py` comprueba que una URL lo cumple.
+The contract between Silence and any client that administers it: the admin panel
+(`silence-v3-admin-panel-uikit`), the CLI, the CI or a script. It is the only piece that Silence
+and the panel share: another backend that fulfils it works with the same panel.
+`tests/ci_project/test/test_admin_api.py` checks that a URL fulfils it.
 
-## Principios
+## Principles
 
-- **Prefijo `/_silence/v1`**: no choca con la API del alumno (`/api`) y lleva la versión del
-  contrato. Un cambio incompatible es `/_silence/v2`; los compatibles (campos u operaciones
-  nuevos) no cambian la versión. Los clientes ignoran los campos que no conocen.
-- **Solo desde el propio ordenador** (127.0.0.1); desde otro, 403. Sin CORS: el panel se sirve
-  desde el mismo origen (`/admin/`). Además, la cabecera `Host` tiene que ser `localhost`,
-  `127.0.0.1` o `[::1]` (una página de otro sitio cuyo nombre apunte a 127.0.0.1, *DNS rebinding*,
-  recibe 403), y un `POST`, `PUT` o `DELETE` con un `Origin` que no sea el propio también (un
-  formulario de otra web que envíe aquí, CSRF).
-- **JSON** en peticiones y respuestas; UTF-8; nombres de campos en camelCase, salvo los de la
-  definición de un endpoint, que son los de su fichero (`auth_required`…).
-- **Todo en inglés**: rutas, campos y mensajes.
-- **Solo lo que solo puede hacer el servidor**: lo que necesita la conexión con MariaDB, la
-  `secret_key` o argon2. El resto lo hace el cliente: leer, cambiar y escribir los ficheros del
-  proyecto, ejecutar los tests y resumir el registro de peticiones. Las órdenes de la CLI y de la
-  API comparten código: `silence createapi` es `POST /endpoints/generate`, y `silence createdb`,
+- **Prefix `/_silence/v1`**: it does not clash with the student's API (`/api`) and carries the
+  version of the contract. An incompatible change is `/_silence/v2`; compatible ones (new fields
+  or operations) do not change the version. Clients ignore the fields that they do not know.
+- **Only from the computer itself** (127.0.0.1); from another one, 403. No CORS: the panel is
+  served from the same origin (`/admin/`). Besides, the `Host` header must be `localhost`,
+  `127.0.0.1` or `[::1]` (a page of another site whose name points to 127.0.0.1, *DNS
+  rebinding*, gets a 403), and so does a `POST`, `PUT` or `DELETE` with an `Origin` that is not
+  its own (a form of another site that posts here, CSRF).
+- **JSON** in requests and responses; UTF-8; field names in camelCase, except those of the
+  definition of an endpoint, which are those of its file (`auth_required`…).
+- **Everything in English**: routes, fields and messages.
+- **Only what only the server can do**: what needs the connection to MariaDB, the `secret_key`
+  or argon2. The client does the rest: reading, changing and writing the files of the project,
+  running the tests and summarizing the request log. The commands of the CLI and of the API share
+  code: `silence createapi` is `POST /endpoints/generate`, and `silence createdb`,
   `POST /database/reload`.
-- **Silence no ejecuta tests**: genera los que se deducen de los endpoints (al pedirlos, sin
-  guardarlos) y guarda los propios; los ejecuta el panel contra la API del alumno, sin
-  transacciones: cambian la BD.
-- **Los ficheros del proyecto, con una sola API** (`/files/{ruta}`): `silence.json`,
-  `endpoints/*.json`, `tests/*.json` y el registro de peticiones (`admin/logs/requests.log`). Se leen y se escriben enteros; Silence valida cada uno
-  según lo que es antes de guardarlo. Los ficheros `endpoints/auto_<tabla>` los genera Silence (solo
-  se leen); los demás son del usuario. Los tests generados no son ficheros.
-- **Concurrencia**: las lecturas devuelven la versión de cada fichero (`etag`, un texto opaco;
-  `""` si el fichero no existe). Una escritura con la cabecera `If-Match` que no coincide responde
-  **412** y no escribe; sin `If-Match`, escribe siempre.
-- **Recarga**: el servidor vigila `silence.json`, `endpoints/` y `tests/`, y los recarga cuando
-  cambian, los cambie quien los cambie (el panel no consulta el estado periódicamente: lo lee al
-  cambiar de página y tras cada acción).
-- **Especificación OpenAPI** en `GET /_silence/v1/openapi.json`, con los esquemas de las
-  respuestas.
+- **Silence does not run tests**: it generates the ones that follow from the endpoints (when they
+  are asked for, without saving them) and stores the custom ones; the panel runs them against the
+  student's API, without transactions: they change the database.
+- **The files of the project, with a single API** (`/files/{path}`): `silence.json`,
+  `endpoints/*.json`, `tests/*.json` and the request log (`admin/logs/requests.log`). They are
+  read and written whole; Silence validates each one according to what it is before saving it.
+  The `endpoints/auto_<table>` files are generated by Silence (they are only read); the others
+  belong to the user. The generated tests are not files.
+- **Concurrency**: reads return the version of each file (`etag`, an opaque text; `""` if the
+  file does not exist). A write with an `If-Match` header that does not match gets a **412** and
+  writes nothing; without `If-Match`, it always writes.
+- **Reload**: the server watches `silence.json`, `endpoints/` and `tests/`, and reloads them when
+  they change, whoever changes them (the panel does not poll the state: it reads it when a page is
+  shown and after each action).
+- **OpenAPI specification** at `GET /_silence/v1/openapi.json`, with the schemas of the
+  responses.
 
-## Errores
+## Errors
 
-Cualquier error responde `{"message": "...", "code": N}` (el mismo formato que la API del
-alumno), con estos códigos:
+Any error responds `{"message": "...", "code": N}` (the same format as the student's API), with
+these codes:
 
-| Código | Cuándo |
+| Code | When |
 |---|---|
-| 400 | La petición no es válida (el motivo va en `message`): un valor de `silence.json` incorrecto o una conexión que no funciona, un endpoint o un test mal definido, un nombre no válido, un JSON mal formado |
-| 403 | La petición no viene del propio ordenador (o de una página suya); o un fichero que no se puede tocar: fuera de los de la API de ficheros, un `auto_` (escribirlo o borrarlo), escribir el registro, borrar `silence.json` |
-| 404 | El recurso no existe (un usuario, un fichero que se borra) |
-| 409 | El estado no lo permite: la BD no está configurada o no responde, la tabla de usuarios no está enlazada, un endpoint con el método y la ruta de otro **personalizado** (o dos veces en el mismo fichero), un test con el nombre de uno generado o de uno de otro fichero |
-| 412 | El fichero ha cambiado desde que se leyó (`If-Match`) |
+| 400 | The request is not valid (the reason is in `message`): a wrong value of `silence.json` or a connection that does not work, a badly defined endpoint or test, an invalid name, malformed JSON |
+| 403 | The request does not come from the computer itself (or from one of its pages); or a file that cannot be touched: outside those of the file API, an `auto_` one (writing or deleting it), writing the log, deleting `silence.json` |
+| 404 | The resource does not exist (a user, a file that is deleted) |
+| 409 | The state does not allow it: the database is not configured or does not respond, the users table is not linked, an endpoint with the method and route of another **custom** one (or twice in the same file), a test with the name of a generated one or of one of another file |
+| 412 | The file has changed since it was read (`If-Match`) |
 
-## La API del alumno
+## The student's API
 
-El contrato fija lo que un cliente necesita para llamar a la API del alumno (el panel lo usa al
-probar un endpoint), y `GET /` lo dice:
+The contract states what a client needs to call the student's API (the panel uses it to try an
+endpoint), and `GET /` says it:
 
-- Su **prefijo** (`studentApi.prefix`, normalmente `/api`).
-- La **cabecera de la sesión** (`studentApi.sessionHeader`, `Token`), con el `sessionToken` que
-  devuelve `POST /users/{id}/session` (o el login de la API del alumno).
-- Los errores de la API del alumno tienen la misma forma: `{"message", "code"}`.
+- Its **prefix** (`studentApi.prefix`, usually `/api`).
+- The **session header** (`studentApi.sessionHeader`, `Token`), with the `sessionToken` that
+  `POST /users/{id}/session` (or the login of the student's API) returns.
+- The errors of the student's API have the same shape: `{"message", "code"}`.
 
-## Recursos
+## Resources
 
-### Silence y el proyecto
+### Silence and the project
 
-**`GET /`**: lo primero que consulta un cliente, para comprobar la compatibilidad (`api` es la
-versión de este contrato). `versions` da la versión de cada pieza: Silence, el panel (el de
-`silence.json` y el instalado en `admin/`, con la versión de esta API que necesita), la plantilla
-del front-end (la que apuntó `silence new`) y ez-ui (`web/ez-ui/VERSION.txt`); `null` si el
-proyecto no la tiene o no se sabe. Con **`?updates=true`** añade `latest`, la última versión
-publicada de cada una (PyPI para Silence; las etiquetas de su repo, o de su copia local con
-`SILENCE_SOURCES`, para las demás; `GITHUB_TOKEN` si el repo es privado), o por qué no se sabe.
-Va a la red: solo cuando se pide.
+**`GET /`**: the first thing that a client asks, to check compatibility (`api` is the version of
+this contract). `versions` gives the version of each piece: Silence, the panel (the one of
+`silence.json` and the one installed in `admin/`, with the version of this API that it needs), the
+frontend template (the one that `silence new` recorded) and ez-ui (`web/ez-ui/VERSION.txt`);
+`null` if the project does not have it or it is not known. With **`?updates=true`** it adds
+`latest`, the latest published version of each one (PyPI for Silence; the tags of its repo, or of
+its local copy with `SILENCE_SOURCES`, for the others; `GITHUB_TOKEN` if the repo is private), or
+why it is not known: `{"private": true}` if its repo is not public. It goes to the network: only
+when it is asked for.
 
 ```json
-{"silence": "3.0.0", "api": 1, "project": "galeria", "projectDir": "/home/student/galeria",
- "versions": {"silence": {"version": "3.0.0.dev0", "adminApi": 1},
+{"silence": "3.0.0", "api": 1, "project": "gallery", "projectDir": "/home/student/gallery",
+ "versions": {"silence": {"version": "3.0.0", "adminApi": 1},
               "panel": {"repo": "DEAL-US/silence-v3-admin-panel-uikit", "version": "v1.1.0", "installed": "1.1.0", "adminApi": 1},
               "template": {"repo": "DEAL-US/silence-template-v3-ez-ui", "version": "v1.1.1"},
               "ezUi": {"repo": "IISSI-US/ez-ui", "version": "1.0.1"}},
- "latest": {"silence": {"version": "2.2.0"}, "panel": {"version": "v1.0.0"},
-            "template": {"version": "v1.1.1"}, "ezUi": {"error": "Cannot read the versions of IISSI-US/ez-ui (HTTP 404; if it is private, set GITHUB_TOKEN)"}},
+ "latest": {"silence": {"version": "3.0.0"}, "panel": {"version": "v1.1.0"},
+            "template": {"version": "v1.1.1"}, "ezUi": {"private": true}},
  "studentApi": {"prefix": "/api", "sessionHeader": "Token"}}
 ```
 
-**`GET /status`**: el estado del proyecto. `database.error` es `null` si hay conexión; `auth`
-lleva `linked` y los valores de `auth` de `silence.json`; `endpoints.list`, los endpoints que se
-están sirviendo (ver «Endpoints»); `jsApi`, la carpeta de la API JS y, si no se genera, por qué
-(está desactivada o el proyecto no tiene sus moldes); `errors` son los problemas de los ficheros,
-como texto.
+**`GET /status`**: the state of the project. `database.error` is `null` if there is a connection;
+`auth` has `linked` and the `auth` values of `silence.json`; `endpoints.list`, the endpoints (see
+«Endpoints»); `jsApi`, the folder of the JS API and, if it is not generated, why (it is disabled or
+the project does not have its molds); `errors` are the problems of the files, as text.
 
 ```json
 {"apiPrefix": "/api", "baseUrl": "http://127.0.0.1:8080",
  "database": {"name": "silence_gallery_db", "error": null},
  "auth": {"linked": true, "table": "users", "identifier": "email", "password": "password",
           "role": "", "active": "", "password_mode": "argon2", "login": true, "token_max_age": 86400},
- "endpoints": {"count": 40, "auto": 39, "custom": 1, "list": [ … ]},
+ "endpoints": {"count": 40, "auto": 39, "custom": 1, "disabled": 0, "list": [ … ]},
  "tests": {"custom": 2},
  "jsApi": {"dir": "web/js/api/_auto", "notGenerated": null},
  "errors": {"config": [], "endpoints": [], "tests": []}}
 ```
 
-**`GET /openapi.json`**: la especificación de esta API.
+**`GET /openapi.json`**: the specification of this API.
 
-### Ficheros del proyecto
+### The files of the project
 
-| Ruta | Qué es | Se puede |
+| Path | What it is | It can be |
 |---|---|---|
-| `silence.json` | La configuración | leer y escribir |
-| `endpoints/<nombre>.json` | Endpoints (por nombre); `auto_<tabla>`, los generados | leer y escribir (los `auto_`, solo leer) |
-| `tests/<nombre>.json` | Tests propios (por nombre) | leer, escribir y borrar |
-| `admin/logs/requests.log` | El registro de peticiones (texto) | leer y borrar |
-| `<js_api.dir>/<tabla>.js` | La API JS generada (texto) | solo leer |
-| `.silence/js_api/<molde>.js` | Los moldes de la API JS, de la plantilla (texto; ver `docs/molds.md`) | solo leer |
+| `silence.json` | The configuration | read and written |
+| `endpoints/<name>.json` | Endpoints (by name); `auto_<table>`, the generated ones | read and written (the `auto_` ones, only read) |
+| `tests/<name>.json` | Custom tests (by name) | read, written and deleted |
+| `admin/logs/requests.log` | The request log (text) | read and deleted |
+| `<js_api.dir>/<table>.js` | The generated JS API (text) | only read |
+| `.silence/js_api/<mold>.js` | The molds of the JS API, from the template (text; see `docs/molds.md`) | only read |
 
-Los nombres, de letras, dígitos, `_` y `-`. Cualquier otra ruta, 403.
+Names, of letters, digits, `_` and `-`. Any other path, 403.
 
-**`GET /files`** (o **`GET /files?dir=endpoints`**, con `endpoints`, `tests` o
-`admin/logs`): los ficheros que hay, con su versión.
+**`GET /files`** (or **`GET /files?dir=endpoints`**, with `endpoints`, `tests` or `admin/logs`):
+the files that there are, with their version.
 
 ```json
 {"files": [{"path": "silence.json", "etag": "f9a1870f02a230d0"},
@@ -129,8 +128,8 @@ Los nombres, de letras, dígitos, `_` y `-`. Cualquier otra ruta, 403.
            {"path": "endpoints/photos.json", "etag": "96b41b2f1b5e8b1a"}]}
 ```
 
-**`GET /files/{ruta}`**: el contenido y su versión. `data` es el JSON del fichero (el registro,
-su texto), o `null` si no existe (con `etag` `""`).
+**`GET /files/{path}`**: the content and its version. `data` is the JSON of the file (the log,
+its text), or `null` if it does not exist (with `etag` `""`).
 
 ```json
 {"path": "endpoints/photos.json", "etag": "96b41b2f1b5e8b1a",
@@ -139,7 +138,8 @@ su texto), o `null` si no existe (con `etag` `""`).
                      "owner": "user_id", "description": "Deletes a photo (only its owner)"}}}
 ```
 
-`silence.json` se devuelve sin `secret_key` y con los valores por defecto de lo que falte:
+`silence.json` is returned without its `secret_key` and with the default values of what is
+missing:
 
 ```json
 {"path": "silence.json", "etag": "f9a1870f02a230d0",
@@ -155,62 +155,64 @@ su texto), o `null` si no existe (con `etag` `""`).
           "debug": false}}
 ```
 
-**`PUT /files/{ruta}`**, con el contenido entero como cuerpo (y `If-Match` con la versión que se
-leyó): lo valida y lo guarda. Responde `{"path", "etag"}`, con 201 si el fichero es nuevo.
+**`PUT /files/{path}`**, with the whole content as the body (and `If-Match` with the version that
+was read): it validates and saves it. It responds `{"path", "etag"}`, with 201 if the file is new.
 
-- `silence.json`: sin claves desconocidas y con valores válidos; si cambia la conexión, la prueba
-  antes de guardar; los scripts de `database.scripts` deben estar en `sql/`. Se conserva su
-  `secret_key` (si el cuerpo trae una, se ignora). La respuesta añade `restartNeeded`, `true` solo
-  si cambian `server.address` o `server.port`.
-- `endpoints/<nombre>.json`: cada endpoint bien definido (400), sin el método y la ruta de otro
-  personalizado de otro fichero ni repetidos en el mismo (409). Uno con el método y la ruta de uno
-  autogenerado lo sustituye: así se personaliza un endpoint generado (y al borrar el propio, vuelve
-  el generado). Silence recarga los endpoints al guardarlo.
-- `tests/<nombre>.json`: cada test unitario bien definido (400; ver «Tests»), sin el nombre de
-  uno generado ni de uno de otro fichero (409).
+- `silence.json`: without unknown keys and with valid values; if the connection changes, it is
+  tested before saving; the scripts of `database.scripts` must be in `sql/`. Its `secret_key` is
+  kept (if the body has one, it is ignored). The response adds `restartNeeded`, `true` only if
+  `server.address` or `server.port` change.
+- `endpoints/<name>.json`: each endpoint well defined (400), without the method and route of
+  another custom one of another file nor repeated in the same one (409). One with the method and
+  route of an autogenerated one replaces it: that is how a generated endpoint is customized (and
+  when the custom one is deleted, the generated one comes back). Silence reloads the endpoints
+  when it is saved.
+- `tests/<name>.json`: each unit test well defined (400; see «Tests»), without the name of a
+  generated one nor of one of another file (409).
 
-Un fichero vacío (`{}`) en `endpoints/` o en `tests/` vale; para quitarlo, `DELETE`.
+An empty file (`{}`) in `endpoints/` or in `tests/` is valid; to remove it, `DELETE`.
 
-**`DELETE /files/{ruta}`** (con `If-Match`, si se quiere): lo borra y responde
-`{"deleted": true}`; 404 si no existe. Borrar el registro de peticiones pone a cero la actividad y
-las estadísticas del panel (Logs).
+**`DELETE /files/{path}`** (with `If-Match`, if wanted): it deletes it and responds
+`{"deleted": true}`; 404 if it does not exist. Deleting the request log resets the activity and
+the statistics of the panel (Logs).
 
-Cambiar una entrada (un endpoint, un test) es leer su fichero, cambiarla y escribirlo; renombrarla,
-lo mismo con su nombre nuevo. Para moverla a otro fichero, se quita del antiguo y se añade al
-nuevo (si no, el nuevo choca con el antiguo: 409).
+Changing an entry (an endpoint, a test) is reading its file, changing it and writing it; renaming
+it, the same with its new name. To move it to another file, it is removed from the old one and
+added to the new one (otherwise, the new one clashes with the old one: 409).
 
-### Base de datos
+### Database
 
-**`POST /database/test`**, con `{"host", "port", "user", "password", "name"}` (`name`
-opcional): prueba una conexión sin guardarla y, si el usuario puede conectarse, dice qué BD ve.
+**`POST /database/test`**, with `{"host", "port", "user", "password", "name"}` (`name`
+optional): it tests a connection without saving it and, if the user can connect, says which
+databases it sees.
 
 ```json
 {"ok": true, "error": null, "databases": ["animals_db", "gallery_db", "silence_gallery_db"]}
 ```
 
-(con un error de conexión: `{"ok": false, "error": "Access denied for user …", "databases": []}`;
-con una BD que no existe, `ok` es `false` pero `databases` trae las que ve)
+(with a connection error: `{"ok": false, "error": "Access denied for user …", "databases": []}`;
+with a database that does not exist, `ok` is `false` but `databases` has the ones that it sees)
 
-**`POST /database/reload`**: crea de nuevo la BD con los scripts de `sql/` que lista
-`database.scripts` de `silence.json`, en ese orden, como `silence createdb` (y como
-`SQL_SCRIPTS` en Silence 2): `DROP DATABASE`, `CREATE DATABASE` y cada script tras un `USE`,
-con `DELIMITER` para los procedimientos y triggers. Sirve, por ejemplo, para volver a ejecutar
-los tests desde los datos originales.
+**`POST /database/reload`**: creates the database again with the scripts of `sql/` that
+`database.scripts` of `silence.json` lists, in that order, as `silence createdb` (and as
+`SQL_SCRIPTS` in Silence 2): `DROP DATABASE`, `CREATE DATABASE` and each script after a `USE`,
+with `DELIMITER` for the procedures and triggers. It is useful, for example, to run the tests
+again from the original data.
 
 ```json
 {"scripts": [{"file": "create_tables.sql", "statements": 4}, {"file": "populate.sql", "statements": 2}]}
 ```
 
-Si un script falla, 400 con dónde: `{"code": 400, "message": "populate.sql, line 12: …",
-"file": "populate.sql", "line": 12, "statement": "INSERT INTO …"}` (los anteriores ya se han
-ejecutado). Sin scripts en `database.scripts`, 409.
+If a script fails, 400 with where: `{"code": 400, "message": "populate.sql, line 12: …",
+"file": "populate.sql", "line": 12, "statement": "INSERT INTO …"}` (the previous ones have already
+been run). Without scripts in `database.scripts`, 409.
 
-Al guardar `silence.json` se comprueba que los scripts existen en `sql/` (si no, 400 y no guarda
-nada); los que falten después (un script borrado, `silence.json` editado a mano) salen en los
-errores de configuración de `GET /status`.
+When `silence.json` is saved, Silence checks that the scripts exist in `sql/` (if not, 400 and it
+saves nothing); the ones that are missing later (a deleted script, `silence.json` edited by hand)
+appear in the configuration errors of `GET /status`.
 
-**`GET /schema`**: tablas y vistas de la BD, con su número de filas (`rows`; `null` si no se
-puede contar, por ejemplo una vista que ya no funciona).
+**`GET /schema`**: the tables and views of the database, with their number of rows (`rows`;
+`null` if they cannot be counted, for example a view that no longer works).
 
 ```json
 {"database": "silence_gallery_db",
@@ -221,54 +223,68 @@ puede contar, por ejemplo una vista que ya no funciona).
                              "autoIncrement": true, "generated": false, "optional": true}]}]}
 ```
 
-`optional` dice si un `INSERT` puede omitir la columna (admite `NULL`, tiene `DEFAULT`, es
-`AUTO_INCREMENT` o calculada); `uniques` son los índices UNIQUE (listas de columnas).
+`optional` says whether an `INSERT` can leave the column out (it accepts `NULL`, has a `DEFAULT`,
+is `AUTO_INCREMENT` or computed); `uniques` are the UNIQUE indexes (lists of columns).
 
-### Usuarios (la tabla enlazada en `auth`)
+### Users (the table linked in `auth`)
 
-Sin tabla enlazada, todas responden 409.
+Without a linked table, all of them respond 409.
 
-El identificador (`auth.identifier`) es una columna de la tabla de usuarios (`email`) o de una
-tabla a la que esta apunta con una clave ajena (`people.email`, cuando las credenciales están en
-su propia tabla: `credentials(person_id → people, password, role)`). En el segundo caso Silence
-lee los usuarios con un `JOIN` por esa clave ajena y el login recibe `email`.
+The identifier (`auth.identifier`) is a column of the users table (`email`) or of a table that it
+references with a foreign key (`people.email`, when the credentials are in their own table:
+`credentials(person_id → people, password, role)`). In the second case Silence reads the users
+with a `JOIN` on that foreign key and the login receives `email`.
 
-**`GET /users`**: los usuarios, con el estado de su contraseña (`argon2`, `plain` o
-`unsupported`). Su valor (`plainPassword`) solo si está en texto plano y el proyecto guarda así
-las contraseñas (`auth.password_mode: plain`, para las BD de prácticas): sirve para probar el
-login. `role` y `active` son `null` si no hay esas columnas.
+**`GET /users`**: the users, with the state of their password (`argon2`, `plain` or
+`unsupported`). Its value (`plainPassword`) only if it is stored as plain text and the project
+stores the passwords that way (`auth.password_mode: plain`, for practice databases): it is useful
+to try the login. `role` and `active` are `null` if there are no such columns.
 
 ```json
 {"pk": "user_id", "passwordMode": "argon2",
- "users": [{"id": 1, "identifier": "agu@gallery.com", "role": null, "active": null, "password": "argon2",
+ "users": [{"id": 1, "identifier": "ana@gallery.com", "role": null, "active": null, "password": "argon2",
             "plainPassword": null}]}
 ```
 
-**`PUT /users/{id}/password`**, con `{"password": "…"}`: la guarda cifrada o no, según
-`auth.password_mode`. Responde `{"updated": 1}`.
+**`PUT /users/{id}/password`**, with `{"password": "…"}`: it stores it encrypted or not,
+according to `auth.password_mode`. It responds `{"updated": 1}`.
 
-**`POST /users/{id}/session`**: la sesión de ese usuario, sin su contraseña, para usarla con la
-API del alumno; `user` es su fila sin la contraseña.
+**`POST /users/{id}/session`**: the session of that user, without its password, to use it with
+the student's API; `user` is its row without the password.
 
 ```json
-{"sessionToken": ".eJxNzU0KAjEMhuGrDF3L…", "user": {"user_id": 2, "email": "david@gallery.com", "username": "druiz"}}
+{"sessionToken": ".eJxNzU0KAjEMhuGrDF3L…", "user": {"user_id": 2, "email": "david@gallery.com", "username": "david"}}
 ```
 
 ### Endpoints
 
-**Definición de un endpoint** (la de su fichero): `route` (con `$param`), `method` (`GET`,
-`POST`, `PUT` o `DELETE`), `sql` (con `$param` y `$loggedId`), `auth_required`,
-`allowed_roles` (`["*"]`: cualquier usuario con sesión; unos roles concretos implican la sesión),
-`description`, `request_body_params`
-(los del cuerpo), `query_params` (los de la *query string* que usa el SQL, los filtros de una
-colección: `?minAverage=7` → `$minAverage`; si falta uno, 400), `owner` (la columna con el id del
-usuario dueño de cada fila, o `null`: cada usuario con sesión actúa solo sobre sus filas, también al
-leer, y los roles de `allowed_roles`, si los hay, sobre todas) y `disabled` (solo en uno propio: `true`, no se publica). El resto de la *query string* filtra y ordena el resultado de un `GET` (`?columna=valor`,
-`_sort`, `_order`, `_limit`, `_page`).
+**Definition of an endpoint** (the one of its file): `route` (with `$param`), `method` (`GET`,
+`POST`, `PUT` or `DELETE`), `sql` (with `$param`), `auth_required`, `allowed_roles` (`["*"]`: any
+user with a session; specific roles imply a session), `description`, `request_body_params` (the
+ones of the body), `query_params` (the ones of the query string that the SQL uses, the filters of
+a collection: `?minAverage=7` → `$minAverage`; if one is missing, 400), `owner` (the column with
+the id of the user that owns each row, or `null`) and `disabled` (only in a custom one: `true`, it
+is not published). The rest of the query string filters and sorts the result of a `GET`
+(`?column=value`, `_sort`, `_order`, `_limit`, `_page`).
 
-**Los endpoints** están en `endpoints.list` de `GET /status`: los generados y los propios, con su
-fichero y nombre, y también los desactivados (`"disabled": true`), que no se sirven. `endpoints.count`
-cuenta los que se sirven y `endpoints.disabled`, los desactivados.
+**Access**, in four levels:
+
+| Level | Definition | Who can call it |
+|---|---|---|
+| Public | nothing (the generated endpoints) | anyone |
+| Logged in | `auth_required: true` | any user with a session (401 without one) |
+| Roles | `allowed_roles: ["teacher", …]` | only the users with those roles (403 for the others) |
+| Owner | `owner: "student_id"` | each user with a session, only on its rows; and the roles of `allowed_roles`, if any, on any row |
+
+With an owner: a `GET` only returns the rows of the user (another one's row by id is a 404; the
+owner column must be in the result of the `SELECT`); a `POST` sets the column to the user of the
+session, whatever the body says (unless the user has one of the roles of the list); a `PUT` or
+`DELETE` on another one's row is a 403. Rules that go through other tables (e.g., «a teacher only
+grades the groups that they teach») are business rules: they are written as triggers.
+
+**The endpoints** are in `endpoints.list` of `GET /status`: the generated and the custom ones,
+with their file and name, and also the disabled ones (`"disabled": true`), which are not served.
+`endpoints.count` counts the ones that are served and `endpoints.disabled`, the disabled ones.
 
 ```json
 [{"file": "photos", "name": "delete", "table": "photos", "source": "custom",
@@ -279,29 +295,30 @@ cuenta los que se sirven y `endpoints.disabled`, los desactivados.
   "overrides": ["auto_photos.json"], "warnings": [], "disabled": false}]
 ```
 
-`source` es `auto` (fichero `auto_<tabla>`) o `custom`; `overrides`, los ficheros autogenerados
-cuyo endpoint (el mismo método y ruta) sustituye este; `warnings`, avisos que no impiden cargarlo.
-Los errores de los ficheros (lo que no se ha podido cargar) están en `errors.endpoints`.
+`source` is `auto` (an `auto_<table>` file) or `custom`; `overrides`, the autogenerated files
+whose endpoint (the same method and route) this one replaces; `warnings`, warnings that do not
+prevent loading it. The errors of the files (what could not be loaded) are in `errors.endpoints`.
 
-Los endpoints se leen y se escriben con la API de ficheros (`endpoints/<nombre>.json`).
-Personalizar uno generado es escribir en el fichero propio de su tabla uno con su método y ruta:
-el propio lo sustituye. **Desactivarlo** (que no se publique) es lo mismo, con `"disabled": true`:
-no se sirve (404, o 405 si la ruta tiene otros métodos), ni sale en el resumen de la API, ni en la
-API JS, ni en los tests generados; el generado sigue en su fichero, y vuelve al borrar la copia.
+The endpoints are read and written with the file API (`endpoints/<name>.json`). Customizing a
+generated one is writing in the custom file of its table one with its method and route: the
+custom one replaces it. **Disabling it** (so that it is not published) is the same, with
+`"disabled": true`: it is not served (404, or 405 if the route has other methods), nor listed in
+the summary of the API, the JS API or the generated tests; the generated one stays in its file,
+and comes back when the copy is deleted.
 
-**`POST /endpoints/generate`**, con `{"tables": [...]}` (opcional; todas por defecto): como
-`silence createapi`. `custom` son los que no se generan por estar personalizados; `removed`, los
-ficheros `auto_` de tablas que ya no existen. Todos son públicos (la sesión, los roles y el propietario se
-ponen al personalizarlos), también los de la tabla de usuarios enlazada, que es una tabla más:
-en modo argon2, sus lecturas no envían las contraseñas y sus escrituras las cifran; en modo `plain`
-(bases de datos de prácticas), las contraseñas se guardan y se ven tal cual. Un endpoint
-público que cambia la tabla de usuarios lleva un aviso (cualquiera podría cambiar usuarios, roles
-y contraseñas): el alumno le pone sesión y roles.
+**`POST /endpoints/generate`**, with `{"tables": [...]}` (optional; all of them by default): as
+`silence createapi`. `custom` are the ones that are not generated because they are customized;
+`removed`, the `auto_` files of tables that no longer exist. All of them are public (the session,
+the roles and the owner are set when customizing them), also those of the linked users table,
+which is a table like the others: in argon2 mode, its reads do not send the passwords and its
+writes encrypt them; in `plain` mode (practice databases), the passwords are stored and seen as
+they are. A public endpoint that changes the users table has a warning (anybody could change
+users, roles and passwords): the student gives it a session and roles.
 
-Con los endpoints se genera la API JS (`js_api.dir`), rellenando los moldes que trae el proyecto
-de su plantilla (`.silence/js_api/`; ver `docs/molds.md`): Silence no tiene código del front-end
-propio. Sin moldes (o con `js_api.enabled` a `false`), no se genera, y `jsApi.notGenerated` dice
-por qué.
+With the endpoints, the JS API is generated (`js_api.dir`), filling in the molds that the project
+brings from its template (`.silence/js_api/`; see `docs/molds.md`): Silence has no frontend code
+of its own. Without molds (or with `js_api.enabled` set to `false`), it is not generated, and
+`jsApi.notGenerated` says why.
 
 ```json
 {"tables": [{"table": "photos", "view": false, "generated": ["getAll", "getById", "create", "update"],
@@ -311,27 +328,28 @@ por qué.
 
 ### Tests
 
-**Un test** es siempre **unitario**: una petición y lo que se espera (un código de estado y,
-si acaso, un fragmento del mensaje de error), en forma corta (`{"MÉTODO /ruta": cuerpo, "as":
-id, "expect": 403}` o `"expect": {"status": 400, "message": "validSalary"}`) o larga
-(`{"request": {"method", "path", "body", "as"}, "expect"}`); ver la cabecera de
-`silence/testing/model.py`. Hay dos clases:
+**A test** is always a **unit** test: one request and what is expected (a status code and,
+maybe, a part of the error message), in short form (`{"METHOD /route": body, "as": id,
+"expect": 403}` or `"expect": {"status": 400, "message": "validSalary"}`) or long form
+(`{"request": {"method", "path", "body", "as"}, "expect"}`); see the header of
+`silence/testing/model.py`. There are two kinds:
 
-- **generados** (`source: auto`): Silence los deduce de los endpoints y de los datos cada vez que
-  se piden; no se guardan ni se editan, así que siempre siguen a los endpoints. `file` es el de
-  su tabla.
-- **propios** (`source: custom`): `tests/<tabla>.json`, del alumno (por ejemplo, para las reglas
-  de negocio), que se leen y se escriben con la API de ficheros. No pueden llamarse como un
-  generado: la API de ficheros no lo guarda (409; sin BD, tampoco, porque no lo puede comprobar).
-  Si alguien lo escribe a mano en el fichero, vale el generado y el panel no usa el propio.
+- **generated** (`source: auto`): Silence works them out from the endpoints and the data each time
+  that they are asked for; they are not saved nor edited, so they always follow the endpoints.
+  `file` is the one of their table.
+- **custom** (`source: custom`): `tests/<table>.json`, the student's (for example, for the
+  business rules), which are read and written with the file API. They cannot be named as a
+  generated one: the file API does not save it (409; without a database, neither, because it
+  cannot check it). If somebody writes it by hand in the file, the generated one counts and the
+  panel does not use the custom one.
 
-Un test es una sola petición: no hay secuencias de tests. Un fichero `tests/auto_*.json` de una
-versión anterior no se carga: sale como error.
+A test is a single request: there are no sequences of tests. A `tests/auto_*.json` file of a
+previous version is not loaded: it appears as an error.
 
-**`GET /tests/generated`**: los tests generados, calculados en ese momento con los endpoints y los
-datos de la BD (para que los positivos usen valores que existen y los negativos, valores que no
-chocan); sin BD, 409. `definition` va en forma corta, como se escribiría en un fichero; `request`
-y `expect`, ya interpretados.
+**`GET /tests/generated`**: the generated tests, computed at that moment with the endpoints and
+the data of the database (so that the positive ones use values that exist and the negative ones,
+values that do not clash); without a database, 409. `definition` is in short form, as it would be
+written in a file; `request` and `expect`, already interpreted.
 
 ```json
 {"tests": [{"file": "departments", "name": "departments_getById_not_found", "table": "departments",
@@ -342,21 +360,20 @@ y `expect`, ya interpretados.
             "expect": {"status": 404}}]}
 ```
 
-Un test con `steps` (varias peticiones) o con otra cosa esperada que no sea `status` y `message`
-no es válido (400 al guardarlo).
+A test with `steps` (several requests) or that expects anything else than `status` and `message`
+is not valid (400 when saving it).
 
-Silence no ejecuta los tests: no hay `tests/run`, `tests/try` ni `silence test`. Tampoco se
-generan, personalizan ni exportan ficheros (`tests/generate`, `…/customize`, `tests/export` y
-`silence createtests` ya no existen). El panel los ejecuta contra la API del alumno en el orden
-`GET`, `POST`, `PUT`, `DELETE`, abriendo la sesión de cada `as` con `POST /users/{id}/session`.
+Silence does not run the tests: there is no `tests/run`, `tests/try` nor `silence test`. The
+panel runs them against the student's API in the order `GET`, `POST`, `PUT`, `DELETE`, opening
+the session of each `as` with `POST /users/{id}/session`.
 
-### Registro de peticiones
+### Request log
 
-Silence escribe en `admin/logs/requests.log` una línea por cada petición a la aplicación del
-alumno, como el registro de accesos de cualquier servidor web; el panel lo muestra en Logs (su
-actividad) y lo resume en sus estadísticas. No se apuntan las del panel (`/admin/` y esta API). Se guardan
-las últimas 10 000 líneas; si se borra, Silence lo crea de nuevo con la siguiente. `silence new`
-lo pone en el `.gitignore`.
+Silence writes in `admin/logs/requests.log` one line for each request to the student's
+application, as the access log of any web server; the panel shows it in Logs (its activity) and
+summarizes it in its statistics. The requests of the panel (`/admin/` and this API) are not
+logged. The last 10,000 lines are kept; if it is deleted, Silence creates it again with the next
+one. `silence new` puts it in the `.gitignore`.
 
 ```text
 2026-11-08T08:01:12 api GET /api/employees/3 200 4ms 312B /employees/$employeeId
@@ -364,23 +381,24 @@ lo pone en el `.gitignore`.
 2026-11-08T08:01:14 web GET /css/main.css 404 1ms 0B - Not found
 ```
 
-Campos, separados por un espacio: la hora (local), el grupo, el método, la ruta pedida (con su
-*query string*, codificada), el código de estado, el tiempo, los bytes enviados, la ruta del
-endpoint que respondió (`-` si ninguno) y, en los errores, el mensaje (hasta el final de la
-línea). Los grupos, como en Silence de Rust:
+Fields, separated by a space: the time (local), the group, the method, the requested path (with
+its query string, encoded), the status code, the time taken, the bytes sent, the route of the
+endpoint that responded (`-` if none) and, in the errors, the message (up to the end of the
+line). The groups:
 
-- `api`: la API del alumno (sus endpoints); las que no encuentran endpoint llevan `-`.
-- `silence`: lo que Silence da a la aplicación del alumno: el login, el logout y el resumen
-  (`GET /api`).
-- `web`: los ficheros de `web/` (la aplicación del alumno).
+- `api`: the student's API (its endpoints); the ones that do not find an endpoint have `-`.
+- `silence`: what Silence gives to the student's application: the login, the logout and the
+  summary (`GET /api`).
+- `web`: the files of `web/` (the student's application).
 
-## El panel en el proyecto
+## The panel in the project
 
-- `silence new` copia el panel en `admin/`; el servidor sirve esa carpeta en `/admin/` si
-  existe, sin saber qué contiene.
-- `admin/panel.json`: `{"version": "1.0.0", "api": 1}`. Al arrancar, Silence avisa si el panel
-  necesita otra versión de este contrato.
-- `silence.json` anota qué panel tiene el proyecto (`"admin": {"repo", "version"}`, o `null`);
-  `silence admin update` instala ese (o el del índice de Silence, `templates.json`) y
-  `--version`, `--latest` o `--repo` lo cambian. Se lee con `GET /files/silence.json`; aunque se
-  puede escribir, cambiarlo no instala nada: es cosa de la CLI, que es la que instala el panel.
+- `silence new` copies the panel into `admin/`; the server serves that folder at `/admin/` if it
+  exists, without knowing what it contains.
+- `admin/panel.json`: `{"name": "silence-v3-admin-panel-uikit", "version": "1.1.0", "api": 1}`.
+  When it starts, Silence warns if the panel needs another version of this contract.
+- `silence.json` records which panel the project has (`"admin": {"repo", "version"}`, or `null`);
+  `silence admin update` installs that one (or the one of the index of Silence, `templates.json`)
+  and `--version`, `--latest` or `--repo` change it. It is read with `GET /files/silence.json`;
+  although it can be written, changing it installs nothing: that is the job of the CLI, which is
+  the one that installs the panel.
