@@ -376,12 +376,13 @@ logged. The last 10,000 lines are kept; if it is deleted, Silence creates it aga
 one. `silence new` puts it in the `.gitignore`.
 
 ```text
-2026-11-08T08:01:12 api GET /api/employees/3 200 4ms 312B /employees/$employeeId
-2026-11-08T08:01:13 silence POST /api/login 400 9ms 60B /login The user or the password are not correct
-2026-11-08T08:01:14 web GET /css/main.css 404 1ms 0B - Not found
+2026-11-08T08:01:12+01:00 api GET /api/employees/3 200 4ms 312B /employees/$employeeId
+2026-11-08T08:01:13+01:00 silence POST /api/login 400 9ms 60B /login The user or the password are not correct
+2026-11-08T08:01:14+01:00 web GET /css/main.css 404 1ms 0B - Not found
 ```
 
-Fields, separated by a space: the time (local), the group, the method, the requested path (with
+Fields, separated by a space: the time (local, with its UTC offset, so that a browser in another
+time zone places it right), the group, the method, the requested path (with
 its query string, encoded), the status code, the time taken, the bytes sent, the route of the
 endpoint that responded (`-` if none) and, in the errors, the message (up to the end of the
 line). The groups:

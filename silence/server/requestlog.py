@@ -33,7 +33,7 @@ def log_path():
 
 
 def line(group, method, path, query, status, ms, size, route=None, message=None):
-    text = (f"{datetime.now().isoformat(timespec='seconds')} {group} {method} "
+    text = (f"{datetime.now().astimezone().isoformat(timespec='seconds')} {group} {method} "
             f"{quote(path, safe='/$-_.~@:+,;=!*()')}{'?' + query if query else ''} "
             f"{status} {round(ms)}ms {size}B {route or '-'}")
     if message:
