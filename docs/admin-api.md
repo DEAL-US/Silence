@@ -80,10 +80,10 @@ when it is asked for.
 ```json
 {"silence": "3.0.0", "api": 1, "project": "gallery", "projectDir": "/home/student/gallery",
  "versions": {"silence": {"version": "3.0.0", "adminApi": 1},
-              "panel": {"repo": "DEAL-US/silence-v3-admin-panel-uikit", "version": "v1.1.0", "installed": "1.1.0", "adminApi": 1},
+              "panel": {"repo": "DEAL-US/silence-v3-admin-panel-uikit", "version": "v1.2.0", "installed": "1.2.0", "adminApi": 1},
               "template": {"repo": "DEAL-US/silence-template-v3-ez-ui", "version": "v1.1.1"},
               "ezUi": {"repo": "IISSI-US/ez-ui", "version": "1.0.1"}},
- "latest": {"silence": {"version": "3.0.0"}, "panel": {"version": "v1.1.0"},
+ "latest": {"silence": {"version": "3.0.0"}, "panel": {"version": "v1.2.0"},
             "template": {"version": "v1.1.1"}, "ezUi": {"private": true}},
  "studentApi": {"prefix": "/api", "sessionHeader": "Token"}}
 ```
@@ -155,7 +155,7 @@ missing:
           "auth": {"table": "users", "identifier": "email", "password": "password", "role": "",
                    "active": "", "password_mode": "argon2", "login": true, "token_max_age": 86400},
           "js_api": {"enabled": true, "dir": "web/js/api/_auto"},
-          "admin": {"repo": "DEAL-US/silence-v3-admin-panel-uikit", "version": "v1.1.0"},
+          "admin": {"repo": "DEAL-US/silence-v3-admin-panel-uikit", "version": "v1.2.0"},
           "debug": false}}
 ```
 
@@ -400,7 +400,7 @@ line). The groups:
 
 - `silence new` copies the panel into `admin/`; the server serves that folder at `/admin/` if it
   exists, without knowing what it contains.
-- `admin/panel.json`: `{"name": "silence-v3-admin-panel-uikit", "version": "1.1.0", "api": 1}`.
+- `admin/panel.json`: `{"name": "silence-v3-admin-panel-uikit", "version": "1.2.0", "api": 1}`.
   When it starts, Silence warns if the panel needs another version of this contract.
 - `silence.json` records which panel the project has (`"admin": {"repo", "version"}`, or `null`);
   `silence admin update` installs that one (or the one of the index of Silence, `templates.json`)
