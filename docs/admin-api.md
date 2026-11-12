@@ -80,11 +80,11 @@ Va a la red: solo cuando se pide.
 ```json
 {"silence": "3.0.0.dev0", "api": 1, "project": "galeria", "projectDir": "/home/druiz/galeria",
  "versions": {"silence": {"version": "3.0.0.dev0", "adminApi": 1},
-              "panel": {"repo": "IISSI-US/silence-admin-panel", "version": "v1.0.0", "installed": "1.0.0", "adminApi": 1},
-              "template": {"repo": "IISSI-US/silence-template-v3-ez-ui", "version": "v1.1.0"},
+              "panel": {"repo": "DEAL-US/silence-admin-panel", "version": "v1.1.0", "installed": "1.1.0", "adminApi": 1},
+              "template": {"repo": "DEAL-US/silence-template-v3-ez-ui", "version": "v1.1.1"},
               "ezUi": {"repo": "IISSI-US/ez-ui", "version": "1.0.1"}},
  "latest": {"silence": {"version": "2.2.0"}, "panel": {"version": "v1.0.0"},
-            "template": {"version": "v1.1.0"}, "ezUi": {"error": "Cannot read the versions of IISSI-US/ez-ui (HTTP 404; if it is private, set GITHUB_TOKEN)"}},
+            "template": {"version": "v1.1.1"}, "ezUi": {"error": "Cannot read the versions of IISSI-US/ez-ui (HTTP 404; if it is private, set GITHUB_TOKEN)"}},
  "studentApi": {"prefix": "/api", "sessionHeader": "Token"}}
 ```
 
@@ -151,7 +151,7 @@ su texto), o `null` si no existe (con `etag` `""`).
           "auth": {"table": "users", "identifier": "email", "password": "password", "role": "",
                    "active": "", "password_mode": "argon2", "login": true, "token_max_age": 86400},
           "js_api": {"enabled": true, "dir": "web/js/api/_auto"},
-          "admin": {"repo": "IISSI-US/silence-admin-panel", "version": "v1.0.0"},
+          "admin": {"repo": "DEAL-US/silence-admin-panel", "version": "v1.1.0"},
           "debug": false}}
 ```
 

@@ -2,19 +2,19 @@
     "description": "Templates of the student's frontend and admin panel that this version of Silence uses, each one at a fixed version (a git tag of its repo)",
     "templates": {
         "ez-ui": {
-            "repo": "IISSI-US/silence-template-v3-ez-ui",
-            "version": "v1.1.0",
+            "repo": "DEAL-US/silence-template-v3-ez-ui",
+            "version": "v1.1.1",
             "default": true,
             "description": "Frontend with ez-ui: a first page (index.html) ready to grow"
         },
         "blank": {
-            "repo": "IISSI-US/silence-template-v3-blank",
-            "version": "v1.0.0",
+            "repo": "DEAL-US/silence-template-v3-blank",
+            "version": "v1.0.1",
             "description": "Only web/index.html"
         }
     },
     "admin": {
-        "repo": "IISSI-US/silence-admin-panel",
-        "version": "v1.0.0"
+        "repo": "DEAL-US/silence-admin-panel",
+        "version": "v1.1.0"
     }
 }
