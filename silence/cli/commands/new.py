@@ -45,19 +45,28 @@ def copy_template(src, dest):
 
 
 def install_admin_panel(dest, repo, version):
-    '''Copies the admin/ folder of the panel's repo at that version into the project (replacing it)'''
+    '''Copies the admin/ folder of the panel's repo at that version into the project (replacing it,
+    but keeping its logs: admin/logs/, the request log, belongs to the project)'''
     src = tpl.fetch(repo, version)
+    target = os.path.join(dest, "admin")
+    logs = os.path.join(target, "logs")
+    saved_logs = os.path.join(dest, ".silence-admin-logs")  # In the project: never lost with src
     try:
         panel = os.path.join(src, "admin")
         if not os.path.isdir(panel):
             raise DownloadError(f"{repo} has no admin/ folder: it is not an admin panel")
-        target = os.path.join(dest, "admin")
+        if os.path.isdir(logs):
+            shutil.move(logs, saved_logs)
         if os.path.isdir(target):
             shutil.rmtree(target)
         shutil.copytree(panel, target, ignore=shutil.ignore_patterns(".gitkeep"))
         return panel_version(dest)
     finally:
         shutil.rmtree(src, ignore_errors=True)
+        if os.path.isdir(saved_logs):  # The logs back in their place, whatever happened
+            os.makedirs(target, exist_ok=True)
+            shutil.rmtree(logs, ignore_errors=True)
+            shutil.move(saved_logs, logs)
 
 
 def panel_version(project_dir):

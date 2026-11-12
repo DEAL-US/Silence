@@ -13,8 +13,8 @@ from silence.project.files import write_text
 # deleting the file resets both. The panel's own requests (/admin and the
 # admin API) are not logged.
 #
-#   2026-11-08T08:01:12 api GET /api/employees/3 200 4ms 312B /employees/$employeeId
-#   2026-11-08T08:01:13 web GET /css/main.css 404 1ms 0B - Not found
+#   2026-11-08T08:01:12+01:00 api GET /api/employees/3 200 4ms 312B /employees/$employeeId
+#   2026-11-08T08:01:13+01:00 web GET /css/main.css 404 1ms 0B - Not found
 #
 # Fields: time, group (api: the student's endpoints; silence: login, logout
 # and GET <prefix>; web: the files of web/), method, path (with the query
