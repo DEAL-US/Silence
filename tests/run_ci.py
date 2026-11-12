@@ -25,9 +25,9 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJECT = os.path.join(HERE, "ci_project")
 # The silence of this Python environment (not another one in the PATH, e.g., the Rust one)
-SILENCE = os.path.join(os.path.dirname(sys.executable), "silence")
-if not os.path.isfile(SILENCE):
-    SILENCE = shutil.which("silence")
+# (silence.exe in Windows)
+SILENCE = next((p for p in (os.path.join(os.path.dirname(sys.executable), name) for name in ("silence", "silence.exe"))
+                if os.path.isfile(p)), None) or shutil.which("silence")
 
 
 def db_settings():
