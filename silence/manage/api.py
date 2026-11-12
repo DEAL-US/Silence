@@ -129,8 +129,6 @@ def latest_versions(current):
             continue
         try:
             res[key] = {"version": tpl.latest_tag(repo)}
-        except tpl.NotPublic:
-            res[key] = {"private": True}  # e.g., ez-ui: the project has its copy; its repo is not public
         except tpl.DownloadError as exc:
             res[key] = {"error": str(exc)}
     return res

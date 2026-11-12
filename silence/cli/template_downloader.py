@@ -32,10 +32,6 @@ class DownloadError(Exception):
     pass
 
 
-class NotPublic(DownloadError):
-    '''The repo cannot be read without a token: it is private (or it does not exist)'''
-    pass
-
 
 def index():
     with open(INDEX_PATH, encoding="utf8") as f:
@@ -149,8 +145,6 @@ def latest_tag(repo_spec):
             r = requests.get(f"https://api.github.com/repos/{owner}/{repo}/tags?per_page=100", headers=headers, timeout=10)
         except requests.RequestException as exc:
             raise DownloadError(f"Cannot reach GitHub: {exc}")
-        if r.status_code == 404 and not token:
-            raise NotPublic(f"{owner}/{repo} is not public")
         if r.status_code != 200:
             hint = "" if token else "; if it is private, set GITHUB_TOKEN"
             raise DownloadError(f"Cannot read the versions of {owner}/{repo} (HTTP {r.status_code}{hint})")

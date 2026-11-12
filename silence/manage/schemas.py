@@ -27,7 +27,7 @@ COMPONENTS = {
                           "panel {repo, version, installed, adminApi}, template {repo, version} and ezUi {repo, version} "
                           "(null if the project does not have it or it is not known)"},
                 latest={"type": "object", "description": "Only with ?updates=true: the latest published version of "
-                        "each piece ({version}, {private: true} if its repo is not public, or {error}; null if it has no repo)"},
+                        "each piece ({version} or {error}; null if it has no repo)"},
                 studentApi=obj(["prefix", "sessionHeader"], prefix=STR, sessionHeader=STR)),
 
     "Status": obj(["apiPrefix", "baseUrl", "database", "auth", "endpoints", "tests", "jsApi", "errors"],

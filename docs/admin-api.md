@@ -74,8 +74,7 @@ frontend template (the one that `silence new` recorded) and ez-ui (`web/ez-ui/VE
 `null` if the project does not have it or it is not known. With **`?updates=true`** it adds
 `latest`, the latest published version of each one (PyPI for Silence; the tags of its repo, or of
 its local copy with `SILENCE_SOURCES`, for the others; `GITHUB_TOKEN` if the repo is private), or
-why it is not known: `{"private": true}` if its repo is not public. It goes to the network: only
-when it is asked for.
+why it is not known (`{"error": "…"}`). It goes to the network: only when it is asked for.
 
 ```json
 {"silence": "3.0.0", "api": 1, "project": "gallery", "projectDir": "/home/student/gallery",
@@ -84,7 +83,7 @@ when it is asked for.
               "template": {"repo": "DEAL-US/silence-template-v3-ez-ui", "version": "v1.1.1"},
               "ezUi": {"repo": "IISSI-US/ez-ui", "version": "1.0.1"}},
  "latest": {"silence": {"version": "3.0.0"}, "panel": {"version": "v1.2.0"},
-            "template": {"version": "v1.1.1"}, "ezUi": {"private": true}},
+            "template": {"version": "v1.1.1"}, "ezUi": {"version": "v1.0.1"}},
  "studentApi": {"prefix": "/api", "sessionHeader": "Token"}}
 ```
 
