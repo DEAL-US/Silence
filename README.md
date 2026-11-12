@@ -32,7 +32,7 @@ If you find Silence useful for your ongoing research work, please consider citin
     url = {https://www.sciencedirect.com/science/article/pii/S2352711022001789}
 }
 ```
-
+ 
 # Contributions
 All contributions are welcome provided that they follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
