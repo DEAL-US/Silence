@@ -1,7 +1,7 @@
 # API de administración de Silence 3
 
 Contrato entre Silence y cualquier cliente que lo administre: el panel
-(`silence-admin-panel`), la CLI, el CI o un script. Aprobado el 06/11/2026 y completado con los
+(`silence-v3-admin-panel-uikit`), la CLI, el CI o un script. Aprobado el 06/11/2026 y completado con los
 formatos el 07/11/2026; simplificado el 08/11/2026 (de 26 operaciones a 15: los ficheros del
 proyecto con una sola API, y las estadísticas en el panel, con el registro de peticiones). Es la única pieza que comparten Silence y el panel: otro backend (por
 ejemplo, Silence de Rust) que lo cumpla sirve con el mismo panel. `tests/ci_project/test/
@@ -80,7 +80,7 @@ Va a la red: solo cuando se pide.
 ```json
 {"silence": "3.0.0", "api": 1, "project": "galeria", "projectDir": "/home/student/galeria",
  "versions": {"silence": {"version": "3.0.0.dev0", "adminApi": 1},
-              "panel": {"repo": "DEAL-US/silence-admin-panel", "version": "v1.1.0", "installed": "1.1.0", "adminApi": 1},
+              "panel": {"repo": "DEAL-US/silence-v3-admin-panel-uikit", "version": "v1.1.0", "installed": "1.1.0", "adminApi": 1},
               "template": {"repo": "DEAL-US/silence-template-v3-ez-ui", "version": "v1.1.1"},
               "ezUi": {"repo": "IISSI-US/ez-ui", "version": "1.0.1"}},
  "latest": {"silence": {"version": "2.2.0"}, "panel": {"version": "v1.0.0"},
@@ -151,7 +151,7 @@ su texto), o `null` si no existe (con `etag` `""`).
           "auth": {"table": "users", "identifier": "email", "password": "password", "role": "",
                    "active": "", "password_mode": "argon2", "login": true, "token_max_age": 86400},
           "js_api": {"enabled": true, "dir": "web/js/api/_auto"},
-          "admin": {"repo": "DEAL-US/silence-admin-panel", "version": "v1.1.0"},
+          "admin": {"repo": "DEAL-US/silence-v3-admin-panel-uikit", "version": "v1.1.0"},
           "debug": false}}
 ```
 

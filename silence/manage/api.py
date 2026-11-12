@@ -28,7 +28,7 @@ from silence.cli.commands.new import panel_version
 
 ###############################################################################
 # Admin API (/_silence/v1): the operations to administer Silence itself.
-# It is the contract used by the admin panel (silence-admin-panel), and the
+# It is the contract used by the admin panel (silence-v3-admin-panel-uikit), and the
 # CLI runs the same code. Only reachable from this computer. See
 # docs/admin-api.md.
 ###############################################################################
@@ -129,6 +129,8 @@ def latest_versions(current):
             continue
         try:
             res[key] = {"version": tpl.latest_tag(repo)}
+        except tpl.NotPublic:
+            res[key] = {"private": True}  # e.g., ez-ui: the project has its copy; its repo is not public
         except tpl.DownloadError as exc:
             res[key] = {"error": str(exc)}
     return res

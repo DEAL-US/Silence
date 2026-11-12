@@ -14,7 +14,7 @@
         }
     },
     "admin": {
-        "repo": "DEAL-US/silence-admin-panel",
+        "repo": "DEAL-US/silence-v3-admin-panel-uikit",
         "version": "v1.1.0"
     }
 }
