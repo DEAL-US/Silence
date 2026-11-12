@@ -158,3 +158,16 @@ def latest_tag(repo_spec):
     if not tags:
         raise DownloadError(f"{owner}/{repo} has no versions (git tags) yet")
     return max(tags, key=version_key)
+
+
+def resolve(repo_spec, version):
+    '''The version to install and record: "latest" is the latest published one (the latest tag of
+    the repo), so that the project records a fixed version; the default branch only if the repo has
+    no tags (or they cannot be read)'''
+    if version != LATEST:
+        return version
+    try:
+        return latest_tag(repo_spec)
+    except DownloadError as exc:
+        logger.debug("No tags of %s (%s): its default branch", repo_spec, exc)
+        return LATEST

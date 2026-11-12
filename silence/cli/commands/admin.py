@@ -27,6 +27,7 @@ def handle(args):
     if args.latest:
         admin["version"] = tpl.LATEST
 
+    admin["version"] = tpl.resolve(admin["repo"], admin["version"])
     before = panel_version(settings.PROJECT_DIR)
     try:
         after = install_admin_panel(settings.PROJECT_DIR, admin["repo"], admin["version"])

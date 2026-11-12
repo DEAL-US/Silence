@@ -28,7 +28,7 @@ def run_from_command_line():
     admin_group = p.add_mutually_exclusive_group()
     admin_group.add_argument("--no-admin", action="store_true", help="Without the admin panel")
     admin_group.add_argument("--admin", help="Another admin panel: owner/repo or its GitHub URL")
-    p.add_argument("--admin-version", help="Version (git tag) of the admin panel, or latest")
+    p.add_argument("--admin-version", help="Version (git tag) of the admin panel, or latest (the latest tag)")
     p.set_defaults(handler=new.handle)
 
     p = subparsers.add_parser("run", help="Starts the API, the web app and the admin panel")
@@ -51,7 +51,7 @@ def run_from_command_line():
     p.add_argument("action", choices=["update"], help="update: installs or updates admin/")
     version_group = p.add_mutually_exclusive_group()
     version_group.add_argument("--version", help="Version (git tag) to install")
-    version_group.add_argument("--latest", action="store_true", help="The latest version (default branch)")
+    version_group.add_argument("--latest", action="store_true", help="The latest published version (the latest tag of its repo)")
     p.add_argument("--repo", help="Another admin panel: owner/repo or its GitHub URL")
     p.set_defaults(handler=admin.handle)
 

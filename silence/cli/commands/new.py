@@ -119,6 +119,7 @@ def handle(args):
             admin = {"repo": args.admin, "version": args.admin_version or tpl.LATEST}
         elif args.admin_version:
             admin["version"] = args.admin_version
+        admin["version"] = tpl.resolve(admin["repo"], admin["version"])
         try:
             panel = install_admin_panel(name, admin["repo"], admin["version"])
         except DownloadError as exc:
