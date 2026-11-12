@@ -262,7 +262,7 @@ the student's API; `user` is its row without the password.
 ### Endpoints
 
 **Definition of an endpoint** (the one of its file): `route` (with `$param`), `method` (`GET`,
-`POST`, `PUT` or `DELETE`), `sql` (with `$param`), `auth_required`, `allowed_roles` (`["*"]`: any
+`POST`, `PUT` or `DELETE`), `sql` (with `$param`, and `$loggedId` for the id of the logged user), `auth_required`, `allowed_roles` (`["*"]`: any
 user with a session; specific roles imply a session), `description`, `request_body_params` (the
 ones of the body), `query_params` (the ones of the query string that the SQL uses, the filters of
 a collection: `?minAverage=7` → `$minAverage`; if one is missing, 400), `owner` (the column with
