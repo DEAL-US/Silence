@@ -25,11 +25,11 @@ def get_logged_user(required=False):
         return None
 
 
-def get_field(row, name):
-    '''Case-insensitive access to a column of a row'''
+def get_field(row, name, missing=None):
+    '''Case-insensitive access to a column of a row (missing: what to return if it has no such column)'''
     if not row or not name:
-        return None
-    return next((v for k, v in row.items() if k.lower() == name.lower()), None)
+        return missing
+    return next((v for k, v in row.items() if k.lower() == name.lower()), missing)
 
 
 def check_roles(user, allowed_roles):
@@ -41,6 +41,13 @@ def check_roles(user, allowed_roles):
     role = get_field(user, settings.USER_AUTH_DATA["role"])
     if role not in allowed_roles:
         raise HTTPError(403, "Your role does not allow you to access this resource")
+
+
+def has_role(user, allowed_roles):
+    '''Whether the logged user has one of the roles of the list ("*" is not a role: false)'''
+    if user is None or "*" in allowed_roles:
+        return False
+    return get_field(user, settings.USER_AUTH_DATA["role"]) in allowed_roles
 
 
 def user_id_of(user):

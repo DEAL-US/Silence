@@ -12,7 +12,7 @@ from silence.exceptions import HTTPError, DatabaseError, EndpointError
 from silence.settings import settings
 from silence.logging.default_logger import logger
 from silence.server import sqlshape
-from silence.server.session import get_logged_user, check_roles, user_id_of
+from silence.server.session import get_logged_user, check_roles, has_role, user_id_of, get_field
 from silence.auth.users import is_users_table
 from silence.auth.passwords import prepare_for_storage
 from silence.utils.min_type import Min
@@ -76,14 +76,19 @@ class Endpoint:
         self.method = data.get("method", "GET").upper()
         if self.method not in METHODS:
             raise EndpointError(f"'{name}' in {self.file}: unknown method {self.method}")
-        self.auth_required = bool(data.get("auth_required", False))
         self.allowed_roles = data.get("allowed_roles", ["*"]) or ["*"]
+        self.owner = data.get("owner") or None
+        # Roles (other than "*") and an owner need a session: they imply auth_required
+        implied = self.owner or "*" not in self.allowed_roles
+        if implied and "auth_required" in data and not data["auth_required"]:
+            self.warnings.append("auth_required is false, but " + ("owner" if self.owner else "allowed_roles")
+                                 + " needs a session: it is required anyway")
+        self.auth_required = bool(data.get("auth_required", False) or implied)
         self.description = data.get("description", "")
         self.body_params = data.get("request_body_params", []) or []
         # Params of the query string that the SQL uses (?minAverage=7 → $minAverage): filters
         # of a collection, which in REST go in the query string, not in the route
         self.query_params = data.get("query_params", []) or []
-        self.owner = data.get("owner") or None
         self.disabled = bool(data.get("disabled", False))
 
         self.op = sqlshape.sql_op(self.sql)
@@ -134,8 +139,6 @@ class Endpoint:
                 raise EndpointError(f"'{self.name}' in {self.file}: owner needs an INSERT INTO t(...) VALUES (...)")
             if self.op in ("UPDATE", "DELETE") and not (self.shape and self.shape.where):
                 raise EndpointError(f"'{self.name}' in {self.file}: owner needs an {self.op} with a WHERE")
-            if self.op == "SELECT":
-                self.warnings.append("owner has no effect on a GET")
 
     def to_dict(self):
         return {"name": self.name, "file": self.file, "table": self.table, "source": self.source,
@@ -308,9 +311,13 @@ def column_is_optional(table, column):
 
 def run(ep, url_params):
     '''Runs an endpoint for the current request. Returns (result, status)'''
-    owned = bool(ep.owner) and ep.op != "SELECT"  # An owner has no effect on a GET
-    user = get_logged_user(required=ep.auth_required or owned)
-    if ep.auth_required or owned:
+    user = get_logged_user(required=ep.auth_required)
+    # With an owner, the roles of the list act on any row and the other users only on their own
+    # rows (owner OR roles); without one, the roles of the list are the only ones allowed
+    owned = False
+    if ep.owner:
+        owned = not has_role(user, ep.allowed_roles)
+    elif ep.auth_required:
         check_roles(user, ep.allowed_roles)
 
     params = dict(url_params)
@@ -324,6 +331,8 @@ def run(ep, url_params):
     try:
         if ep.op == "SELECT":
             rows = dal.query(sqlshape.to_pyformat(ep.sql), params)
+            if owned:
+                rows = own_rows(ep, rows, user)
             # The query string also filters and sorts (not with the params that the SQL uses)
             args = {k: v for k, v in request.args.items() if k not in ep.query_params}
             rows = filter_query_results(strip_passwords(rows), args)
@@ -335,7 +344,7 @@ def run(ep, url_params):
 
         body = request_body()
         values = {p: body[p] for p in ep.body_params if p in body}
-        sql = prepare_statement(ep, params, values, user)
+        sql = prepare_statement(ep, params, values, user, owned)
         res = dal.update(sqlshape.to_pyformat(sql), {**values, **params})
         if "rows" in res:
             res["rows"] = strip_passwords(res["rows"])
@@ -349,14 +358,24 @@ def run(ep, url_params):
         raise to_http_error(exc, f"endpoint '{ep.name}' ({ep.file})")
 
 
-def prepare_statement(ep, params, values, user):
+def own_rows(ep, rows, user):
+    '''The rows of a GET with owner that belong to the logged user (the others are not seen)'''
+    if rows and get_field(rows[0], ep.owner, missing=KeyError) is KeyError:
+        raise HTTPError(500, f"endpoint '{ep.name}' ({ep.file}): its owner column '{ep.owner}' is not in "
+                             "the result of its SELECT: add it to the SELECT")
+    uid = str(user_id_of(user))
+    return [r for r in rows if str(get_field(r, ep.owner)) == uid]
+
+
+def prepare_statement(ep, params, values, user, owned=False):
     '''Applies the rules of Silence 3 to a POST/PUT/DELETE and returns its SQL:
     owner, optional columns, partial updates and password hashing'''
     shape = ep.shape
     pairs = list(shape.pairs) if isinstance(shape, (sqlshape.Insert, sqlshape.Update)) else None
 
-    # Owner: in a POST the owner is the logged user, whatever the body says
-    if ep.owner and ep.op == "INSERT":
+    # Owner: in a POST the owner is the logged user, whatever the body says (unless the user has
+    # one of the roles that act on any row)
+    if owned and ep.op == "INSERT":
         uid = user_id_of(user)
         owner_param = next((sqlshape.only_param(v) for c, v in pairs if c.lower() == ep.owner.lower()), None)
         if owner_param:
@@ -407,7 +426,7 @@ def prepare_statement(ep, params, values, user):
                 values[p] = prepare_for_storage(values[p])
 
     # Owner: a PUT or DELETE only acts on the rows of the logged user
-    if ep.owner and ep.op in ("UPDATE", "DELETE"):
+    if owned and ep.op in ("UPDATE", "DELETE"):
         check_owner(ep, {**values, **params}, user)
 
     return sql
@@ -421,4 +440,6 @@ def check_owner(ep, all_params, user):
         raise HTTPError(404, "Not found")
     uid = user_id_of(user)
     if any(str(r["owner"]) != str(uid) for r in rows):
-        raise HTTPError(403, "Only the owner can modify or delete this resource")
+        roles = [r for r in ep.allowed_roles if r != "*"]
+        who = f"the owner or the roles {', '.join(roles)}" if roles else "the owner"
+        raise HTTPError(403, f"Only {who} can modify or delete this resource")

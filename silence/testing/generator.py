@@ -12,7 +12,7 @@ from silence.testing.model import Test, short_unit
 # Generation of tests from the endpoints, computed whenever they are asked for
 # (they are not saved). For each endpoint, with the status expected:
 #   positive: the request that should work (2xx);
-#   negative: no session (401), another role (403), another owner (403),
+#   negative: no session (401), another role (403), another owner (403; 404 in a GET by id),
 #             a row that does not exist (404), a required param missing (400).
 # Silence does not run them: the admin panel does. They are not edited; the
 # custom tests (tests/<table>.json) cannot use their names.
@@ -63,8 +63,9 @@ class Context:
         return next((u for u in self.users if self.role(u) not in roles), None)
 
     def other_user(self, roles, owner_id):
+        '''A user who is not the owner of the row nor has one of the roles that act on any row'''
         return next((u for u in self.users if str(self.user_ref(u)) != str(owner_id)
-                     and ("*" in roles or self.role(u) in roles)), None)
+                     and ("*" in roles or self.role(u) not in roles)), None)
 
     def referenced(self, table, row):
         '''Whether other rows reference this one (then it cannot be deleted)'''
@@ -170,8 +171,6 @@ def body_from_row(ep, rel, row, ctx, mutate_uniques, n=1):
     is_users = rel is not None and is_users_table(rel.name)
     for p in ep.body_params:
         col = rel.column(p) if rel else None
-        if ep.owner and col is not None and col.name.lower() == ep.owner.lower():
-            continue
         if is_users and col is not None and col.name.lower() == pwd:
             body[p] = TEST_PASSWORD
             continue
@@ -251,7 +250,10 @@ def required_param(ep, rel):
 def tests_for_endpoint(ep, ctx):
     rel = ctx.schema.get(ep.shape.table) if ep.shape is not None else ctx.schema.get(ep.table)
     rows = ctx.sample(rel.name) if rel else []
-    needs_user = ep.auth_required or bool(ep.owner)
+    needs_user = ep.auth_required
+    # With an owner, any user with a session acts on its own rows (the roles of the list, on any)
+    callers = ["*"] if ep.owner else ep.allowed_roles
+    by_owner = ep.owner and (ep.method in ("PUT", "DELETE") or (ep.method == "GET" and ep.url_params))
     base = f"{ep.table}_{ep.name}"
     label = f"{ep.method} {ep.route}"
     tests = {}
@@ -261,29 +263,32 @@ def tests_for_endpoint(ep, ctx):
 
     # The row used by the positive case, and its user
     row, user = None, None
-    if ep.method in ("PUT", "DELETE"):
+    if by_owner or ep.method in ("PUT", "DELETE"):
         for r in rows:
             if ep.method == "DELETE" and ctx.referenced(rel.name, r):
                 continue
             owner_id = r.get(ep.owner) if ep.owner else None
             if ep.owner and owner_id is None:
                 continue  # A row without owner cannot be changed by anybody
-            u = ctx.allowed_user(ep.allowed_roles, owner_id) if needs_user else None
+            u = ctx.allowed_user(callers, owner_id) if needs_user else None
             if needs_user and u is None:
                 continue
             row, user = r, u
             break
+    elif ep.owner and ep.method == "POST":
+        row = next((r for r in rows if r.get(ep.owner) is not None), rows[0] if rows else None)
+        user = (ctx.allowed_user(callers, row.get(ep.owner)) if row else None) or ctx.allowed_user(callers)
     else:
         row = rows[0] if rows else None
         if needs_user:
-            user = ctx.allowed_user(ep.allowed_roles)
+            user = ctx.allowed_user(callers)
     positive_row = row
-    if row is None and ep.method in ("PUT", "DELETE"):
+    if row is None and (by_owner or ep.method in ("PUT", "DELETE")):
         # No row for the positive case: the negative ones can use any row
         row = rows[0] if rows else None
         if needs_user:
             owner_id = row.get(ep.owner) if (ep.owner and row) else None
-            user = ctx.allowed_user(ep.allowed_roles, owner_id) or ctx.allowed_user(ep.allowed_roles)
+            user = ctx.allowed_user(callers, owner_id) or ctx.allowed_user(callers)
     as_user = ctx.user_ref(user)
     can_run = not needs_user or user is not None
 
@@ -332,17 +337,21 @@ def tests_for_endpoint(ep, ctx):
             if ep.method in ("POST", "PUT") and row else None
         add("no_session", "without a session is a 401", unit(ep.method, any_path, None, body, {"status": 401}))
 
-        other = ctx.other_role_user(ep.allowed_roles)
+        other = None if ep.owner else ctx.other_role_user(ep.allowed_roles)
         if other is not None:
             add("wrong_role", f"with the role {ctx.role(other)!r} is a 403",
                 unit(ep.method, any_path, ctx.user_ref(other), body, {"status": 403}))
 
-        if ep.owner and ep.method in ("PUT", "DELETE") and row is not None and path is not None:
+        if by_owner and row is not None and path is not None:
             intruder = ctx.other_user(ep.allowed_roles, row.get(ep.owner))
             if intruder is not None:
-                add("not_owner", "by a user who is not the owner is a 403",
-                    unit(ep.method, path, ctx.user_ref(intruder), body, {"status": 403}))
+                status = 404 if ep.method == "GET" else 403
+                what = "does not see it (404)" if ep.method == "GET" else "is a 403"
+                add("not_owner", f"by a user who is not the owner {what}",
+                    unit(ep.method, path, ctx.user_ref(intruder), body, {"status": status}))
 
+    if ep.method == "DELETE" and f"{base}_ok" in tests:
+        tests[f"{base}_ok"] = tests.pop(f"{base}_ok")  # Last: it deletes the row of the others
     return tests
 
 

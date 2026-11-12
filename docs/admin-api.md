@@ -258,10 +258,12 @@ API del alumno; `user` es su fila sin la contraseña.
 
 **Definición de un endpoint** (la de su fichero): `route` (con `$param`), `method` (`GET`,
 `POST`, `PUT` o `DELETE`), `sql` (con `$param` y `$loggedId`), `auth_required`,
-`allowed_roles` (`["*"]`: cualquier usuario con sesión), `description`, `request_body_params`
+`allowed_roles` (`["*"]`: cualquier usuario con sesión; unos roles concretos implican la sesión),
+`description`, `request_body_params`
 (los del cuerpo), `query_params` (los de la *query string* que usa el SQL, los filtros de una
-colección: `?minAverage=7` → `$minAverage`; si falta uno, 400), `owner` (la columna del dueño,
-o `null`) y `disabled` (solo en uno propio: `true`, no se publica). El resto de la *query string* filtra y ordena el resultado de un `GET` (`?columna=valor`,
+colección: `?minAverage=7` → `$minAverage`; si falta uno, 400), `owner` (la columna con el id del
+usuario dueño de cada fila, o `null`: cada usuario con sesión actúa solo sobre sus filas, también al
+leer, y los roles de `allowed_roles`, si los hay, sobre todas) y `disabled` (solo en uno propio: `true`, no se publica). El resto de la *query string* filtra y ordena el resultado de un `GET` (`?columna=valor`,
 `_sort`, `_order`, `_limit`, `_page`).
 
 **Los endpoints** están en `endpoints.list` de `GET /status`: los generados y los propios, con su

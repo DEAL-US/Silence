@@ -7,6 +7,7 @@ import test_login
 import test_roles
 import test_banned
 import test_loggedId
+import test_owner
 import test_departments
 import test_employees
 import test_admin_api
@@ -18,6 +19,7 @@ tests = [
     test_roles,
     test_banned,
     test_loggedId,
+    test_owner,
     test_departments,
     test_employees,
     test_admin_api,

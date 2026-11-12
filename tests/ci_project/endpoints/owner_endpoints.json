@@ -1,0 +1,33 @@
+{
+    "team": {
+        "description": "The employees whose boss is the logged user (owner on a GET: only its rows)",
+        "route": "/employees/team",
+        "method": "GET",
+        "sql": "SELECT * FROM employees",
+        "owner": "bossId"
+    },
+    "teamMember": {
+        "description": "An employee of the team of the logged user (another one: 404)",
+        "route": "/employees/team/$employeeId",
+        "method": "GET",
+        "sql": "SELECT * FROM employees WHERE employeeId = $employeeId",
+        "owner": "bossId"
+    },
+    "teamSalary": {
+        "description": "The salary of an employee: its boss, or the CEO on any (owner OR roles)",
+        "route": "/employees/team/$employeeId/salary",
+        "method": "PUT",
+        "sql": "UPDATE employees SET salary = $salary WHERE employeeId = $employeeId",
+        "request_body_params": ["salary"],
+        "owner": "bossId",
+        "allowed_roles": ["CEO"]
+    },
+    "ceoOnly": {
+        "description": "Roles without auth_required: a session is required anyway",
+        "route": "/departments/ceoOnly",
+        "method": "GET",
+        "sql": "SELECT * FROM departments",
+        "auth_required": false,
+        "allowed_roles": ["CEO"]
+    }
+}
