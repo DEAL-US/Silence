@@ -88,14 +88,16 @@ when it is asked for.
  "studentApi": {"prefix": "/api", "sessionHeader": "Token"}}
 ```
 
-**`GET /status`**: the state of the project. `database.error` is `null` if there is a connection;
+**`GET /status`**: the state of the project. `database.error` is `null` if there is a connection,
+and `database.tables` is the number of tables of the database (`0`: it is empty, it has to be
+loaded with the scripts; `null` without a connection);
 `auth` has `linked` and the `auth` values of `silence.json`; `endpoints.list`, the endpoints (see
 «Endpoints»); `jsApi`, the folder of the JS API and, if it is not generated, why (it is disabled or
 the project does not have its molds); `errors` are the problems of the files, as text.
 
 ```json
 {"apiPrefix": "/api", "baseUrl": "http://127.0.0.1:8080",
- "database": {"name": "silence_gallery_db", "error": null},
+ "database": {"name": "silence_gallery_db", "error": null, "tables": 3},
  "auth": {"linked": true, "table": "users", "identifier": "email", "password": "password",
           "role": "", "active": "", "password_mode": "argon2", "login": true, "token_max_age": 86400},
  "endpoints": {"count": 40, "auto": 39, "custom": 1, "disabled": 0, "list": [ … ]},
@@ -116,10 +118,12 @@ the project does not have its molds); `errors` are the problems of the files, as
 | `admin/logs/requests.log` | The request log (text) | read and deleted |
 | `<js_api.dir>/<table>.js` | The generated JS API (text) | only read |
 | `.silence/js_api/<mold>.js` | The molds of the JS API, from the template (text; see `docs/molds.md`) | only read |
+| `sql/<name>.sql` | The SQL scripts of the project (text), to choose the ones that create the database | only read |
 
 Names, of letters, digits, `_` and `-`. Any other path, 403.
 
-**`GET /files`** (or **`GET /files?dir=endpoints`**, with `endpoints`, `tests` or `admin/logs`):
+**`GET /files`** (or **`GET /files?dir=endpoints`**, with `endpoints`, `tests`, `admin/logs`, `sql`, the folder
+of the JS API or that of its molds):
 the files that there are, with their version.
 
 ```json

@@ -62,14 +62,21 @@ def try_config_file():
 
 def try_other_files():
     # Only the files of the project that Silence manages
-    for path in ("sql/create_tables.sql", "../x.json", "endpoints/%2E%2E/silence.json", "web/index.html",
+    for path in ("../x.json", "endpoints/%2E%2E/silence.json", "web/index.html",
                  "endpoints/a.b.json", "admin/js/main.js"):
         assert requests.get(FILES + path).status_code in (403, 404), path
     listing = requests.get(ADMIN + "/files").json()["files"]
     paths = [f["path"] for f in listing]
     assert "silence.json" in paths and "endpoints/auto_employees.json" in paths and "tests/employees.json" in paths
     assert all(f["path"].startswith("tests/") for f in requests.get(ADMIN + "/files?dir=tests").json()["files"])
-    assert requests.get(ADMIN + "/files?dir=sql").status_code == 400
+    # The SQL scripts: listed and read (to choose the ones that create the database), not written
+    scripts = [f["path"] for f in requests.get(ADMIN + "/files?dir=sql").json()["files"]]
+    assert "sql/create_tables.sql" in scripts and all(p.startswith("sql/") and p.endswith(".sql") for p in scripts)
+    assert "CREATE TABLE" in read("sql/create_tables.sql")["data"].upper()
+    assert write("sql/create_tables.sql", "x").status_code == 403
+    assert requests.delete(FILES + "sql/create_tables.sql").status_code == 403
+    # The number of tables of the connected database
+    assert requests.get(ADMIN + "/status").json()["database"]["tables"] >= 2
     # Nothing else of the project (e.g., the panel's own files)
     assert requests.get(FILES + "admin/data/x.json").status_code == 403
     assert write("admin/data/x.json", []).status_code == 403

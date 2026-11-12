@@ -34,7 +34,8 @@ COMPONENTS = {
                   jsApi=obj(["dir", "notGenerated"], dir=STR, notGenerated={
                       **STR_OR_NULL, "description": "Why the JS API is not generated (null if it is)"}),
                   apiPrefix=STR, baseUrl=STR,
-                  database=obj(["name", "error"], name=STR, error=STR_OR_NULL),
+                  database=obj(["name", "error"], name=STR, error=STR_OR_NULL, tables={"type": ["integer", "null"],
+                               "description": "The tables of the database (0: empty, load it with the scripts); null without a connection"}),
                   auth={"allOf": [ref("AuthSettings"), obj(["linked"], linked=BOOL)]},
                   endpoints=obj(["count", "auto", "custom", "disabled", "list"], count=INT, auto=INT, custom=INT, disabled=INT,
                                 list={"type": "array", "items": ref("Endpoint"),
