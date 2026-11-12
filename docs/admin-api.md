@@ -78,7 +78,7 @@ publicada de cada una (PyPI para Silence; las etiquetas de su repo, o de su copi
 Va a la red: solo cuando se pide.
 
 ```json
-{"silence": "3.0.0.dev0", "api": 1, "project": "galeria", "projectDir": "/home/druiz/galeria",
+{"silence": "3.0.0", "api": 1, "project": "galeria", "projectDir": "/home/student/galeria",
  "versions": {"silence": {"version": "3.0.0.dev0", "adminApi": 1},
               "panel": {"repo": "DEAL-US/silence-admin-panel", "version": "v1.1.0", "installed": "1.1.0", "adminApi": 1},
               "template": {"repo": "DEAL-US/silence-template-v3-ez-ui", "version": "v1.1.1"},

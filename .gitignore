@@ -117,3 +117,6 @@ dmypy.json
 
 # Local virtual environment
 .venv/
+
+# The work plan of Silence 3: only in the development copy, not published
+docs/plan.md

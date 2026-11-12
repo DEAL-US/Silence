@@ -24,8 +24,7 @@
 > Silence is the backend: the student's API (`/api`) and an admin API (`/_silence/v1`,
 > [docs/admin-api.md](docs/admin-api.md)). The admin panel (repo `silence-admin-panel`) and
 > the frontend templates (`silence-template-v3-*`) are separate repos that `silence new`
-> composes. The plan and the decisions are in [docs/plan.md](docs/plan.md) (in Spanish);
-> the CI runs `python tests/run_ci.py`.
+> composes. The CI runs `python tests/run_ci.py`.
 > The rest of this README describes Silence 2.
 
 

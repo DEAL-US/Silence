@@ -117,7 +117,7 @@ def missing_values(ep, rel):
 def variants(value, n):
     '''Variants of a value that keep its format (so as not to break a CHECK on it, e.g., the
     format of a DNI): the last group of digits changed (00001A → 00002A, 00003A...), or, without
-    digits, a prefix in the local part of an email (t1.druiz@us.es) or a suffix (-t1)'''
+    digits, a prefix in the local part of an email (t1.student@us.es) or a suffix (-t1)'''
     import re
     text = str(value)
     digits = list(re.finditer(r"\d+", text))
