@@ -1,3 +1,9 @@
+# 3.0.1
+- The ez-ui template is v1.2.0: `js/session.js` (`sessionManager`: the token of `POST /api/login`
+  and the user, in `sessionStorage`, where the generated `common.js` reads the token from) and
+  `messageRenderer.showErrorsAsAlert` in `js/messages.js` (an ez-ui alert for the errors to
+  correct, such as a form's).
+
 # 3.0.0
 A new version, not compatible with Silence 2 projects (see the wiki: *Migrating from Silence 2*;
 to keep Silence 2, `pip install "silence<3"`). Requires Python 3.12 or newer.
