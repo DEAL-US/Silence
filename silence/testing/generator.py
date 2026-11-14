@@ -314,8 +314,11 @@ def tests_for_endpoint(ep, ctx):
         elif ep.method == "DELETE" and positive_row is not None:
             add("ok", "deletes a row that no other row references", unit("DELETE", path, as_user, expect={"status": 200}))
 
-    # A row that does not exist
-    if ep.url_params and ep.method in ("GET", "PUT", "DELETE") and can_run and rel is not None and not ep.query_params:
+    # A row that does not exist. A GET is a 404 only if its route ends with a param (as Silence
+    # answers it, see run in server/endpoints.py): /photos/$photo_id/comments is a list, empty
+    ends_with_param = ep.route.rstrip("/").split("/")[-1].startswith("$")
+    if ep.url_params and ep.method in ("GET", "PUT", "DELETE") and can_run and rel is not None \
+            and not ep.query_params and (ep.method != "GET" or ends_with_param):
         body = body_from_row(ep, rel, row, ctx, False) if ep.method == "PUT" and row else None
         add("not_found", "a row that does not exist is a 404", unit(ep.method, missing_path, as_user, body, {"status": 404}))
 

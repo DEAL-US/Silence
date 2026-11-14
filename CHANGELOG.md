@@ -4,6 +4,8 @@
   whenever the endpoints change (from the admin panel, by hand or generating them), as the
   generated tests.
 - The ez-ui template is v1.3.0: the molds of the JS API in the style of the course's code.
+- The generated tests only expect a 404 for a GET of a row that does not exist when its route
+  ends with a param, as Silence answers (`/photos/$photo_id/comments` is a list: an empty one).
 
 # 3.0.1
 - The ez-ui template is v1.2.0: `js/session.js` (`sessionManager`: the token of `POST /api/login`
