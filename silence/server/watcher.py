@@ -52,6 +52,8 @@ def reload(changed):
         REGISTRY.load().log_errors()
         from silence.testing.generator import write_generated_tests
         write_generated_tests()  # The tests follow the endpoints
+        from silence.server.generator import write_js_api_all
+        write_js_api_all()  # And the JS API too
     if settings.errors and rel == [PROJECT_FILE]:
         return  # Already reported: nothing has been reloaded
     logger.info("Reloaded %s", ", ".join(rel))

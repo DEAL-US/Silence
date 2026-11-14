@@ -246,6 +246,8 @@ def setup():
     REGISTRY.load().log_errors()
     from silence.testing.generator import write_generated_tests
     write_generated_tests()  # The tests follow the endpoints (also if they changed while it was stopped)
+    from silence.server.generator import write_js_api_all
+    write_js_api_all()  # And the JS API too
 
     if not _routes_registered:
         register_admin_routes()

@@ -1,3 +1,10 @@
+# 3.1.0
+- The JS API has a function for every endpoint, also the custom ones (with their names and the
+  params of their query string), and `auth.js` with `login` and `logout`. Silence writes it again
+  whenever the endpoints change (from the admin panel, by hand or generating them), as the
+  generated tests.
+- The ez-ui template is v1.3.0: the molds of the JS API in the style of the course's code.
+
 # 3.0.1
 - The ez-ui template is v1.2.0: `js/session.js` (`sessionManager`: the token of `POST /api/login`
   and the user, in `sessionStorage`, where the generated `common.js` reads the token from) and

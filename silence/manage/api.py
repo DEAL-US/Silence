@@ -546,6 +546,7 @@ def put_file(path):
         if kind == "endpoints":
             REGISTRY.load()
             write_generated_tests()
+            generator.write_js_api_all()
     return jsonify({"path": path, "etag": etag_of(where), **extra}), 201 if created else 200
 
 
