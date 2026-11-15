@@ -1,3 +1,8 @@
+# 3.1.1
+- An empty value (`""`) for a column that admits `NULL` is stored as `NULL` in a POST or a PUT: an
+  HTML form cannot send `NULL` (an empty field or the empty option of a `<select>` sends `""`), and
+  `""` is not a valid value for every type (an `ENUM`, a number, a date).
+
 # 3.1.0
 - The JS API has a function for every endpoint, also the custom ones (with their names and the
   params of their query string), and `auth.js` with `login` and `logout`. Silence writes it again

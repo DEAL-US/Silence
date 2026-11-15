@@ -29,6 +29,13 @@
                             "lastName": "Test", "salary": 1000, "departmentId": 1, "isActive": 1},
         "expect": 401
     },
+    "employees_create_empty_nullable": {
+        "description": "An empty value for a column that admits NULL (departmentId) is stored as NULL, as an HTML form sends it",
+        "POST /employees": {"email": "empty@company.com", "password": "empty", "firstName": "Empty",
+                            "lastName": "Test", "salary": 1000, "departmentId": "", "isActive": 1},
+        "as": 1,
+        "expect": 201
+    },
     "employees_login": {
         "description": "A user logs in with the password of the sample data",
         "POST /login": {"email": "perianez@company.com", "password": "perianez"},

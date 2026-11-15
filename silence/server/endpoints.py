@@ -309,6 +309,12 @@ def column_is_optional(table, column):
     return col is not None and col.optional
 
 
+def column_is_nullable(table, column):
+    rel = get_schema().get(table)
+    col = rel.column(column) if rel else None
+    return col is not None and col.nullable
+
+
 def run(ep, url_params):
     '''Runs an endpoint for the current request. Returns (result, status)'''
     user = get_logged_user(required=ep.auth_required)
@@ -372,6 +378,15 @@ def prepare_statement(ep, params, values, user, owned=False):
     owner, optional columns, partial updates and password hashing'''
     shape = ep.shape
     pairs = list(shape.pairs) if isinstance(shape, (sqlshape.Insert, sqlshape.Update)) else None
+
+    # An empty value ("") for a column that admits NULL is stored as NULL: an HTML form cannot send
+    # NULL (an empty field or the empty option of a <select> sends ""), and "" is not a valid value
+    # for every type (an ENUM, a number, a date)
+    if pairs is not None:
+        for col, expr in pairs:
+            p = sqlshape.only_param(expr)
+            if p and values.get(p) == "" and column_is_nullable(shape.table, col):
+                values[p] = None
 
     # Owner: in a POST the owner is the logged user, whatever the body says (unless the user has
     # one of the roles that act on any row)
