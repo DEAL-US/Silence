@@ -246,7 +246,8 @@ def write_js_api_all():
         functions = "".join(js_function(n, eps[n]) for n in names)
         write_if_changed(os.path.join(folder, f"{name}.js"),
                          molds.fill("js_api", "table.js", {"table": name, "functions": functions}))
-    for f in os.listdir(folder):
+    # Without endpoints (a new project, with no database yet) nothing has created the folder
+    for f in (os.listdir(folder) if os.path.isdir(folder) else []):
         if f.endswith(".js") and f != "common.js" and f[:-3] not in files:
             os.remove(os.path.join(folder, f))
     write_js_common()
