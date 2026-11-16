@@ -1,3 +1,8 @@
+# 3.1.2
+- `silence run` works in a new project, before the database is configured: with no endpoints yet,
+  the folder of the generated JS API (`web/js/api/_auto`) did not exist, and Silence stopped with a
+  `FileNotFoundError` (since 3.1.0).
+
 # 3.1.1
 - An empty value (`""`) for a column that admits `NULL` is stored as `NULL` in a POST or a PUT: an
   HTML form cannot send `NULL` (an empty field or the empty option of a `<select>` sends `""`), and
