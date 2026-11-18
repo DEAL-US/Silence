@@ -1,9 +1,10 @@
 import os
+import re
 
 import pymysql
 
 from silence.db.connector import get_conn, error_message
-from silence.settings import settings
+from silence.settings import settings, PROJECT_FILE
 
 ###############################################################################
 # Creates the database again with the SQL scripts of the project's sql/ folder
@@ -100,6 +101,35 @@ class ScriptError(Exception):
         self.done = list(done)
 
 
+# The statements that name a database: CREATE/DROP DATABASE|SCHEMA [IF [NOT] EXISTS] x, and USE x
+NAMES_DB = re.compile(r"^(?:(?:CREATE|DROP)\s+(?:DATABASE|SCHEMA)\s+(?:IF\s+(?:NOT\s+)?EXISTS\s+)?|USE\s+)`?(\w+)`?",
+                      re.IGNORECASE)
+
+
+def databases_named(statements):
+    '''The databases that some statements name (in order, once; ignoring case)'''
+    found = {}
+    for _, statement in statements:
+        m = NAMES_DB.match(statement)
+        if m:
+            found.setdefault(m.group(1).lower(), m.group(1))
+    return list(found.values())
+
+
+def scripts_problem(named, db_name):
+    '''Why some scripts cannot load the database of the project (None if they can): the database of a
+    project is the one that its scripts create, so if they name one, it must be that one, and only one
+    (DEAL-US/Silence#24). The scripts of the course name it themselves (DROP DATABASE IF EXISTS
+    grades_db; CREATE DATABASE grades_db; USE grades_db;), because they are also run in HeidiSQL: with
+    another one configured, they would drop and fill theirs, and leave the configured one empty'''
+    if len(named) > 1:
+        return f"The scripts name more than one database ({', '.join(named)}): they must create only one"
+    if named and named[0].lower() != str(db_name).lower():
+        return (f"The scripts create {named[0]}, and the project uses {db_name} ({PROJECT_FILE}): "
+                "change the scripts or the database")
+    return None
+
+
 def reload():
     '''Drops and creates the database, and runs the scripts of database.scripts in order.
     Returns [{"file", "statements"}]; ScriptError (with the file, the line and the statement)
@@ -109,6 +139,14 @@ def reload():
     absent = missing(names)  # All of them exist before dropping anything
     if absent:
         raise ScriptError(absent[0], 0, "", f"there is no {SQL_DIR}/{absent[0]}")
+    # Read and checked before dropping anything
+    scripts = {}
+    for name in names:
+        with open(os.path.join(sql_dir(), name), encoding="utf8") as f:
+            scripts[name] = split(f.read())
+    problem = scripts_problem(databases_named([s for st in scripts.values() for s in st]), db_name)
+    if problem:
+        raise ScriptError("", 0, "", problem)
     conn = get_conn(with_database=False, autocommit=True)
     done = []
     try:
@@ -120,8 +158,7 @@ def reload():
                 raise ScriptError("", 0, f"DROP/CREATE DATABASE `{db_name}`", error_message(exc))
             for name in names:
                 cur.execute(f"USE `{db_name}`")
-                with open(os.path.join(sql_dir(), name), encoding="utf8") as f:
-                    statements = split(f.read())
+                statements = scripts[name]
                 for line, statement in statements:
                     try:
                         cur.execute(statement)
