@@ -1,3 +1,23 @@
+# 3.2.0
+- **Installed and updated from the branch `stable`** of DEAL-US/Silence, which points to the latest
+  release: `pip install --upgrade https://github.com/DEAL-US/Silence/archive/refs/heads/stable.zip`
+  installs and updates it, so the docs need not change with each version (the tags stay, for a given
+  version). From PyPI too, once Silence 3 is published there (`pip install --upgrade silence`).
+- **Updates** (DEAL-US/Silence#23): the latest version is the highest of GitHub (the branch
+  `stable`) and PyPI, compared with pre-releases and development versions (3.2.0.dev1 < 3.2.0rc1 <
+  3.2.0). Silence knows how it was installed (GitHub, PyPI or a working copy) and gives the command
+  that updates it, in `silence run` and to the admin panel (Versions).
+- **The scripts and the database** (DEAL-US/Silence#24): the database of a project is the one that
+  its scripts create. If the scripts of `database.scripts` name a database (`CREATE DATABASE`,
+  `DROP DATABASE` or `USE`, as the ones of the course do), it must be the configured one, and only
+  one: otherwise the reload (`silence createdb` or the admin panel) stops before dropping anything,
+  instead of dropping and filling the database that they name and leaving the configured one empty.
+- **Faster** (DEAL-US/Silence#22): the connections to the database share one TLS context (PyMySQL
+  created one for each connection, loading the certificates of the system), and Silence's own work
+  that runs many queries (the schema, the generated tests, the rows of each table) uses one
+  connection. Saving an endpoint with the database of the labs: from about 5 s to 0.06 s.
+- The admin panel v1.4.0.
+
 # 3.1.2
 - `silence run` works in a new project, before the database is configured: with no endpoints yet,
   the folder of the generated JS API (`web/js/api/_auto`) did not exist, and Silence stopped with a

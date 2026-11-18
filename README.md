@@ -13,7 +13,7 @@ and changed in JSON files, and an admin panel helps with everything else. It has
 in Computer Science at the University of Seville.
 
 ```bash
-pip install https://github.com/DEAL-US/Silence/archive/refs/tags/v3.1.2.zip   # see Installation in the wiki
+pip install --upgrade https://github.com/DEAL-US/Silence/archive/refs/heads/stable.zip   # installs or updates it; see the wiki
 silence new myproject       # the project, with its web app template and the admin panel
 cd myproject
 silence run                 # the API at /api, the web app at / and the admin panel at /admin/
