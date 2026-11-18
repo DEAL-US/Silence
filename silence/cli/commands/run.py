@@ -6,7 +6,7 @@ import webbrowser
 
 from silence.logging.default_logger import logger
 from silence.settings import settings, PROJECT_FILE
-from silence.utils.check_update import check_for_new_version
+from silence.utils.check_update import check_for_new_version, upgrade_command
 from silence.db.connector import connection_error
 from silence import __version__
 
@@ -61,7 +61,8 @@ def handle(args):
     settings.warn_unknown_settings()
     new_ver = check_for_new_version()
     if new_ver:
-        logger.warning("A new Silence version (v%s) is available.", new_ver)
+        how = upgrade_command()
+        logger.warning("A new version of Silence (v%s) is available%s", new_ver, f": {how}" if how else ".")
 
     db_error = connection_error()
     server_manager.setup()

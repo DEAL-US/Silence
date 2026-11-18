@@ -7,6 +7,7 @@ from flask import Blueprint, jsonify, request, current_app
 
 from silence import __version__
 from silence.auth.passwords import password_status, hash_password
+from silence.utils.check_update import installed_from, upgrade_command
 from silence.db import dal, schema as db_schema
 from silence.db.connector import get_conn, test_connection, connection_error, error_message
 from silence.db.errors import to_http_error
@@ -106,7 +107,9 @@ def versions():
     panel = panel_version(settings.PROJECT_DIR) or {}
     ez_text, _ = read_with_etag(full_path(EZ_UI["file"]))
     return {
-        "silence": {"version": __version__, "adminApi": API_VERSION},
+        # How it was installed (github, pypi, editable) and the command that updates it
+        "silence": {"version": __version__, "adminApi": API_VERSION, "installedFrom": installed_from(),
+                    "upgrade": upgrade_command()},
         "panel": {**(settings.project.get("admin") or {}), "installed": panel.get("version"),
                   "adminApi": panel.get("api")},
         "template": settings.project.get("template"),
@@ -121,7 +124,7 @@ def latest_versions(current):
     try:
         res["silence"] = {"version": latest_version()}
     except Exception as exc:
-        res["silence"] = {"error": f"Cannot read PyPI: {exc}"}
+        res["silence"] = {"error": f"Cannot read GitHub nor PyPI: {exc}"}
     for key in ("panel", "template", "ezUi"):
         repo = (current.get(key) or {}).get("repo")
         if not repo:
