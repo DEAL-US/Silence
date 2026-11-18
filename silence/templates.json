@@ -1,20 +1,23 @@
 {
-    "description": "Templates of the student's frontend and admin panel that this version of Silence uses, each one at a fixed version (a git tag of its repo)",
+    "description": "Templates of the student's frontend and admin panel of this version of Silence. 'version': \"latest\" installs the latest published one (the latest tag of its repo), so a new template or panel reaches the new projects without a new Silence; 'tested': the latest one tested with this Silence, installed when the latest one cannot be known or does not work with it (an admin panel that needs another version of the admin API)",
     "templates": {
         "ez-ui": {
             "repo": "DEAL-US/silence-template-v3-ez-ui",
-            "version": "v1.3.0",
+            "version": "latest",
             "default": true,
-            "description": "Frontend with ez-ui: a first page (index.html) ready to grow"
+            "description": "Frontend with ez-ui: a first page (index.html) ready to grow",
+            "tested": "v1.4.0"
         },
         "blank": {
             "repo": "DEAL-US/silence-template-v3-blank",
-            "version": "v1.0.1",
-            "description": "Only web/index.html"
+            "version": "latest",
+            "description": "Only web/index.html",
+            "tested": "v1.0.1"
         }
     },
     "admin": {
         "repo": "DEAL-US/silence-v3-admin-panel-uikit",
-        "version": "v1.4.0"
+        "version": "latest",
+        "tested": "v1.4.0"
     }
 }

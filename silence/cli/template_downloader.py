@@ -165,3 +165,19 @@ def resolve(repo_spec, version):
     except DownloadError as exc:
         logger.debug("No tags of %s (%s): its default branch", repo_spec, exc)
         return LATEST
+
+
+def pick(entry):
+    '''The version to install of a piece of the index (templates.json): its latest tag if it says
+    "latest", or the tested one if that cannot be known (no network, the limit of GitHub's API...)'''
+    version, tested = entry.get("version"), entry.get("tested")
+    if version != LATEST:
+        return version
+    try:
+        return latest_tag(entry["repo"])
+    except DownloadError as exc:
+        if not tested:
+            return LATEST
+        logger.warning("The latest version of %s cannot be known (%s): installing %s, the one tested "
+                       "with this Silence.", entry["repo"], exc, tested)
+        return tested

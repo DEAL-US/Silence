@@ -4,7 +4,7 @@ from silence.settings import settings, PROJECT_FILE
 from silence.logging.default_logger import logger
 from silence.cli import template_downloader as tpl
 from silence.cli.template_downloader import DownloadError
-from silence.cli.commands.new import install_admin_panel, panel_version
+from silence.cli.commands.new import install_compatible_panel, panel_version
 
 ###############################################################################
 # silence admin update [--version <v> | --latest] [--repo <owner/repo>]
@@ -17,7 +17,9 @@ from silence.cli.commands.new import install_admin_panel, panel_version
 def handle(args):
     settings.require_project()
 
+    tested = tpl.default_admin().get("tested")
     admin = dict(settings.project.get("admin") or tpl.default_admin())
+    admin.pop("tested", None)
     if args.repo:
         admin["repo"] = args.repo
         if not (args.version or args.latest):
@@ -27,10 +29,12 @@ def handle(args):
     if args.latest:
         admin["version"] = tpl.LATEST
 
+    if admin["repo"] != tpl.default_admin()["repo"]:
+        tested = None  # Another panel: this Silence has tested none of it
     admin["version"] = tpl.resolve(admin["repo"], admin["version"])
     before = panel_version(settings.PROJECT_DIR)
     try:
-        after = install_admin_panel(settings.PROJECT_DIR, admin["repo"], admin["version"])
+        after, admin["version"] = install_compatible_panel(settings.PROJECT_DIR, admin["repo"], admin["version"], tested)
     except DownloadError as exc:
         logger.error("Cannot get the admin panel: %s", exc)
         sys.exit(1)

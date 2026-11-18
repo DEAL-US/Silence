@@ -69,6 +69,20 @@ def install_admin_panel(dest, repo, version):
             shutil.move(saved_logs, logs)
 
 
+def install_compatible_panel(dest, repo, version, tested):
+    '''Installs the panel at that version and, if it needs another version of the admin API than this
+    Silence (its panel.json says which), the tested one instead, with a warning. Returns (its
+    panel.json, the version installed)'''
+    from silence.manage.api import API_VERSION
+    panel = install_admin_panel(dest, repo, version)
+    if panel and panel.get("api") != API_VERSION and tested and version != tested:
+        logger.warning("The admin panel %s needs version %s of the admin API, and this Silence has %s: "
+                       "installing %s, the one tested with it (update Silence to use the latest one).",
+                       version, panel.get("api"), API_VERSION, tested)
+        return install_admin_panel(dest, repo, tested), tested
+    return panel, version
+
+
 def panel_version(project_dir):
     path = os.path.join(project_dir, "admin", "panel.json")
     try:
@@ -104,7 +118,7 @@ def handle(args):
     if args.url:
         repo, version, source = args.url, tpl.LATEST, args.url
     elif template in templates:
-        repo, version = templates[template]["repo"], templates[template]["version"]
+        repo, version = templates[template]["repo"], tpl.pick(templates[template])
         source = f"the template '{template}' {version}"
     else:
         logger.error("Unknown template '%s'. Available: %s (or any repo with --url).",
@@ -124,13 +138,15 @@ def handle(args):
     admin, panel = None, None
     if not args.no_admin:
         admin = tpl.default_admin()
+        tested = admin.pop("tested", None)
         if args.admin:
             admin = {"repo": args.admin, "version": args.admin_version or tpl.LATEST}
+            tested = None
         elif args.admin_version:
             admin["version"] = args.admin_version
-        admin["version"] = tpl.resolve(admin["repo"], admin["version"])
+        admin["version"] = tpl.resolve(admin["repo"], tpl.pick({**admin, "tested": tested}))
         try:
-            panel = install_admin_panel(name, admin["repo"], admin["version"])
+            panel, admin["version"] = install_compatible_panel(name, admin["repo"], admin["version"], tested)
         except DownloadError as exc:
             logger.warning("The project has been created without the admin panel: %s. "
                            "Add it later with 'silence admin update'.", exc)

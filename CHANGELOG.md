@@ -1,3 +1,14 @@
+# 3.3.0
+- **The latest template and admin panel**: `silence new` installs the latest published version of
+  the template and of the admin panel (the latest tag of their repos), so a new one reaches the new
+  projects without a new Silence. `templates.json` keeps, for each one, the version tested with
+  this Silence (`tested`), which is installed when the latest one cannot be known (no network, the
+  limit of GitHub's API) or does not work with it (an admin panel that needs another version of the
+  admin API, also with `silence admin update --latest`). The project records the version that it
+  got. `silence list-templates` shows both.
+- The template ez-ui v1.4.0: `web/js/` as in Silence 2 (`js/libs/`, `js/renderers/messages.js`,
+  `js/utils/session.js`).
+
 # 3.2.1
 - The command that updates Silence, as it was installed: `py -m pip …` on Windows and
   `python3 -m pip …` elsewhere; with pipx, `pipx install --force <the zip of stable>` (`pipx
