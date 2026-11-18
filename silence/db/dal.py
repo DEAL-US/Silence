@@ -1,3 +1,6 @@
+import threading
+from contextlib import contextmanager
+
 from pymysql.cursors import DictCursor
 
 from silence.db.connector import get_conn
@@ -7,10 +10,34 @@ from silence.logging.default_logger import logger
 ###############################################################################
 # The DAL (Data Access Layer) functions provide an abstraction layer
 # for querying and updating the database.
+#
+# Each query opens its own connection, so that nothing of a request (session
+# variables, the isolation level...) reaches another one. Silence's own work
+# that runs many queries in a row (reading the schema, generating the tests)
+# runs them in a batch: one connection for all of them (see batch()).
 ###############################################################################
 
+_local = threading.local()  # The connection of the batch of this thread, if any
+
+
+@contextmanager
+def batch():
+    '''Runs the queries inside it with one connection (of this thread), instead of one each. Each
+    query is still committed (or rolled back) on its own. Nested batches use the outer one'''
+    if getattr(_local, "conn", None) is not None:
+        yield
+        return
+    _local.conn = get_conn()
+    try:
+        yield
+    finally:
+        conn, _local.conn = _local.conn, None
+        conn.close()
+
+
 def _run(q, params, fetch):
-    conn = get_conn()
+    kept = getattr(_local, "conn", None)
+    conn = kept or get_conn()
     cursor = conn.cursor(DictCursor)
     try:
         cursor.execute(q, params or None)
@@ -29,7 +56,8 @@ def _run(q, params, fetch):
         raise DatabaseError(exc) from exc
     finally:
         cursor.close()
-        conn.close()
+        if conn is not kept:
+            conn.close()
 
 
 def query(q, params=None):

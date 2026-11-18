@@ -248,12 +248,13 @@ def database_reload():
 def get_schema():
     '''Tables and views of the database, with their columns, keys and number of rows'''
     require_db()
-    data = db_schema.get_schema(refresh=True).to_dict()
-    for rel in data["relations"]:
-        try:
-            rel["rows"] = dal.query(f"SELECT COUNT(*) AS n FROM `{rel['name']}`")[0]["n"]
-        except DatabaseError:
-            rel["rows"] = None  # E.g., a view that no longer works
+    with dal.batch():  # The schema and the rows of each table, with one connection
+        data = db_schema.get_schema(refresh=True).to_dict()
+        for rel in data["relations"]:
+            try:
+                rel["rows"] = dal.query(f"SELECT COUNT(*) AS n FROM `{rel['name']}`")[0]["n"]
+            except DatabaseError:
+                rel["rows"] = None  # E.g., a view that no longer works
     return jsonify(data)
 
 

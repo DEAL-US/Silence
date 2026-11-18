@@ -99,6 +99,11 @@ class Schema:
 
 
 def load_schema():
+    with dal.batch():  # Its queries with one connection
+        return _load_schema()
+
+
+def _load_schema():
     db = settings.DB_CONN["database"]
     schema = Schema()
 

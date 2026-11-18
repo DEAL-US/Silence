@@ -368,10 +368,11 @@ def generated_tests():
     REGISTRY.load()
     ctx = Context()
     tests = []
-    for ep in sorted(REGISTRY.endpoints, key=lambda e: (e.table, e.route, e.method)):
-        for name, t in tests_for_endpoint(ep, ctx).items():
-            # The short form, the same as the custom tests (and so the example for them)
-            tests.append(Test(name, short_unit(t), f"{ep.table}.json", source="auto"))
+    with dal.batch():  # The rows that the tests take (many small queries), with one connection
+        for ep in sorted(REGISTRY.endpoints, key=lambda e: (e.table, e.route, e.method)):
+            for name, t in tests_for_endpoint(ep, ctx).items():
+                # The short form, the same as the custom tests (and so the example for them)
+                tests.append(Test(name, short_unit(t), f"{ep.table}.json", source="auto"))
     return tests
 
 
