@@ -1,3 +1,8 @@
+# 3.2.1
+- The command that updates Silence, as it was installed: `py -m pip …` on Windows and
+  `python3 -m pip …` elsewhere; with pipx, `pipx install --force <the zip of stable>` (`pipx
+  upgrade` only looks at PyPI, so it would not update a Silence installed from GitHub).
+
 # 3.2.0
 - **Installed and updated from the branch `stable`** of DEAL-US/Silence, which points to the latest
   release: `pip install --upgrade https://github.com/DEAL-US/Silence/archive/refs/heads/stable.zip`

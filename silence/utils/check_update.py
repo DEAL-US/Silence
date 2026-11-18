@@ -1,6 +1,8 @@
 import json
 import os
+import platform
 import re
+import sys
 from importlib import metadata
 
 import requests
@@ -23,10 +25,16 @@ STABLE_ZIP = f"https://github.com/{REPO}/archive/refs/heads/stable.zip"
 STABLE_INIT = f"https://raw.githubusercontent.com/{REPO}/stable/silence/__init__.py"
 PYPI_JSON = "https://pypi.org/pypi/Silence/json"
 
-UPGRADE = {
-    "github": f"pip install --upgrade {STABLE_ZIP}",
-    "pypi": "pip install --upgrade silence",
-}
+
+def _pip():
+    '''How pip is called: "py -m pip" on Windows (the launcher of Python), "python3 -m pip" otherwise'''
+    return "py -m pip" if platform.system() == "Windows" else "python3 -m pip"
+
+
+def _pipx():
+    '''Whether this Silence runs in an environment of pipx (its venvs folder)'''
+    parts = os.path.normpath(sys.prefix).split(os.sep)
+    return "venvs" in parts and any("pipx" in p for p in parts)
 
 
 def version_key(version):
@@ -78,8 +86,14 @@ def installed_from():
 
 
 def upgrade_command(source=None):
-    '''The command that updates this Silence (None for a working copy, or if it is not known)'''
-    return UPGRADE.get(source or installed_from())
+    '''The command that updates this Silence (None for a working copy, or if it is not known). With
+    pipx, "pipx upgrade" only looks at PyPI: a URL is installed again with --force'''
+    source = source or installed_from()
+    if source == "github":
+        return f"pipx install --force {STABLE_ZIP}" if _pipx() else f"{_pip()} install --upgrade {STABLE_ZIP}"
+    if source == "pypi":
+        return "pipx upgrade silence" if _pipx() else f"{_pip()} install --upgrade silence"
+    return None
 
 
 def github_version():
